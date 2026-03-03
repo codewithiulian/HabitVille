@@ -55,7 +55,7 @@ All from a single artist ecosystem (Penzilla) plus free audio packs. One purchas
 
 ### 1.1 — Project Setup
 
-- Initialize Next.js 15 project with TypeScript and Tailwind
+- Initialize Next.js 16 project with TypeScript and Tailwind
 - Install PixiJS 8, Zustand, Dexie.js
 - Configure PWA manifest (basic — installable on iPhone home screen)
 - Deploy to Vercel with working CI/CD

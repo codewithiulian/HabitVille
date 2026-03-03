@@ -6,7 +6,7 @@ Sequential units of work. Each unit is one coding session (~2-3 hours). Each pro
 
 ## Unit 1 — Project Scaffold
 
-Set up Next.js 15 with TypeScript, Tailwind, App Router. Install PixiJS 8, Zustand, Dexie.js. Configure PWA manifest (basic). Deploy to Vercel. Verify it loads on iPhone via Vercel URL. Just a blank page that says "Habitville" — but the entire toolchain works end to end.
+Set up Next.js 16 with TypeScript, Tailwind, App Router. Install PixiJS 8, Zustand, Dexie.js. Configure PWA manifest (basic). Deploy to Vercel. Verify it loads on iPhone via Vercel URL. Just a blank page that says "Habitville" — but the entire toolchain works end to end.
 
 **Test:** Open Vercel URL on iPhone. Page loads. Can add to home screen.
 

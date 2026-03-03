@@ -58,16 +58,25 @@ habitville/
 │       └── (empty — not started)
 ├── public/
 │   └── assets/                 # All game assets (sprites, audio)
-│       ├── tiles/              # Ground tiles, roads
-│       ├── buildings/          # Houses, shops, civic, etc.
-│       ├── characters/         # NPC sprite sheets
+│       ├── tiles/              # Ground tiles (Grass, Dirt, Asfalt, Concreet, LowDirt + Half variants)
+│       ├── roads/              # Road tiles (Road_Tile1-9, DirtRoad_Tile1-9, GrassRoad_Tile1-9)
+│       ├── sidewalks/          # Sidewalk_Tile1-9, StonePath_Tile1-4
+│       ├── buildings/
+│       │   ├── apartments/     # Apartment buildings
+│       │   ├── houses/         # Residential houses
+│       │   ├── restaurants/    # Restaurant buildings
+│       │   ├── shopping/       # Commercial/shop buildings
+│       │   └── public/         # Public/civic buildings
+│       ├── decor/              # DecorItems from pack
+│       ├── plants/             # Trees, bushes, flowers
+│       ├── fences/             # Fence variants (used for map borders)
 │       ├── vehicles/           # Car sprites
-│       ├── decor/              # Trees, benches, lamp posts
+│       ├── characters/         # NPC sprite sheets (from Giant NPC pack)
 │       ├── ui/                 # GUI elements (Penzilla GUI pack)
 │       ├── audio/
 │       │   ├── music/          # Background tracks (Towball's Crossing)
 │       │   └── sfx/            # Sound effects (Shapeforms)
-│       └── (empty — assets not added yet)
+│       └── (assets not yet copied into repo)
 ├── ARCHITECTURE.md             # THIS FILE
 ├── AGENT_RULES.md              # Hard constraints for every agent session
 ├── next.config.ts              # Next.js configuration
@@ -75,6 +84,25 @@ habitville/
 ├── package.json
 └── README.md
 ```
+
+### Asset Folder Mapping (Penzilla Pack → Repo)
+
+The Penzilla GiantCityBuilder pack has this structure. Map it into the repo as follows:
+
+| Pack Folder                                                       | Repo Path                              | Notes                   |
+| ----------------------------------------------------------------- | -------------------------------------- | ----------------------- |
+| `Tiles/` (Grass, Dirt, Asfalt, Concreet, LowDirt + Half variants) | `public/assets/tiles/`                 | Ground terrain only     |
+| `Tiles/` (Road_Tile1-9, DirtRoad_Tile1-9, GrassRoad_Tile1-9)      | `public/assets/roads/`                 | Split from Tiles folder |
+| `Tiles/` (Sidewalk_Tile1-9, StonePath_Tile1-4)                    | `public/assets/sidewalks/`             | Split from Tiles folder |
+| `Appartments/`                                                    | `public/assets/buildings/apartments/`  | Fix typo in folder name |
+| `Houses/`                                                         | `public/assets/buildings/houses/`      |                         |
+| `Restaurants/`                                                    | `public/assets/buildings/restaurants/` |                         |
+| `Shopping/`                                                       | `public/assets/buildings/shopping/`    |                         |
+| `Public/`                                                         | `public/assets/buildings/public/`      |                         |
+| `DecorItems/`                                                     | `public/assets/decor/`                 |                         |
+| `Plants/`                                                         | `public/assets/plants/`                |                         |
+| `Fences/`                                                         | `public/assets/fences/`                |                         |
+| `Vehicles/`                                                       | `public/assets/vehicles/`              |                         |
 
 ---
 
@@ -113,8 +141,9 @@ row = Math.floor(
 ```
 stage
 ├── gameWorld (Container — transformed by camera: pan/zoom)
-│   ├── groundLayer (Container — grass, water, terrain)
-│   ├── roadLayer (Container — roads, pavements)
+│   ├── groundLayer (Container — grass, dirt, terrain tiles)
+│   ├── borderLayer (Container — fences, dense plants at map edges)
+│   ├── roadLayer (Container — roads, sidewalks)
 │   ├── buildingLayer (Container — sorted by depth)
 │   ├── entityLayer (Container — citizens, cars, sorted by depth)
 │   └── decorLayer (Container — trees, benches, lamp posts)
@@ -125,6 +154,40 @@ stage
 │   └── toolbar
 └── (React overlays are DOM elements above the canvas, not PixiJS)
 ```
+
+### Map Border Strategy
+
+The Penzilla City Builder pack does NOT include water, mountain, or railroad tiles. Borders use existing assets instead:
+
+- **All edges:** 3 rows of non-buildable tiles
+- **Border visual:** Dense Plants (treeline) backed by Fences — reads as "edge of the world"
+- **Ground transition:** Grass → Grass_Half\* variants at edges to suggest terrain fading out
+- **Interior:** All Grass tiles, fully buildable (24×24 usable area)
+- **Future:** Can swap in dedicated terrain tiles later if a matching pack is found
+
+This is cosmetic only — it does not affect gameplay. The key is `buildable: false` on border tiles.
+
+### Road Tile System (9-Tile Set)
+
+The Penzilla pack provides **9 variants per road type** (Road, DirtRoad, GrassRoad), NOT 16. This is a standard 3×3 tileset format.
+
+Available variants per type (e.g., Road_Tile1 through Road_Tile9):
+
+```
+Tile1: End/cap (north)     Tile4: Corner (NW)     Tile7: T-junction or straight
+Tile2: End/cap (east)      Tile5: Crossroads      Tile8: T-junction or straight
+Tile3: End/cap (south)     Tile6: Corner (SE)      Tile9: Isolated single tile
+```
+
+> **NOTE:** The exact mapping of Tile1-9 to connection types needs to be verified visually when assets are loaded. The auto-tiling logic should use a lookup table that can be adjusted once the actual sprite-to-connection mapping is confirmed.
+
+Auto-tiling approach:
+
+- Still check 4 neighbors (N, E, S, W)
+- Map neighbor combinations to the available 9 sprites
+- Some combinations may share a sprite (e.g., T-junctions may use rotation of the same sprite)
+- Three road types available: paved (Road), dirt (DirtRoad), grass (GrassRoad)
+- Sidewalks (9 variants) and StonePaths (4 variants) available for pedestrian areas
 
 ### State Management (Zustand)
 
@@ -172,15 +235,8 @@ stage
 export const GRID_SIZE = 30; // 30×30 tiles
 export const TILE_WIDTH = 512; // px (Penzilla standard)
 export const TILE_HEIGHT = 292; // px (Penzilla standard)
-```
-
-## Reference: Road Auto-Tiling Bitmask
-
-```
-Neighbor check: N=1, E=2, S=4, W=8
-4-bit value (0–15) maps to 1 of 16 road sprite variants
-Example: road with neighbors N and S → 1+4 = 5 → straight vertical road
-Example: road with neighbors N, E, S → 1+2+4 = 7 → T-junction
+export const BORDER_WIDTH = 3; // tiles of non-buildable border on each edge
+export const BUILDABLE_SIZE = 24; // 30 - (3*2) = 24×24 buildable interior
 ```
 
 ## Reference: Depth Sorting
@@ -194,12 +250,11 @@ buildingLayer.children.sort((a, b) => {
 });
 ```
 
-## Reference: Asset Paths
+## Reference: Available Ground Tiles
 
 ```
-Penzilla City Builder: /public/assets/tiles/, /public/assets/buildings/, /public/assets/decor/
-Penzilla NPC Pack:     /public/assets/characters/
-Penzilla GUI Bundle:   /public/assets/ui/
-Towball Music:         /public/assets/audio/music/
-Shapeforms SFX:        /public/assets/audio/sfx/
+Full tiles:     Grass, Dirt, LowDirt, Asfalt, Concreet
+Half variants:  [Type]_HalfBottom, [Type]_HalfSide, [Type]_HalfTop (for terrain transitions)
+Road types:     Road_Tile[1-9], DirtRoad_Tile[1-9], GrassRoad_Tile[1-9]
+Sidewalks:      Sidewalk_Tile[1-9], StonePath_Tile[1-4]
 ```
