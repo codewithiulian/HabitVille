@@ -42,48 +42,38 @@
 habitville/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
-│   │   ├── layout.tsx          # Root layout
-│   │   └── page.tsx            # Main page (mounts game canvas)
+│   │   ├── layout.tsx          # Root layout (PWA meta, mobile viewport)
+│   │   ├── page.tsx            # Main page (minimal "Habitville" — game canvas later)
+│   │   └── globals.css         # Tailwind imports + body styling
 │   ├── engine/                 # PixiJS game engine (no React imports)
-│   │   └── (empty — not started)
+│   │   └── .gitkeep
 │   ├── stores/                 # Zustand stores
-│   │   └── (empty — not started)
+│   │   └── .gitkeep
 │   ├── components/             # React UI components (overlays)
-│   │   └── (empty — not started)
+│   │   └── .gitkeep
 │   ├── db/                     # Dexie.js database schema & helpers
-│   │   └── (empty — not started)
+│   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
-│   │   └── (empty — not started)
+│   │   └── .gitkeep
 │   └── config/                 # Constants, level tables, building catalog
-│       └── (empty — not started)
+│       └── .gitkeep
 ├── public/
-│   └── assets/                 # All game assets (sprites, audio)
-│       ├── tiles/              # Ground tiles (Grass, Dirt, Asfalt, Concreet, LowDirt + Half variants)
-│       ├── roads/              # Road tiles (Road_Tile1-9, DirtRoad_Tile1-9, GrassRoad_Tile1-9)
-│       ├── sidewalks/          # Sidewalk_Tile1-9, StonePath_Tile1-4
-│       ├── buildings/
-│       │   ├── apartments/     # Apartment buildings
-│       │   ├── houses/         # Residential houses
-│       │   ├── restaurants/    # Restaurant buildings
-│       │   ├── shopping/       # Commercial/shop buildings
-│       │   └── public/         # Public/civic buildings
-│       ├── decor/              # DecorItems from pack
-│       ├── plants/             # Trees, bushes, flowers
-│       ├── fences/             # Fence variants (used for map borders)
-│       ├── vehicles/           # Car sprites
-│       ├── characters/         # NPC sprite sheets (from Giant NPC pack)
-│       ├── ui/                 # GUI elements (Penzilla GUI pack)
-│       ├── audio/
-│       │   ├── music/          # Background tracks (Towball's Crossing)
-│       │   └── sfx/            # Sound effects (Shapeforms)
-│       └── (assets not yet copied into repo)
+│   ├── manifest.json           # PWA manifest (basic — installable on iOS)
+│   └── assets/                 # All game assets (raw packs — not yet reorganized)
+│       ├── Basic_GUI_Bundle/   # Penzilla GUI pack (raw)
+│       ├── GiantCityBuilder/   # Penzilla City Builder pack (raw)
+│       └── NPC/                # Penzilla NPC pack (raw)
 ├── ARCHITECTURE.md             # THIS FILE
 ├── AGENT_RULES.md              # Hard constraints for every agent session
 ├── next.config.ts              # Next.js configuration
 ├── tsconfig.json               # TypeScript config (strict: true)
-├── package.json
+├── postcss.config.mjs          # PostCSS config (Tailwind)
+├── eslint.config.mjs           # ESLint configuration
+├── package.json                # Dependencies: Next.js 16, PixiJS 8, Zustand 5, Dexie 4
 └── README.md
 ```
+
+> **Note:** `public/assets/` currently contains raw Penzilla packs in their original structure. Asset reorganization into the target folder layout (tiles/, roads/, buildings/, etc.) is planned for Unit 6.
 
 ### Asset Folder Mapping (Penzilla Pack → Repo)
 
@@ -214,18 +204,19 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** None — project not started yet
-**What exists:** Nothing. This is the initial architecture file.
-**Next up:** Unit 1 — Project Scaffold
+**Last completed unit:** Unit 1 — Project Scaffold
+**What works:** Next.js 16 project with TypeScript strict mode, Tailwind CSS, App Router. Minimal "Habitville" page renders. PWA manifest present (installable on iOS). `npm run build` succeeds.
+**Next up:** Unit 2 — PixiJS Canvas Bootstrap
 
 ### Unit 1 checklist:
 
-- [ ] `npx create-next-app@latest` with TypeScript, Tailwind, App Router
-- [ ] Install PixiJS 8.16.0, Zustand 5, Dexie 4.3
-- [ ] Create folder structure per file tree above
-- [ ] Minimal page.tsx that renders "Habitville" text
-- [ ] Deploy to Vercel (connect repo)
-- [ ] Update this file
+- [x] `npx create-next-app@latest` with TypeScript, Tailwind, App Router
+- [x] Install PixiJS 8.16.0, Zustand 5.0.11, Dexie 4.3.0, dexie-react-hooks 4.2.0
+- [x] Create folder structure per file tree above
+- [x] Minimal page.tsx that renders "Habitville" text
+- [x] PWA manifest + mobile viewport meta tags
+- [ ] Deploy to Vercel (user connects manually)
+- [x] Update this file
 
 ---
 

@@ -1,0 +1,9 @@
+@import "tailwindcss";
+
+body {
+  background: #1a5c1a;
+  color: #ffffff;
+  font-family: Arial, Helvetica, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}

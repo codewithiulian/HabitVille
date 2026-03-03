@@ -1,0 +1,11 @@
+{
+  "name": "Habitville",
+  "short_name": "Habitville",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1a5c1a",
+  "theme_color": "#1a5c1a",
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}
