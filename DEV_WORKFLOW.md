@@ -8,4 +8,5 @@
 8. When finished, provide me with a plain english summary of what you've done and how I can test it.
 9. The same exact plain-english summary must be added as a new comment in the github issue
 10. Update the issue with a new comment that a minimal checklist test plan for me to conduct to test your work in this task, and that you haven't broken anything.
-11. Lastly move the item into testing and let me know I can start testing it.
+11. Move the item into testing and let me know I can start testing it.
+12. When I say all good, you commit, push with the correct commit message and move the item on the board to Done.

@@ -31,7 +31,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#1a5c1a" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen overflow-hidden bg-[#1a5c1a]">
+      <body className="min-h-screen overflow-hidden bg-[#1a5c1a]" suppressHydrationWarning>
         {children}
       </body>
     </html>

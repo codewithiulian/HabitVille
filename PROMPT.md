@@ -6,7 +6,7 @@ Before writing any code, read these files in the repo root:
 - AGENT_RULES.md (hard constraints — never violate these)
 - MASTER_PLAN.md (full project vision, for context only)
 
-Implement: Issue #1
+Implement: Issue #2
 
 Refer to ACTION_PLAN.md for the unit description. Implement everything it specifies, nothing more. When done, update ARCHITECTURE.md with: new files added to the file tree, any new patterns/conventions established, and the "Current State" section reflecting what's now complete.
 

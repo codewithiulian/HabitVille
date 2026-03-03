@@ -43,14 +43,16 @@ habitville/
 ├── src/
 │   ├── app/                    # Next.js App Router pages
 │   │   ├── layout.tsx          # Root layout (PWA meta, mobile viewport)
-│   │   ├── page.tsx            # Main page (minimal "Habitville" — game canvas later)
+│   │   ├── page.tsx            # Main page (dynamically imports GameCanvas)
 │   │   └── globals.css         # Tailwind imports + body styling
 │   ├── engine/                 # PixiJS game engine (no React imports)
-│   │   └── .gitkeep
+│   │   ├── create-app.ts       # PixiJS Application factory (async init)
+│   │   ├── setup-stage.ts      # Container hierarchy skeleton per spec
+│   │   └── game.ts             # Game facade — init/destroy/accessors
 │   ├── stores/                 # Zustand stores
 │   │   └── .gitkeep
 │   ├── components/             # React UI components (overlays)
-│   │   └── .gitkeep
+│   │   └── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
@@ -204,9 +206,18 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Unit 1 — Project Scaffold
-**What works:** Next.js 16 project with TypeScript strict mode, Tailwind CSS, App Router. Minimal "Habitville" page renders. PWA manifest present (installable on iOS). `npm run build` succeeds.
-**Next up:** Unit 2 — PixiJS Canvas Bootstrap
+**Last completed unit:** Unit 2 — PixiJS Canvas Bootstrap
+**What works:** Full-screen PixiJS canvas renders at 60fps on dark green background (#1a5c1a). Canvas auto-resizes with window. Container hierarchy (gameWorld with 6 child layers + hudLayer) is established. React StrictMode double-mount handled safely. `npm run build` succeeds.
+**Next up:** Unit 3 — Asset Loading / Tilemap
+
+### Unit 2 checklist:
+
+- [x] `create-app.ts` — PixiJS Application factory with async init
+- [x] `setup-stage.ts` — Container hierarchy (gameWorld + 6 layers + hudLayer)
+- [x] `game.ts` — Game facade with init/destroy/accessors, StrictMode guard
+- [x] `GameCanvas.tsx` — React component mounting PixiJS canvas
+- [x] `page.tsx` — Dynamic import of GameCanvas (SSR disabled)
+- [x] Update ARCHITECTURE.md
 
 ### Unit 1 checklist:
 
