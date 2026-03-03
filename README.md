@@ -47,3 +47,7 @@ So to come back on the original question: I build this in public because I shoul
 ## License
 
 TBD: will decide once the project takes shape. For now, feel free to look around, fork i, clone it, run it locally. Currently not accepting PRs or suggestions. This is a passion project built in my already thin spare time, managing contributions would require a much larger attention span which unfortunately I don't have at the moment.
+
+## Credits
+
+Graphics created by Penzilla Design
