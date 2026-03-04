@@ -6,6 +6,15 @@ const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
 });
 
+const BuildToolbar = dynamic(() => import('@/components/BuildToolbar'), {
+  ssr: false,
+});
+
 export default function Home() {
-  return <GameCanvas />;
+  return (
+    <>
+      <GameCanvas />
+      <BuildToolbar />
+    </>
+  );
 }

@@ -56,9 +56,10 @@ habitville/
 │   │   ├── asset-loader.ts     # Manifest builder + preloader with progress
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
-│   │   └── .gitkeep
+│   │   └── build-store.ts      # Build mode state (selected category/asset)
 │   ├── components/             # React UI components (overlays)
-│   │   └── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
+│   │   ├── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
+│   │   └── BuildToolbar.tsx    # Build mode toolbar (category tabs + asset picker)
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
@@ -221,6 +222,16 @@ Auto-tiling approach:
 - Houses are in color subdirectories: `Houses/{Color}/House_Type{1-20}.png` (8 colors × 20 types)
 - Apartments use original pack spelling: `Appartments/Appartment_{Color}_{Size}_Level{1-3}.png`
 
+### React Overlay Toolbar
+
+- `BuildToolbar` is a React component rendered as a fixed-position DOM overlay above the PixiJS canvas (`z-index: 100`)
+- Uses inline styles (matching existing project pattern — no CSS modules or Tailwind utility classes on components)
+- Communicates with game engine via `useBuildStore` Zustand store
+- Category tabs map to asset registry categories via `CATEGORY_MAP`
+- Road tab filters to representative tiles (one per road type) instead of showing all 9 variants
+- `maxHeight: 20vh` ensures toolbar never blocks more than 20% of viewport
+- All touch targets meet 44×44px minimum
+
 ### State Management (Zustand)
 
 - One store per domain: `useGameStore`, `useHabitStore`, `usePlayerStore`
@@ -246,9 +257,18 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Phase 2.1 — Texture Atlas & Asset Registry (Issue #6)
-**What works:** All previous features + asset registry with ~600 sprites mapped to metadata (anchor, offset, category, size). Manifest-based preloader loads all textures at init with progress bar on splash screen. `placeOnGrid()` helper positions any sprite on the isometric grid using registry data. 4 test buildings placed on the grid (house, apartment, shop, restaurant). Missing textures warn but don't crash. `npm run build` succeeds.
-**Next up:** Phase 2.2
+**Last completed unit:** Phase 2.2 — Asset Picker UI (Build Toolbar)
+**What works:** All previous features + React overlay toolbar at bottom of screen for selecting buildings/items to place. 5 category tabs (Roads, Homes, Shops, Public, Decor) expand to show scrollable asset thumbnails. Zustand `useBuildStore` bridges selection state between React UI and game engine. Road tab shows representative tiles only. `npm run build` succeeds.
+**Next up:** Phase 2.3
+
+### Phase 2.2 checklist (Asset Picker UI — Build Toolbar):
+
+- [x] `stores/build-store.ts` — Zustand store for build mode state (category, asset, actions)
+- [x] `globals.css` — Add `.hide-scrollbar` utility class
+- [x] `components/BuildToolbar.tsx` — React overlay toolbar with category tabs + asset grid
+- [x] `page.tsx` — Add BuildToolbar dynamic import alongside GameCanvas
+- [x] Build verification — `npm run build` succeeds
+- [x] Update ARCHITECTURE.md
 
 ### Phase 2.1 checklist (Texture Atlas & Asset Registry):
 
