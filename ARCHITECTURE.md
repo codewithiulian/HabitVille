@@ -51,7 +51,10 @@ habitville/
 │   │   ├── game.ts             # Game facade — init/destroy/accessors
 │   │   ├── grid.ts             # Grid data model + tile rendering
 │   │   ├── iso-utils.ts        # gridToScreen / screenToGrid conversions
-│   │   └── camera.ts           # Camera system — pan, zoom, momentum, bounds
+│   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds
+│   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
+│   │   ├── asset-loader.ts     # Manifest builder + preloader with progress
+│   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
 │   │   └── .gitkeep
 │   ├── components/             # React UI components (overlays)
@@ -60,7 +63,8 @@ habitville/
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
 │   │   ├── grid.ts             # Grid, GridCell, GroundType
-│   │   └── camera.ts           # CameraState, Velocity, TouchPoint
+│   │   ├── camera.ts           # CameraState, Velocity, TouchPoint
+│   │   └── assets.ts           # AssetCategory, AssetEntry
 │   └── config/                 # Constants, level tables, building catalog
 │       ├── grid-constants.ts   # GRID_SIZE, TILE_WIDTH/HEIGHT, BORDER_WIDTH
 │       └── camera-constants.ts # CAMERA_*_ZOOM, friction, velocity, bounds
@@ -204,6 +208,19 @@ Auto-tiling approach:
 - `GameCanvas.tsx` sets `touchAction: 'none'` to prevent default browser touch gestures
 - Tunable constants in `src/config/camera-constants.ts`
 
+### Asset Registry & Loading
+
+- **Asset keys** = descriptive stem (e.g. `House_Blue_Type1`, `Grass`, `Restaurant_Pizza`)
+- **Texture keys** = path relative to public/ (e.g. `assets/GiantCityBuilder/Houses/Blue/House_Type1.png`)
+- **Registry** is static — built at import time from pattern generators, not dynamically scanned
+- **Default anchors**: ground tiles `(0.5, 0)` (top-center), buildings/decor/plants `(0.5, 1.0)` (bottom-center foot point)
+- **gridOffset** defaults to `(0, 0)` — adjusted per-sprite during visual calibration
+- **Loading**: `loadAllAssets()` loads all bundles grouped by category with progress callback
+- **Missing textures** log a warning and skip — never crash
+- **Placement**: `placeOnGrid(sprite, row, col, assetKey)` uses registry metadata for anchor + offset
+- Houses are in color subdirectories: `Houses/{Color}/House_Type{1-20}.png` (8 colors × 20 types)
+- Apartments use original pack spelling: `Appartments/Appartment_{Color}_{Size}_Level{1-3}.png`
+
 ### State Management (Zustand)
 
 - One store per domain: `useGameStore`, `useHabitStore`, `usePlayerStore`
@@ -229,9 +246,21 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Unit 4 — Camera System
-**What works:** 30×30 isometric grass grid renders with full camera controls. Mouse drag pans, mouse wheel zooms toward cursor, touch drag pans, pinch-to-zoom on mobile, momentum/inertia on release, bounds clamping prevents scrolling off map. Default zoom (0.15) shows ~5 tiles across on mobile. hudLayer stays fixed (unaffected by camera). `npm run build` succeeds.
-**Next up:** Unit 5
+**Last completed unit:** Phase 2.1 — Texture Atlas & Asset Registry (Issue #6)
+**What works:** All previous features + asset registry with ~600 sprites mapped to metadata (anchor, offset, category, size). Manifest-based preloader loads all textures at init with progress bar on splash screen. `placeOnGrid()` helper positions any sprite on the isometric grid using registry data. 4 test buildings placed on the grid (house, apartment, shop, restaurant). Missing textures warn but don't crash. `npm run build` succeeds.
+**Next up:** Phase 2.2
+
+### Phase 2.1 checklist (Texture Atlas & Asset Registry):
+
+- [x] `types/assets.ts` — AssetCategory, AssetEntry type definitions
+- [x] `asset-registry.ts` — Pattern-based registry for ~600 sprites (tiles, houses, apartments, shopping, restaurants, public, decor, plants, fences, vehicles)
+- [x] `asset-loader.ts` — Manifest builder + preloader with progress callback
+- [x] `place-on-grid.ts` — `placeOnGrid()` helper using registry anchor/offset
+- [x] `game.ts` — Integrate loadAllAssets() before grid render, place 4 test buildings
+- [x] `grid.ts` — Use `Assets.get()` (preloaded) instead of `Assets.load()`
+- [x] `layout.tsx` — Progress bar on splash screen (`#loading-progress`)
+- [x] Build verification — `npm run build` succeeds
+- [x] Update ARCHITECTURE.md
 
 ### Unit 4 checklist:
 

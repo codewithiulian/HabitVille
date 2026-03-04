@@ -31,7 +31,7 @@ export function createGrid(): Grid {
 }
 
 export async function renderGrid(groundLayer: Container): Promise<void> {
-  const texture: Texture = await Assets.load(GRASS_TILE_PATH);
+  const texture: Texture = Assets.get(GRASS_TILE_PATH);
 
   // Collect all cells and sort by (row + col) ascending for depth ordering
   const allCells: GridCell[] = [];

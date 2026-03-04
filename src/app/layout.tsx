@@ -69,6 +69,26 @@ export default function RootLayout({
               }}
             />
           </picture>
+          <div
+            style={{
+              position: "absolute",
+              bottom: 0,
+              left: 0,
+              right: 0,
+              height: 4,
+              background: "rgba(0, 0, 0, 0.15)",
+            }}
+          >
+            <div
+              id="loading-progress"
+              style={{
+                height: "100%",
+                width: "0%",
+                background: "rgba(255, 255, 255, 0.8)",
+                transition: "width 0.3s ease-out",
+              }}
+            />
+          </div>
         </div>
         {children}
       </body>

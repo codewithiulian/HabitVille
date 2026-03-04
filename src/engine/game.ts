@@ -1,9 +1,12 @@
-import { Application } from 'pixi.js';
+import { Application, Assets, Sprite } from 'pixi.js';
 import { createApp } from './create-app';
 import { setupStage, type SceneContainers } from './setup-stage';
 import { createGrid, renderGrid, destroyGrid } from './grid';
 import { initCamera, destroyCamera } from './camera';
 import { gridToScreen } from './iso-utils';
+import { loadAllAssets } from './asset-loader';
+import { getAsset } from './asset-registry';
+import { placeOnGrid } from './place-on-grid';
 import { GRID_SIZE } from '../config/grid-constants';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
 
@@ -16,8 +19,17 @@ export async function initGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
+  // Load all assets with progress bar
+  await loadAllAssets((progress) => {
+    const bar = document.getElementById('loading-progress');
+    if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
+  });
+
   createGrid();
   await renderGrid(containers.groundLayer);
+
+  // Place test buildings
+  placeTestBuildings(containers);
 
   // Apply default zoom
   containers.gameWorld.scale.set(CAMERA_DEFAULT_ZOOM);
@@ -32,6 +44,37 @@ export async function initGame(): Promise<HTMLCanvasElement> {
   initCamera(app, containers.gameWorld);
 
   return app.canvas;
+}
+
+function placeTestBuildings(c: SceneContainers): void {
+  const testPlacements: Array<{ key: string; row: number; col: number }> = [
+    { key: 'House_Blue_Type1', row: 12, col: 12 },
+    { key: 'Appartment_Green_1x1_Level1', row: 14, col: 14 },
+    { key: 'Shop_Butcher_OneFloor', row: 16, col: 12 },
+    { key: 'Restaurant_Pizza', row: 12, col: 16 },
+  ];
+
+  for (const { key, row, col } of testPlacements) {
+    const asset = getAsset(key);
+    if (!asset) {
+      console.warn(`[game] Test building "${key}" not found in registry`);
+      continue;
+    }
+
+    const texture = Assets.get(asset.textureKey);
+    if (!texture) {
+      console.warn(`[game] Texture not loaded for "${key}" (${asset.textureKey})`);
+      continue;
+    }
+
+    const sprite = new Sprite(texture);
+    sprite.label = `building_${key}_${row}_${col}`;
+    placeOnGrid(sprite, row, col, key);
+    c.buildingLayer.addChild(sprite);
+  }
+
+  // Depth-sort building layer by y position (bottom of sprite)
+  c.buildingLayer.children.sort((a, b) => a.position.y - b.position.y);
 }
 
 export function destroyGame(): void {
