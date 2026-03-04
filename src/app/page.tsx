@@ -18,12 +18,17 @@ const BuildingPopup = dynamic(() => import('@/components/BuildingPopup'), {
   ssr: false,
 });
 
+const RoadPopup = dynamic(() => import('@/components/RoadPopup'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
       <GameCanvas />
       <Toast />
       <BuildingPopup />
+      <RoadPopup />
       <BuildToolbar />
     </>
   );

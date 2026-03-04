@@ -1,10 +1,12 @@
 import { create } from 'zustand';
 import type { Sprite } from 'pixi.js';
 import { loadBuildCategory as loadBuildCategoryAssets } from '../engine/asset-loader';
+import { ALL_ROAD_TYPES, parseRoadAssetKey } from '../engine/road-tiles';
+import type { RoadType } from '../engine/road-tiles';
 
 export type BuildCategory = 'roads' | 'residential' | 'commercial' | 'public' | 'decorations';
 
-export interface PlacementEntry {
+export interface BuildingPlacementEntry {
   type: 'place' | 'move' | 'delete';
   sprite: Sprite;
   row: number;
@@ -15,10 +17,36 @@ export interface PlacementEntry {
   fromCol?: number;  // only for 'move'
 }
 
+export interface RoadPlacementEntry {
+  type: 'road-place';
+  tiles: Array<{ row: number; col: number; roadType: string }>;
+  neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>;
+}
+
+export interface RoadDeleteEntry {
+  type: 'road-delete';
+  row: number;
+  col: number;
+  roadType: string;
+  tileNum: number;
+  neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>;
+}
+
+export type PlacementEntry = BuildingPlacementEntry | RoadPlacementEntry | RoadDeleteEntry;
+
 export interface SelectedBuildingInfo {
   row: number;
   col: number;
   assetKey: string;
+  displayName: string;
+  textureKey: string;
+}
+
+export interface SelectedRoadInfo {
+  row: number;
+  col: number;
+  roadType: string;
+  tileNum: number;
   displayName: string;
   textureKey: string;
 }
@@ -29,10 +57,13 @@ interface BuildState {
   buildMode: boolean;
   selectedCategory: BuildCategory | null;
   selectedAsset: string | null; // asset registry key
+  selectedRoadType: RoadType | null; // derived from selectedAsset
   placementHistory: PlacementEntry[];
   toastMessage: string | null;
   selectedBuilding: SelectedBuildingInfo | null;
   popupScreenPos: { x: number; y: number } | null;
+  selectedRoad: SelectedRoadInfo | null;
+  roadPopupScreenPos: { x: number; y: number } | null;
   categoryLoadState: Record<BuildCategory, CategoryLoadState>;
 
   selectCategory: (category: BuildCategory) => void;
@@ -46,17 +77,32 @@ interface BuildState {
   selectBuilding: (info: SelectedBuildingInfo) => void;
   deselectBuilding: () => void;
   updatePopupPos: (x: number, y: number) => void;
+  selectRoad: (info: SelectedRoadInfo) => void;
+  deselectRoad: () => void;
+  updateRoadPopupPos: (x: number, y: number) => void;
   loadCategory: (category: BuildCategory) => Promise<void>;
+}
+
+function deriveRoadType(assetKey: string | null): RoadType | null {
+  if (!assetKey) return null;
+  const parsed = parseRoadAssetKey(assetKey);
+  if (parsed && ALL_ROAD_TYPES.has(parsed.roadType)) {
+    return parsed.roadType as RoadType;
+  }
+  return null;
 }
 
 export const useBuildStore = create<BuildState>((set, get) => ({
   buildMode: false,
   selectedCategory: null,
   selectedAsset: null,
+  selectedRoadType: null,
   placementHistory: [],
   toastMessage: null,
   selectedBuilding: null,
   popupScreenPos: null,
+  selectedRoad: null,
+  roadPopupScreenPos: null,
   categoryLoadState: {
     roads: 'idle',
     residential: 'idle',
@@ -66,21 +112,21 @@ export const useBuildStore = create<BuildState>((set, get) => ({
   },
 
   selectCategory: (category) =>
-    set({ selectedCategory: category, selectedAsset: null, buildMode: true }),
+    set({ selectedCategory: category, selectedAsset: null, selectedRoadType: null, buildMode: true }),
 
   selectAsset: (assetKey) => {
     if (get().selectedAsset === assetKey) {
-      set({ selectedAsset: null, buildMode: false });
+      set({ selectedAsset: null, selectedRoadType: null, buildMode: false });
     } else {
-      set({ selectedAsset: assetKey, buildMode: true });
+      set({ selectedAsset: assetKey, selectedRoadType: deriveRoadType(assetKey), buildMode: true });
     }
   },
 
   deselectAsset: () =>
-    set({ selectedAsset: null, buildMode: false }),
+    set({ selectedAsset: null, selectedRoadType: null, buildMode: false }),
 
   exitBuildMode: () =>
-    set({ buildMode: false, selectedCategory: null, selectedAsset: null }),
+    set({ buildMode: false, selectedCategory: null, selectedAsset: null, selectedRoadType: null, selectedRoad: null, roadPopupScreenPos: null }),
 
   pushPlacement: (entry) =>
     set((s) => ({ placementHistory: [...s.placementHistory, entry] })),
@@ -99,6 +145,10 @@ export const useBuildStore = create<BuildState>((set, get) => ({
   selectBuilding: (info) => set({ selectedBuilding: info, popupScreenPos: null }),
   deselectBuilding: () => set({ selectedBuilding: null, popupScreenPos: null }),
   updatePopupPos: (x, y) => set({ popupScreenPos: { x, y } }),
+
+  selectRoad: (info) => set({ selectedRoad: info, roadPopupScreenPos: null }),
+  deselectRoad: () => set({ selectedRoad: null, roadPopupScreenPos: null }),
+  updateRoadPopupPos: (x, y) => set({ roadPopupScreenPos: { x, y } }),
 
   loadCategory: async (category) => {
     const current = get().categoryLoadState[category];

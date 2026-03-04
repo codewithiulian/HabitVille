@@ -4,13 +4,15 @@ import { setupStage, type SceneContainers } from './setup-stage';
 import { createGrid, renderGrid, destroyGrid } from './grid';
 import { initCamera, destroyCamera } from './camera';
 import { initBuildSystem, destroyBuildSystem } from './build-system';
+import { initRoadSystem, destroyRoadSystem } from './road-system';
 import { gridToScreen } from './iso-utils';
 import { loadEssentialAssets } from './asset-loader';
 import { GRID_SIZE } from '../config/grid-constants';
 import { db } from '../db/db';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
 import { destroyBackground } from './create-background';
-import { restoreCity, restoreCameraState } from '../db/city-restore';
+import { restoreCity, restoreCameraState, restoreRoads } from '../db/city-restore';
+import { roadAssetKey } from './road-tiles';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
@@ -28,9 +30,15 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
-  // Load essential assets (grid tiles + saved buildings) with progress bar
-  const savedBuildings = await db.city.toArray();
-  const savedAssetKeys = [...new Set(savedBuildings.map((b) => b.assetKey))];
+  // Load essential assets (grid tiles + saved buildings + saved roads) with progress bar
+  const [savedBuildings, savedRoads] = await Promise.all([
+    db.city.toArray(),
+    db.roads.toArray(),
+  ]);
+  const savedAssetKeys = [...new Set([
+    ...savedBuildings.map((b) => b.assetKey),
+    ...savedRoads.map((r) => roadAssetKey(r.roadType, r.tileNum)),
+  ])];
   await loadEssentialAssets(savedAssetKeys, (progress) => {
     const bar = document.getElementById('loading-progress');
     if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
@@ -39,8 +47,12 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   createGrid();
   await renderGrid(containers.groundLayer, containers.decorLayer);
 
-  // Restore persisted buildings
+  // Init road system before restoring
+  initRoadSystem(app, containers);
+
+  // Restore persisted buildings and roads
   await restoreCity(containers);
+  await restoreRoads();
 
   // Restore camera or use defaults
   const savedCamera = await restoreCameraState();
@@ -69,6 +81,7 @@ export function destroyGame(): void {
   if (!app) return;
 
   destroyBuildSystem();
+  destroyRoadSystem();
   destroyCamera();
   destroyGrid();
   destroyBackground(app);

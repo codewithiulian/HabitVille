@@ -3,7 +3,7 @@
 import { useMemo, useCallback, useRef } from 'react';
 import { useBuildStore, type BuildCategory } from '@/stores/build-store';
 import { getAssetsByCategory } from '@/engine/asset-registry';
-import { undoLastPlacement, startToolbarDrag } from '@/engine/build-system';
+import { startToolbarDrag } from '@/engine/build-system';
 import type { AssetEntry } from '@/types/assets';
 
 // ---------------------------------------------------------------------------
@@ -47,18 +47,21 @@ function AssetThumbnail({
 }) {
   const didDragRef = useRef(false);
 
+  const isRoadAsset = /^(Road|DirtRoad|GrassRoad)_Tile\d$/.test(asset.key);
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
       didDragRef.current = false;
-      if (selected) {
-        // Already selected → start drag-to-place
+      if (selected && !isRoadAsset) {
+        // Already selected non-road → start drag-to-place
         e.preventDefault();
         startToolbarDrag(asset.key, e.clientX, e.clientY);
         didDragRef.current = true;
       }
+      // Road assets: tap-to-select only (placement happens on the grid)
       // Unselected: do nothing — onClick handles tap-to-select
     },
-    [asset.key, selected],
+    [asset.key, selected, isRoadAsset],
   );
 
   const handleClick = useCallback(() => {
@@ -75,8 +78,8 @@ function AssetThumbnail({
         flexDirection: 'column',
         alignItems: 'center',
         gap: 2,
-        width: 60,
-        minWidth: 60,
+        width: 76,
+        minWidth: 76,
         minHeight: 44,
         padding: 4,
         border: selected ? '2px solid #7C3AED' : '2px solid transparent',
@@ -88,6 +91,7 @@ function AssetThumbnail({
       }}
     >
       <img
+        className={selected ? 'asset-pulse' : undefined}
         src={`/${asset.textureKey}`}
         alt={asset.displayName}
         loading="lazy"
@@ -104,15 +108,23 @@ function AssetThumbnail({
           fontSize: 9,
           lineHeight: '11px',
           color: 'rgba(0, 0, 0, 0.55)',
-          textAlign: 'center',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
           width: '100%',
           pointerEvents: 'none',
+          overflow: 'hidden',
+          whiteSpace: 'nowrap',
+          textOverflow: selected ? 'clip' : 'ellipsis',
         }}
       >
-        {asset.displayName}
+        {selected ? (
+          <span
+            className="marquee-text"
+            style={{ display: 'inline-block' }}
+          >
+            {asset.displayName}
+          </span>
+        ) : (
+          asset.displayName
+        )}
       </span>
     </button>
   );
@@ -123,7 +135,7 @@ function AssetThumbnail({
 // ---------------------------------------------------------------------------
 
 export default function BuildToolbar() {
-  const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, placementHistory, categoryLoadState, loadCategory } =
+  const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, categoryLoadState, loadCategory } =
     useBuildStore();
 
   // Build asset list for the selected category
@@ -144,13 +156,6 @@ export default function BuildToolbar() {
     return list;
   }, [selectedCategory]);
 
-  // Look up the selected asset's display name
-  const selectedAssetName = useMemo(() => {
-    if (!selectedAsset || !assets.length) return null;
-    const found = assets.find((a) => a.key === selectedAsset);
-    return found?.displayName ?? null;
-  }, [selectedAsset, assets]);
-
   return (
     <div
       data-build-toolbar
@@ -170,42 +175,24 @@ export default function BuildToolbar() {
         flexDirection: 'column',
       }}
     >
-      {/* Selected asset label + undo */}
-      {selectedAssetName && (
-        <div
-          style={{
-            padding: '4px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#6D28D9',
-            textAlign: 'center',
-            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 8,
-          }}
-        >
-          <span style={{ flex: 1 }}>{selectedAssetName}</span>
-          {placementHistory.length > 0 && (
-            <button
-              onClick={undoLastPlacement}
-              style={{
-                padding: '2px 10px',
-                fontSize: 11,
-                fontWeight: 500,
-                color: '#6D28D9',
-                background: 'rgba(124, 58, 237, 0.08)',
-                border: '1px solid rgba(124, 58, 237, 0.2)',
-                borderRadius: 6,
-                cursor: 'pointer',
-              }}
-            >
-              Undo
-            </button>
-          )}
-        </div>
-      )}
+
+      <style>{`
+        @keyframes marquee-scroll {
+          0%, 25% { transform: translateX(0); }
+          75%, 100% { transform: translateX(calc(-100% + 68px)); }
+        }
+        .marquee-text {
+          animation: marquee-scroll 3s ease-in-out infinite alternate;
+        }
+        @keyframes asset-pulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.12); }
+        }
+        .asset-pulse {
+          animation: asset-pulse 1.5s ease-in-out infinite;
+          will-change: transform;
+        }
+      `}</style>
 
       {/* Asset grid (scrollable row) */}
       {selectedCategory && categoryLoadState[selectedCategory] === 'loading' && (

@@ -9,6 +9,14 @@ import { placeOnGrid } from './place-on-grid';
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
+import {
+  handleRoadPointerDown,
+  findRoadAtScreen,
+  selectRoadForRemoval,
+  undoRoadPlace,
+  undoRoadDelete,
+  hasRoad,
+} from './road-system';
 
 // ---------------------------------------------------------------------------
 // Occupancy map — stores sprite + assetKey per tile
@@ -195,6 +203,7 @@ function isTileValid(row: number, col: number): boolean {
   if (!grid) return false;
   if (!grid[row][col].buildable) return false;
   if (isOccupied(row, col)) return false;
+  if (hasRoad(row, col)) return false;
   return true;
 }
 
@@ -490,6 +499,12 @@ function findOccupantAtScreen(screenX: number, screenY: number): {
 function handleBuildingPickup(screenX: number, screenY: number): boolean {
   if (!containers) return false;
 
+  // Delegate to road system if a road type is selected
+  const { selectedRoadType } = useBuildStore.getState();
+  if (selectedRoadType) {
+    return handleRoadPointerDown(screenX, screenY);
+  }
+
   // Handle pending move from popup "Move" button
   if (pendingMove) {
     const pm = pendingMove;
@@ -529,11 +544,29 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
 
   const hit = findOccupantAtScreen(screenX, screenY);
   if (!hit) {
-    // Tapped empty space — dismiss any popup
+    // Dismiss any building popup
     if (useBuildStore.getState().selectedBuilding) {
       clearHighlight();
       useBuildStore.getState().deselectBuilding();
     }
+    // Dismiss any road popup
+    if (useBuildStore.getState().selectedRoad) {
+      useBuildStore.getState().deselectRoad();
+    }
+
+    // Check for road tap (when not in road placement mode)
+    const roadHit = findRoadAtScreen(screenX, screenY);
+    if (roadHit) {
+      roadTapCandidateForSelect = {
+        ...roadHit,
+        startX: screenX,
+        startY: screenY,
+      };
+      document.addEventListener('pointermove', onRoadSelectTapMove);
+      document.addEventListener('pointerup', onRoadSelectTapUp);
+      return false; // allow camera pan; tap detected on pointer-up
+    }
+
     return false; // allow camera pan
   }
 
@@ -548,6 +581,52 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
   document.addEventListener('pointerup', onTapCandidateUp);
 
   return false; // allow camera pan; tap detected on pointer-up
+}
+
+// ---------------------------------------------------------------------------
+// Road select tap candidate (for non-road-mode)
+// ---------------------------------------------------------------------------
+
+let roadTapCandidateForSelect: {
+  row: number;
+  col: number;
+  entry: { sprite: Sprite; roadType: string; tileNum: number };
+  startX: number;
+  startY: number;
+} | null = null;
+
+function onRoadSelectTapMove(e: PointerEvent): void {
+  if (!roadTapCandidateForSelect) return;
+  const dx = e.clientX - roadTapCandidateForSelect.startX;
+  const dy = e.clientY - roadTapCandidateForSelect.startY;
+  if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+    roadTapCandidateForSelect = null;
+    cleanupRoadSelectTapListeners();
+  }
+}
+
+function onRoadSelectTapUp(): void {
+  if (!roadTapCandidateForSelect) {
+    cleanupRoadSelectTapListeners();
+    return;
+  }
+
+  const hit = roadTapCandidateForSelect;
+  roadTapCandidateForSelect = null;
+  cleanupRoadSelectTapListeners();
+
+  // Dismiss any building popup
+  if (useBuildStore.getState().selectedBuilding) {
+    clearHighlight();
+    useBuildStore.getState().deselectBuilding();
+  }
+
+  selectRoadForRemoval(hit.row, hit.col, hit.entry);
+}
+
+function cleanupRoadSelectTapListeners(): void {
+  document.removeEventListener('pointermove', onRoadSelectTapMove);
+  document.removeEventListener('pointerup', onRoadSelectTapUp);
 }
 
 // ---------------------------------------------------------------------------
@@ -633,6 +712,10 @@ export function undoLastPlacement(): void {
     depthSort();
     if (pixiApp) bounceAnimation(entry.sprite, pixiApp.ticker);
     persistPlace(entry.buildingId, entry.row, entry.col, entry.assetKey);
+  } else if (entry.type === 'road-place') {
+    undoRoadPlace(entry.tiles, entry.neighborChanges);
+  } else if (entry.type === 'road-delete') {
+    undoRoadDelete(entry.row, entry.col, entry.roadType, entry.tileNum, entry.neighborChanges);
   }
 }
 
@@ -703,6 +786,9 @@ export function destroyBuildSystem(): void {
   cancelPendingMove();
   lastPopupX = 0;
   lastPopupY = 0;
+
+  roadTapCandidateForSelect = null;
+  cleanupRoadSelectTapListeners();
 
   occupied.clear();
   pixiApp = null;

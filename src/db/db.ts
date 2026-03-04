@@ -13,6 +13,15 @@ export interface CityBuilding {
   placedAt: Date;
 }
 
+export interface CityRoad {
+  id: string;        // "row,col" — one road per tile
+  row: number;
+  col: number;
+  roadType: string;
+  tileNum: number;
+  placedAt: Date;
+}
+
 export interface GameStateRow {
   id: string;
   cameraX: number;
@@ -27,11 +36,18 @@ export interface GameStateRow {
 
 const db = new Dexie('habitville') as Dexie & {
   city: EntityTable<CityBuilding, 'id'>;
+  roads: EntityTable<CityRoad, 'id'>;
   gameState: EntityTable<GameStateRow, 'id'>;
 };
 
 db.version(1).stores({
   city: 'id',
+  gameState: 'id',
+});
+
+db.version(2).stores({
+  city: 'id',
+  roads: 'id',
   gameState: 'id',
 });
 

@@ -10,6 +10,16 @@ import type { Grid, GridCell, GroundType } from '../types/grid';
 
 let grid: Grid | null = null;
 
+const groundSprites = new Map<string, Sprite>();
+
+function groundKey(row: number, col: number): string {
+  return `${row},${col}`;
+}
+
+export function getGroundSprite(row: number, col: number): Sprite | undefined {
+  return groundSprites.get(groundKey(row, col));
+}
+
 // ---------------------------------------------------------------------------
 // Determine ground type — hard edge: outer 2 rows dirt, inner grass
 // ---------------------------------------------------------------------------
@@ -77,6 +87,7 @@ export async function renderGrid(
     const pos = gridToScreen(cell.row, cell.col);
     sprite.position.set(pos.x, pos.y);
     sprite.label = `ground_${cell.row}_${cell.col}`;
+    groundSprites.set(groundKey(cell.row, cell.col), sprite);
     groundLayer.addChild(sprite);
   }
 
@@ -91,4 +102,5 @@ export function getGrid(): Grid | null {
 
 export function destroyGrid(): void {
   grid = null;
+  groundSprites.clear();
 }

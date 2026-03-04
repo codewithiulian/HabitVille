@@ -53,6 +53,8 @@ habitville/
 │   │   ├── iso-utils.ts        # gridToScreen / screenToGrid conversions
 │   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds, pointer interceptor
 │   │   ├── build-system.ts     # Drag-to-place, building move, select/delete/move-from-popup system
+│   │   ├── road-tiles.ts       # Pure auto-tile logic: bitmask lookup, asset key helpers
+│   │   ├── road-system.ts      # Road state, rendering, drag placement, removal, restore
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
 │   │   ├── asset-loader.ts     # Lazy-loader: essential assets at startup, per-category on demand
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
@@ -62,7 +64,8 @@ habitville/
 │   │   ├── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
 │   │   ├── BuildToolbar.tsx    # Build mode toolbar (drag-from-toolbar initiation)
 │   │   ├── Toast.tsx           # Auto-dismiss toast for placement errors
-│   │   └── BuildingPopup.tsx  # Contextual popup for selected buildings (Move/Delete)
+│   │   ├── BuildingPopup.tsx  # Contextual popup for selected buildings (Move/Delete)
+│   │   └── RoadPopup.tsx      # Contextual popup for selected roads (Remove)
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   ├── db.ts               # Dexie database: 'habitville' with city + gameState tables
 │   │   ├── city-persistence.ts # Fire-and-forget write helpers (place/move/delete/camera)
@@ -174,27 +177,46 @@ The Penzilla City Builder pack does NOT include water, mountain, or railroad til
 
 This is cosmetic only — it does not affect gameplay. The key is `buildable: false` on border tiles.
 
-### Road Tile System (9-Tile Set)
+### Road System (Auto-Tiling)
 
-The Penzilla pack provides **9 variants per road type** (Road, DirtRoad, GrassRoad), NOT 16. This is a standard 3×3 tileset format.
+Roads are ground-level tiles rendered in `roadLayer` (above ground, below buildings). A tile CAN have both a road and a building — buildings sit on top visually.
 
-Available variants per type (e.g., Road_Tile1 through Road_Tile9):
+**Architecture:**
+- `road-tiles.ts` — Pure data + functions (no PixiJS). Bitmask calculation, tile lookup, asset key helpers. Easily unit-testable.
+- `road-system.ts` — Core road state (`roadMap`), sprite creation/update, auto-tile recalculation, L-path drag placement with preview, removal popup, undo helpers, restore from DB.
+- Three road types with auto-tiling: **Road**, **DirtRoad**, **GrassRoad** (9 tiles each). Different road types do NOT connect to each other.
 
-```
-Tile1: End/cap (north)     Tile4: Corner (NW)     Tile7: T-junction or straight
-Tile2: End/cap (east)      Tile5: Crossroads      Tile8: T-junction or straight
-Tile3: End/cap (south)     Tile6: Corner (SE)      Tile9: Isolated single tile
-```
+**Bitmask auto-tile lookup (N=1, E=2, S=4, W=8):**
 
-> **NOTE:** The exact mapping of Tile1-9 to connection types needs to be verified visually when assets are loaded. The auto-tiling logic should use a lookup table that can be adjusted once the actual sprite-to-connection mapping is confirmed.
+| Bitmask | Connections | Tile# | Shape |
+|---------|-------------|-------|-------|
+| 0 | none | 7 | isolated (E+W straight fallback) |
+| 1 | N | 8 | dead-end (N+S straight fallback) |
+| 2 | E | 7 | dead-end (E+W straight fallback) |
+| 3 | N+E | 6 | corner |
+| 4 | S | 8 | dead-end (N+S straight fallback) |
+| 5 | N+S | 8 | straight |
+| 6 | E+S | 9 | corner |
+| 7 | N+E+S | 1 | T → crossroads fallback |
+| 8 | W | 7 | dead-end (E+W straight fallback) |
+| 9 | N+W | 4 | corner |
+| 10 | E+W | 7 | straight |
+| 11 | N+E+W | 1 | T → crossroads fallback |
+| 12 | S+W | 5 | corner |
+| 13 | N+S+W | 2 | T-junction |
+| 14 | E+S+W | 3 | T-junction |
+| 15 | N+E+S+W | 1 | crossroads |
 
-Auto-tiling approach:
+**Placement UX:**
+- Tap-to-select road type in toolbar → tap grid tile to place single road
+- Drag across grid → semi-transparent L-shaped preview (col-first, then row) → release places all tiles
+- Tap existing same-type road → popup with "Remove" button
+- Undo supports both `road-place` (batch removal) and `road-delete` (re-creation)
 
-- Still check 4 neighbors (N, E, S, W)
-- Map neighbor combinations to the available 9 sprites
-- Some combinations may share a sprite (e.g., T-junctions may use rotation of the same sprite)
-- Three road types available: paved (Road), dirt (DirtRoad), grass (GrassRoad)
-- Sidewalks (9 variants) and StonePaths (4 variants) available for pedestrian areas
+**Data model:**
+- In-memory: `roadMap: Map<string, { sprite, roadType, tileNum }>` keyed by `"row,col"`
+- DB: `roads` table with `CityRoad { id: "row,col", row, col, roadType, tileNum, placedAt }`
+- Persistence: fire-and-forget `persistRoad/persistRoadBatch/persistRoadDelete/persistRoadDeleteBatch`
 
 ### Camera System
 
@@ -277,8 +299,8 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ### Persistence (Dexie.js)
 
-- Database defined in `src/db/db.ts`, name `'habitville'`, version 1
-- Tables: `city` (buildings on grid), `gameState` (camera position)
+- Database defined in `src/db/db.ts`, name `'habitville'`, version 2
+- Tables: `city` (buildings on grid), `roads` (road tiles on grid), `gameState` (camera position)
 - All IDs use `crypto.randomUUID()` (buildings) or fixed key `'current'` (gameState)
 - **Write pattern**: fire-and-forget — all writes `.catch(() => {})`, never block the game loop
 - **Camera persistence**: debounced 500ms via `setTimeout`/`clearTimeout` in `persistCamera()`
@@ -297,9 +319,9 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ## Current State
 
-**Last completed unit:** Lazy-Load Assets Per Category
-**What works:** All previous features + lazy asset loading. Startup loads only essential textures (grid tiles + saved buildings). Toolbar category tabs trigger per-category PixiJS texture loading with spinner UI. Thumbnails use `<img>` tags for instant display. `vercel.json` adds immutable cache headers for assets.
-**Next up:** Phase 3
+**Last completed unit:** Phase 3.1 — Road Placement with Auto-Tiling
+**What works:** All previous features + road placement. Three road types (Road, DirtRoad, GrassRoad) with 4-neighbor auto-tiling. Tap-to-select in toolbar, tap/drag-to-place on grid with L-shaped preview. Road removal via popup. Undo support for place/delete. Roads persist in IndexedDB and restore on startup. Roads rendered in roadLayer (below buildings, above ground).
+**Next up:** Phase 3.2
 
 ### Phase 2.5 checklist (Grid State Persistence — Dexie.js):
 

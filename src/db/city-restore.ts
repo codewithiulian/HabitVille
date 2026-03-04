@@ -5,6 +5,7 @@ import type { SceneContainers } from '../engine/setup-stage';
 import { getAsset } from '../engine/asset-registry';
 import { placeOnGrid } from '../engine/place-on-grid';
 import { markOccupied } from '../engine/build-system';
+import { restoreRoadSprite, depthSortAfterRestore } from '../engine/road-system';
 
 // ---------------------------------------------------------------------------
 // Restore buildings from IndexedDB
@@ -29,6 +30,20 @@ export async function restoreCity(containers: SceneContainers): Promise<void> {
 
   // Depth sort once after all buildings restored
   containers.buildingLayer.children.sort((a, b) => a.position.y - b.position.y);
+}
+
+// ---------------------------------------------------------------------------
+// Restore roads from IndexedDB
+// ---------------------------------------------------------------------------
+
+export async function restoreRoads(): Promise<void> {
+  const roads = await db.roads.toArray();
+
+  for (const r of roads) {
+    restoreRoadSprite(r.row, r.col, r.roadType, r.tileNum);
+  }
+
+  depthSortAfterRestore();
 }
 
 // ---------------------------------------------------------------------------
