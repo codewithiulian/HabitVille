@@ -1,4 +1,4 @@
-import { Container, Graphics, FillGradient, TilingSprite, Application, Ticker } from 'pixi.js';
+import { Container, Graphics, FillGradient, TilingSprite, Application } from 'pixi.js';
 
 // Background extends well beyond the isometric world bounds
 // so edges are never visible when panning at any zoom level.
@@ -6,9 +6,6 @@ const BG_X = -23000;
 const BG_Y = -15000;
 const BG_W = 46000;
 const BG_H = 39000;
-
-let oceanTiling: TilingSprite | null = null;
-let tickerCallback: ((ticker: Ticker) => void) | null = null;
 
 /**
  * Creates a large blue gradient background with diamond grid overlay
@@ -84,28 +81,9 @@ export function createBackground(app: Application): Container {
 
   tileGfx.destroy();
 
-  // Store reference for ocean drift animation
-  oceanTiling = tiling;
-
-  // Animate ocean drift
-  tickerCallback = () => {
-    if (oceanTiling) {
-      oceanTiling.tilePosition.x += 0.5;
-      oceanTiling.tilePosition.y += 0.15;
-    }
-  };
-  app.ticker.add(tickerCallback);
-
   return container;
 }
 
-/**
- * Clean up ocean animation ticker callback.
- */
-export function destroyBackground(app: Application): void {
-  if (tickerCallback) {
-    app.ticker.remove(tickerCallback);
-    tickerCallback = null;
-  }
-  oceanTiling = null;
+export function destroyBackground(_app: Application): void {
+  // no-op for now; kept for future cleanup needs
 }
