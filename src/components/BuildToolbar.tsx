@@ -62,9 +62,9 @@ function AssetThumbnail({
         minWidth: 60,
         minHeight: 44,
         padding: 4,
-        border: selected ? '2px solid #4FC3F7' : '2px solid transparent',
+        border: selected ? '2px solid #7C3AED' : '2px solid transparent',
         borderRadius: 8,
-        background: selected ? 'rgba(79, 195, 247, 0.2)' : 'rgba(255,255,255,0.06)',
+        background: selected ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
         cursor: 'pointer',
         flexShrink: 0,
       }}
@@ -85,7 +85,7 @@ function AssetThumbnail({
         style={{
           fontSize: 9,
           lineHeight: '11px',
-          color: 'rgba(255,255,255,0.7)',
+          color: 'rgba(0, 0, 0, 0.55)',
           textAlign: 'center',
           overflow: 'hidden',
           textOverflow: 'ellipsis',
@@ -140,9 +140,10 @@ export default function BuildToolbar() {
         left: 0,
         right: 0,
         zIndex: 100,
-        background: 'rgba(15, 23, 42, 0.85)',
+        background: 'rgba(255, 255, 255, 0.88)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
+        borderTop: '1px solid rgba(0, 0, 0, 0.08)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         maxHeight: '20vh',
         display: 'flex',
@@ -155,9 +156,10 @@ export default function BuildToolbar() {
           style={{
             padding: '4px 12px',
             fontSize: 12,
-            color: '#4FC3F7',
+            fontWeight: 600,
+            color: '#6D28D9',
             textAlign: 'center',
-            borderBottom: '1px solid rgba(255,255,255,0.08)',
+            borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
           }}
         >
           {selectedAssetName}
@@ -192,7 +194,7 @@ export default function BuildToolbar() {
       <div
         style={{
           display: 'flex',
-          borderTop: '1px solid rgba(255,255,255,0.08)',
+          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
         }}
       >
         {(Object.keys(CATEGORY_LABELS) as BuildCategory[]).map((cat) => (
@@ -207,16 +209,16 @@ export default function BuildToolbar() {
               border: 'none',
               background:
                 selectedCategory === cat
-                  ? 'rgba(79, 195, 247, 0.15)'
+                  ? 'rgba(124, 58, 237, 0.06)'
                   : 'transparent',
               borderBottom:
                 selectedCategory === cat
-                  ? '2px solid #4FC3F7'
+                  ? '2px solid #7C3AED'
                   : '2px solid transparent',
               color:
                 selectedCategory === cat
-                  ? '#4FC3F7'
-                  : 'rgba(255,255,255,0.5)',
+                  ? '#6D28D9'
+                  : 'rgba(0, 0, 0, 0.45)',
               fontSize: 12,
               fontWeight: selectedCategory === cat ? 600 : 400,
               cursor: 'pointer',
@@ -236,7 +238,7 @@ export default function BuildToolbar() {
               padding: '8px 12px',
               border: 'none',
               background: 'transparent',
-              color: 'rgba(255,255,255,0.5)',
+              color: 'rgba(0, 0, 0, 0.4)',
               fontSize: 16,
               cursor: 'pointer',
             }}
