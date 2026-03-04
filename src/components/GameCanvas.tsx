@@ -13,6 +13,13 @@ export default function GameCanvas() {
       const canvas = await initGame();
       if (cancelled || !containerRef.current) return;
       containerRef.current.appendChild(canvas);
+
+      // Fade out and remove splash screen
+      const splash = document.getElementById('splash-screen');
+      if (splash) {
+        splash.style.opacity = '0';
+        splash.addEventListener('transitionend', () => splash.remove(), { once: true });
+      }
     }
 
     mount();

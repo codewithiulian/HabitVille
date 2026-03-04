@@ -40,6 +40,30 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
       </head>
       <body className="min-h-screen overflow-hidden bg-[#1a5c1a]" suppressHydrationWarning>
+        <div
+          id="splash-screen"
+          style={{
+            position: "fixed",
+            inset: 0,
+            zIndex: 9999,
+            background: "#1a5c1a",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            transition: "opacity 0.4s ease-out",
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src="/assets/cover/cover.png"
+            alt="HabitVille"
+            style={{
+              width: "100%",
+              height: "100%",
+              objectFit: "cover",
+            }}
+          />
+        </div>
         {children}
       </body>
     </html>
