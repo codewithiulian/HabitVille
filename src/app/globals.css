@@ -1,11 +1,8 @@
 @import "tailwindcss";
 
 body {
-  background:
-    radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.06) 0%, transparent 40%),
-    radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.05) 0%, transparent 45%),
-    linear-gradient(180deg, #89CFF0 0%, #5DADE2 40%, #3498DB 100%);
+  background: linear-gradient(180deg, #7EC8E3 0%, #3B82C4 50%, #1B4F8A 100%);
+  background-attachment: fixed;
   color: #ffffff;
   font-family: Arial, Helvetica, sans-serif;
   -webkit-tap-highlight-color: transparent;

@@ -4,7 +4,7 @@ export async function createApp(): Promise<Application> {
   const app = new Application();
 
   await app.init({
-    background: '#5DADE2',
+    backgroundAlpha: 0,
     resizeTo: window,
     autoDensity: true,
     resolution: window.devicePixelRatio ?? 1,
