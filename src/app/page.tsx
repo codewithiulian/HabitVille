@@ -14,11 +14,16 @@ const Toast = dynamic(() => import('@/components/Toast'), {
   ssr: false,
 });
 
+const BuildingPopup = dynamic(() => import('@/components/BuildingPopup'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
       <GameCanvas />
       <Toast />
+      <BuildingPopup />
       <BuildToolbar />
     </>
   );

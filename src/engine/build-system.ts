@@ -1,4 +1,4 @@
-import { Assets, Sprite, Ticker } from 'pixi.js';
+import { Assets, Sprite, Ticker, ColorMatrixFilter } from 'pixi.js';
 import type { Application } from 'pixi.js';
 import type { SceneContainers } from './setup-stage';
 import { setPointerDownInterceptor, getGameWorld } from './camera';
@@ -49,6 +49,41 @@ const DRAG_THRESHOLD = 8; // px — movement needed to enter drag mode
 
 let containers: SceneContainers | null = null;
 let pixiApp: Application | null = null;
+
+// ---------------------------------------------------------------------------
+// Selection highlight
+// ---------------------------------------------------------------------------
+
+let selectedSprite: Sprite | null = null;
+let selectionFilter: ColorMatrixFilter | null = null;
+
+function highlightSprite(sprite: Sprite): void {
+  clearHighlight();
+  selectionFilter = new ColorMatrixFilter();
+  selectionFilter.brightness(1.3, false);
+  sprite.filters = [selectionFilter];
+  selectedSprite = sprite;
+}
+
+function clearHighlight(): void {
+  if (selectedSprite) {
+    selectedSprite.filters = [];
+    selectedSprite = null;
+    selectionFilter = null;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Pending move (from popup "Move" button)
+// ---------------------------------------------------------------------------
+
+let pendingMove: { assetKey: string; row: number; col: number; sprite: Sprite } | null = null;
+
+function cancelPendingMove(): void {
+  if (!pendingMove) return;
+  pendingMove.sprite.alpha = 1;
+  pendingMove = null;
+}
 
 // ---------------------------------------------------------------------------
 // Drag state machine
@@ -237,7 +272,29 @@ function onDocumentPointerUp(e: PointerEvent): void {
       // Tap on toolbar thumbnail → just select the asset
       useBuildStore.getState().selectAsset(preDrag.assetKey);
     }
-    // For move taps, do nothing (tapping a building without dragging)
+    if (preDrag.type === 'move' && preDrag.originalSprite) {
+      const { selectedBuilding } = useBuildStore.getState();
+      // Toggle off if tapping the already-selected building
+      if (selectedBuilding &&
+          preDrag.originalRow === selectedBuilding.row &&
+          preDrag.originalCol === selectedBuilding.col) {
+        clearHighlight();
+        useBuildStore.getState().deselectBuilding();
+      } else {
+        // Select this building
+        const asset = getAsset(preDrag.assetKey);
+        if (asset) {
+          highlightSprite(preDrag.originalSprite);
+          useBuildStore.getState().selectBuilding({
+            row: preDrag.originalRow!,
+            col: preDrag.originalCol!,
+            assetKey: preDrag.assetKey,
+            displayName: asset.displayName,
+            textureKey: asset.textureKey,
+          });
+        }
+      }
+    }
     preDrag = null;
     cleanupDragListeners();
     return;
@@ -336,6 +393,13 @@ export function startToolbarDrag(assetKey: string, startX: number, startY: numbe
   }
   preDrag = null;
 
+  // Dismiss selection popup and cancel pending move
+  if (useBuildStore.getState().selectedBuilding) {
+    clearHighlight();
+    useBuildStore.getState().deselectBuilding();
+  }
+  cancelPendingMove();
+
   preDrag = {
     type: 'new',
     assetKey,
@@ -375,8 +439,51 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
   const { buildMode } = useBuildStore.getState();
   if (!buildMode || !containers) return false;
 
+  // Handle pending move from popup "Move" button
+  if (pendingMove) {
+    const pm = pendingMove;
+    pendingMove = null;
+
+    // Hide original sprite and free its tile
+    pm.sprite.visible = false;
+    markFree(pm.row, pm.col);
+
+    // Create ghost and start drag directly (skip preDrag threshold)
+    const ghost = createGhostSprite(pm.assetKey);
+    if (!ghost) {
+      pm.sprite.visible = true;
+      pm.sprite.alpha = 1;
+      markOccupied(pm.row, pm.col, pm.sprite, pm.assetKey);
+      return false;
+    }
+
+    activeDrag = {
+      type: 'move',
+      assetKey: pm.assetKey,
+      ghost,
+      valid: false,
+      lastRow: -1,
+      lastCol: -1,
+      originalRow: pm.row,
+      originalCol: pm.col,
+      originalSprite: pm.sprite,
+    };
+
+    updateGhostAtScreen(screenX, screenY);
+    document.addEventListener('pointermove', onDocumentPointerMove);
+    document.addEventListener('pointerup', onDocumentPointerUp);
+    return true;
+  }
+
   const hit = findOccupantAtScreen(screenX, screenY);
-  if (!hit) return false;
+  if (!hit) {
+    // Tapped empty space — dismiss any popup
+    if (useBuildStore.getState().selectedBuilding) {
+      clearHighlight();
+      useBuildStore.getState().deselectBuilding();
+    }
+    return false; // allow camera pan
+  }
 
   // Start a move pre-drag
   preDrag = {
@@ -396,6 +503,56 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Delete selected building
+// ---------------------------------------------------------------------------
+
+export function deleteSelectedBuilding(): void {
+  const { selectedBuilding } = useBuildStore.getState();
+  if (!selectedBuilding || !containers) return;
+
+  const occupant = getOccupant(selectedBuilding.row, selectedBuilding.col);
+  if (!occupant) return;
+
+  // Remove from display but DON'T destroy (needed for undo)
+  occupant.sprite.removeFromParent();
+  markFree(selectedBuilding.row, selectedBuilding.col);
+  clearHighlight();
+  useBuildStore.getState().deselectBuilding();
+
+  useBuildStore.getState().pushPlacement({
+    type: 'delete',
+    sprite: occupant.sprite,
+    row: selectedBuilding.row,
+    col: selectedBuilding.col,
+    assetKey: occupant.assetKey,
+  });
+}
+
+// ---------------------------------------------------------------------------
+// Move from popup
+// ---------------------------------------------------------------------------
+
+export function moveSelectedBuilding(): void {
+  const { selectedBuilding } = useBuildStore.getState();
+  if (!selectedBuilding || !containers) return;
+
+  const occupant = getOccupant(selectedBuilding.row, selectedBuilding.col);
+  if (!occupant) return;
+
+  clearHighlight();
+  useBuildStore.getState().deselectBuilding();
+
+  // Dim sprite and set pending move — next canvas pointerdown starts the drag
+  occupant.sprite.alpha = 0.5;
+  pendingMove = {
+    assetKey: selectedBuilding.assetKey,
+    row: selectedBuilding.row,
+    col: selectedBuilding.col,
+    sprite: occupant.sprite,
+  };
+}
+
+// ---------------------------------------------------------------------------
 // Undo
 // ---------------------------------------------------------------------------
 
@@ -407,12 +564,38 @@ export function undoLastPlacement(): void {
     entry.sprite.removeFromParent();
     entry.sprite.destroy();
     markFree(entry.row, entry.col);
-  } else {
+  } else if (entry.type === 'move') {
     // Move: return sprite to original position
     placeOnGrid(entry.sprite, entry.fromRow!, entry.fromCol!, entry.assetKey);
     markFree(entry.row, entry.col);
     markOccupied(entry.fromRow!, entry.fromCol!, entry.sprite, entry.assetKey);
     depthSort();
+  } else if (entry.type === 'delete') {
+    // Delete: restore sprite to grid
+    containers!.buildingLayer.addChild(entry.sprite);
+    placeOnGrid(entry.sprite, entry.row, entry.col, entry.assetKey);
+    markOccupied(entry.row, entry.col, entry.sprite, entry.assetKey);
+    depthSort();
+    if (pixiApp) bounceAnimation(entry.sprite, pixiApp.ticker);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Popup position ticker
+// ---------------------------------------------------------------------------
+
+let lastPopupX = 0;
+let lastPopupY = 0;
+
+function updatePopupPosition(): void {
+  if (!selectedSprite) return;
+  const bounds = selectedSprite.getBounds();
+  const x = bounds.x + bounds.width / 2;  // horizontal center
+  const y = bounds.y;                       // top edge
+  if (Math.abs(x - lastPopupX) > 0.5 || Math.abs(y - lastPopupY) > 0.5) {
+    lastPopupX = x;
+    lastPopupY = y;
+    useBuildStore.getState().updatePopupPos(x, y);
   }
 }
 
@@ -420,15 +603,34 @@ export function undoLastPlacement(): void {
 // Init / Destroy
 // ---------------------------------------------------------------------------
 
+let unsubBuildMode: (() => void) | null = null;
+
 export function initBuildSystem(app: Application, sceneContainers: SceneContainers): void {
   pixiApp = app;
   containers = sceneContainers;
 
   setPointerDownInterceptor(handleBuildingPickup);
+  app.ticker.add(updatePopupPosition);
+
+  // Cancel pending move when build mode turns off
+  unsubBuildMode = useBuildStore.subscribe((state) => {
+    if (!state.buildMode) {
+      cancelPendingMove();
+    }
+  });
 }
 
 export function destroyBuildSystem(): void {
   setPointerDownInterceptor(null);
+
+  if (pixiApp) {
+    pixiApp.ticker.remove(updatePopupPosition);
+  }
+
+  if (unsubBuildMode) {
+    unsubBuildMode();
+    unsubBuildMode = null;
+  }
 
   if (activeDrag) {
     destroyGhost();
@@ -436,6 +638,11 @@ export function destroyBuildSystem(): void {
   }
   preDrag = null;
   cleanupDragListeners();
+
+  clearHighlight();
+  cancelPendingMove();
+  lastPopupX = 0;
+  lastPopupY = 0;
 
   occupied.clear();
   pixiApp = null;

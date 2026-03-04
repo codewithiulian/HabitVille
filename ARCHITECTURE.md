@@ -52,16 +52,17 @@ habitville/
 │   │   ├── grid.ts             # Grid data model + tile rendering
 │   │   ├── iso-utils.ts        # gridToScreen / screenToGrid conversions
 │   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds, pointer interceptor
-│   │   ├── build-system.ts     # Drag-to-place & building move system (occupancy, ghost, undo)
+│   │   ├── build-system.ts     # Drag-to-place, building move, select/delete/move-from-popup system
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
 │   │   ├── asset-loader.ts     # Manifest builder + preloader with progress
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
-│   │   └── build-store.ts      # Build mode state (category/asset, placement history, toast)
+│   │   └── build-store.ts      # Build mode state (category/asset, placement history, toast, selection)
 │   ├── components/             # React UI components (overlays)
 │   │   ├── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
 │   │   ├── BuildToolbar.tsx    # Build mode toolbar (drag-from-toolbar initiation)
-│   │   └── Toast.tsx           # Auto-dismiss toast for placement errors
+│   │   ├── Toast.tsx           # Auto-dismiss toast for placement errors
+│   │   └── BuildingPopup.tsx  # Contextual popup for selected buildings (Move/Delete)
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
@@ -222,7 +223,12 @@ Auto-tiling approach:
 - **Height offset**: before `screenToGrid()`, world Y is offset by `texture.height * (anchor.y - 0.5)` so buildings with bottom-center anchors appear under the cursor, not above it
 - **Building pickup hit test**: uses `sprite.getBounds()` (screen-space) rather than grid-based lookup, so tapping the visible building works regardless of anchor offset
 - **Bounce animation** on successful place/move: scale 1.15→1.0 over 12 frames
-- **Undo** supports both `'place'` (destroy sprite) and `'move'` (snap back to original position)
+- **Tap-to-select**: Tapping a placed building (without dragging) selects it, shows a highlight filter, and opens a popup with Move/Delete actions
+- **Selection highlight**: `ColorMatrixFilter` with `brightness(1.3)` — non-destructive, toggled on/off
+- **Building popup**: React overlay positioned above the selected building via ticker tracking `sprite.getBounds()`; frosted glass card with Move and Delete buttons
+- **Move from popup**: Two-tap UX — tap Move button, then tap destination on grid. Building dims (alpha 0.5) while waiting for placement
+- **Delete**: Removes sprite from display via `removeFromParent()` without `destroy()` — sprite stays alive for undo
+- **Undo** supports `'place'` (destroy sprite), `'move'` (snap back), and `'delete'` (restore sprite to grid)
 - **Toast** ("Can't build here"): React component reads `toastMessage` from build store, auto-dismisses after 1.5s
 - Dropping back onto toolbar area silently cancels placement (no toast)
 - Document-level `pointermove`/`pointerup` listeners are added during drag and cleaned up on drop
@@ -275,9 +281,18 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Phase 2.3 — Drag-to-Place UX
-**What works:** All previous features + drag-based building placement. Drag asset thumbnails from toolbar onto the grid to place buildings. Tap placed buildings to pick up and move them. Ghost preview with green/red tint snaps to grid during drag. Bounce animation on placement. Undo supports both place and move operations. Toast notification for invalid placements. Camera panning is separate from building interaction. Grid loads empty (no test buildings). `npm run build` succeeds.
+**Last completed unit:** Phase 2.4 — Tile Interaction (Select, Delete, Move Popup)
+**What works:** All previous features + tap-to-select buildings. Tapping a placed building shows a contextual popup with Move and Delete actions. Move uses a two-tap UX (tap Move → tap destination). Delete removes the building with undo support. Selection highlight via ColorMatrixFilter. Popup tracks building position through pan/zoom via ticker. Deselects on empty-space tap, toolbar drag, or toggling the same building. `npm run build` succeeds.
 **Next up:** Phase 3
+
+### Phase 2.4 checklist (Tile Interaction — Select, Delete, Move Popup):
+
+- [x] `build-store.ts` — Added `'delete'` to PlacementEntry type, selection state + actions
+- [x] `build-system.ts` — Tap-to-select, highlight filter, delete, move-from-popup, popup position ticker, deselect on empty tap
+- [x] `BuildingPopup.tsx` — New React overlay: frosted glass card with thumbnail, name, Move/Delete buttons
+- [x] `page.tsx` — Added BuildingPopup to overlay stack
+- [x] `ARCHITECTURE.md` — Updated file tree, patterns, current state
+- [ ] Build verification — `npm run build` succeeds
 
 ### Phase 2.3 checklist (Drag-to-Place UX):
 

@@ -4,7 +4,7 @@ import type { Sprite } from 'pixi.js';
 export type BuildCategory = 'roads' | 'residential' | 'commercial' | 'public' | 'decorations';
 
 export interface PlacementEntry {
-  type: 'place' | 'move';
+  type: 'place' | 'move' | 'delete';
   sprite: Sprite;
   row: number;
   col: number;
@@ -13,12 +13,22 @@ export interface PlacementEntry {
   fromCol?: number;  // only for 'move'
 }
 
+export interface SelectedBuildingInfo {
+  row: number;
+  col: number;
+  assetKey: string;
+  displayName: string;
+  textureKey: string;
+}
+
 interface BuildState {
   buildMode: boolean;
   selectedCategory: BuildCategory | null;
   selectedAsset: string | null; // asset registry key
   placementHistory: PlacementEntry[];
   toastMessage: string | null;
+  selectedBuilding: SelectedBuildingInfo | null;
+  popupScreenPos: { x: number; y: number } | null;
 
   selectCategory: (category: BuildCategory) => void;
   selectAsset: (assetKey: string) => void;
@@ -28,6 +38,9 @@ interface BuildState {
   popPlacement: () => PlacementEntry | undefined;
   showToast: (msg: string) => void;
   dismissToast: () => void;
+  selectBuilding: (info: SelectedBuildingInfo) => void;
+  deselectBuilding: () => void;
+  updatePopupPos: (x: number, y: number) => void;
 }
 
 export const useBuildStore = create<BuildState>((set, get) => ({
@@ -36,6 +49,8 @@ export const useBuildStore = create<BuildState>((set, get) => ({
   selectedAsset: null,
   placementHistory: [],
   toastMessage: null,
+  selectedBuilding: null,
+  popupScreenPos: null,
 
   selectCategory: (category) =>
     set({ selectedCategory: category, selectedAsset: null, buildMode: true }),
@@ -67,4 +82,8 @@ export const useBuildStore = create<BuildState>((set, get) => ({
 
   showToast: (msg) => set({ toastMessage: msg }),
   dismissToast: () => set({ toastMessage: null }),
+
+  selectBuilding: (info) => set({ selectedBuilding: info, popupScreenPos: null }),
+  deselectBuilding: () => set({ selectedBuilding: null, popupScreenPos: null }),
+  updatePopupPos: (x, y) => set({ popupScreenPos: { x, y } }),
 }));
