@@ -3,8 +3,8 @@
   "short_name": "Habitville",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#1a5c1a",
-  "theme_color": "#1a5c1a",
+  "background_color": "#0f2a4a",
+  "theme_color": "#0f2a4a",
   "icons": [
     {
       "src": "/assets/logo/logo-192.png",

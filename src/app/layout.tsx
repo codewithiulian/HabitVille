@@ -36,17 +36,17 @@ export default function RootLayout({
   return (
     <html lang="en">
       <head>
-        <meta name="theme-color" content="#1a5c1a" />
+        <meta name="theme-color" content="#0f2a4a" />
         <link rel="manifest" href="/manifest.json" />
       </head>
-      <body className="min-h-screen overflow-hidden bg-[#1a5c1a]" suppressHydrationWarning>
+      <body className="min-h-screen overflow-hidden bg-[#0f2a4a]" suppressHydrationWarning>
         <div
           id="splash-screen"
           style={{
             position: "fixed",
             inset: 0,
             zIndex: 9999,
-            background: "#1a5c1a",
+            background: "#0f2a4a",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
