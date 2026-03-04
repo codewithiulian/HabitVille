@@ -53,16 +53,22 @@ export default function RootLayout({
             transition: "opacity 0.4s ease-out",
           }}
         >
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/assets/cover/cover.png"
-            alt="HabitVille"
-            style={{
-              width: "100%",
-              height: "100%",
-              objectFit: "cover",
-            }}
-          />
+          <picture style={{ width: "100%", height: "100%" }}>
+            <source
+              srcSet="/assets/cover/cover-portrait.png"
+              media="(orientation: portrait)"
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/cover/cover.png"
+              alt="HabitVille"
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "cover",
+              }}
+            />
+          </picture>
         </div>
         {children}
       </body>
