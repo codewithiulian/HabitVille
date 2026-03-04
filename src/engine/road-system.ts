@@ -861,48 +861,66 @@ export function clearDeleteHighlights(): void {
   deleteHighlightedTiles.clear();
 }
 
-/** Tap candidate state for delete mode */
-let deleteTapCandidate: {
-  row: number;
-  col: number;
+/** Drag state for delete mode — selects every road tile dragged over */
+let deleteDrag: {
   startX: number;
   startY: number;
+  dragging: boolean;
 } | null = null;
 
-function onDeleteTapMove(e: PointerEvent): void {
-  if (!deleteTapCandidate) return;
-  const dx = e.clientX - deleteTapCandidate.startX;
-  const dy = e.clientY - deleteTapCandidate.startY;
-  if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
-    deleteTapCandidate = null;
-    cleanupDeleteTapListeners();
-  }
+function selectRoadTileForDelete(row: number, col: number): void {
+  const key = tileKey(row, col);
+  const entry = roadMap.get(key);
+  if (!entry) return;
+  const store = useBuildStore.getState();
+  if (store.roadDeleteSelection.has(key)) return; // already selected
+  highlightRoadForDelete(row, col);
+  store.toggleRoadDeleteTile(row, col);
 }
 
-function onDeleteTapUp(): void {
-  if (!deleteTapCandidate) {
-    cleanupDeleteTapListeners();
+function onDeleteDragMove(e: PointerEvent): void {
+  if (!deleteDrag) return;
+
+  if (!deleteDrag.dragging) {
+    const dx = e.clientX - deleteDrag.startX;
+    const dy = e.clientY - deleteDrag.startY;
+    if (Math.sqrt(dx * dx + dy * dy) < DRAG_THRESHOLD) return;
+    deleteDrag.dragging = true;
+  }
+
+  const gridPos = screenToGridPos(e.clientX, e.clientY);
+  if (!gridPos) return;
+  selectRoadTileForDelete(gridPos.row, gridPos.col);
+}
+
+function onDeleteDragUp(e: PointerEvent): void {
+  if (!deleteDrag) {
+    cleanupDeleteDragListeners();
     return;
   }
 
-  const { row, col } = deleteTapCandidate;
-  deleteTapCandidate = null;
-  cleanupDeleteTapListeners();
-
-  const key = tileKey(row, col);
-  const store = useBuildStore.getState();
-  if (store.roadDeleteSelection.has(key)) {
-    unhighlightRoad(row, col);
-    store.toggleRoadDeleteTile(row, col);
-  } else {
-    highlightRoadForDelete(row, col);
-    store.toggleRoadDeleteTile(row, col);
+  // If no significant drag, treat as single tap on the start tile
+  if (!deleteDrag.dragging) {
+    const gridPos = screenToGridPos(deleteDrag.startX, deleteDrag.startY);
+    if (gridPos) {
+      const key = tileKey(gridPos.row, gridPos.col);
+      const store = useBuildStore.getState();
+      if (store.roadDeleteSelection.has(key)) {
+        unhighlightRoad(gridPos.row, gridPos.col);
+        store.toggleRoadDeleteTile(gridPos.row, gridPos.col);
+      } else {
+        selectRoadTileForDelete(gridPos.row, gridPos.col);
+      }
+    }
   }
+
+  deleteDrag = null;
+  cleanupDeleteDragListeners();
 }
 
-function cleanupDeleteTapListeners(): void {
-  document.removeEventListener('pointermove', onDeleteTapMove);
-  document.removeEventListener('pointerup', onDeleteTapUp);
+function cleanupDeleteDragListeners(): void {
+  document.removeEventListener('pointermove', onDeleteDragMove);
+  document.removeEventListener('pointerup', onDeleteDragUp);
 }
 
 export function handleRoadDeletePointerDown(screenX: number, screenY: number): boolean {
@@ -912,17 +930,19 @@ export function handleRoadDeletePointerDown(screenX: number, screenY: number): b
   const entry = roadMap.get(tileKey(gridPos.row, gridPos.col));
   if (!entry) return false;
 
-  // Set up tap candidate (confirmed on pointer-up if no drag)
-  deleteTapCandidate = {
-    row: gridPos.row,
-    col: gridPos.col,
+  // Select the initial tile immediately
+  selectRoadTileForDelete(gridPos.row, gridPos.col);
+
+  deleteDrag = {
     startX: screenX,
     startY: screenY,
+    dragging: false,
   };
-  document.addEventListener('pointermove', onDeleteTapMove);
-  document.addEventListener('pointerup', onDeleteTapUp);
 
-  return false; // allow camera pan; tap detected on pointer-up
+  document.addEventListener('pointermove', onDeleteDragMove);
+  document.addEventListener('pointerup', onDeleteDragUp);
+
+  return true; // claim pointer — prevent camera pan during drag-select
 }
 
 export function deleteRoadBatch(tileKeys: string[]): void {
@@ -1047,8 +1067,8 @@ export function destroyRoadSystem(): void {
   roadTapCandidate = null;
   cleanupRoadTapListeners();
 
-  deleteTapCandidate = null;
-  cleanupDeleteTapListeners();
+  deleteDrag = null;
+  cleanupDeleteDragListeners();
   clearDeleteHighlights();
 
   lastRoadPopupX = 0;
