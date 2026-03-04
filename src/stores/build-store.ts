@@ -32,7 +32,13 @@ export interface RoadDeleteEntry {
   neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>;
 }
 
-export type PlacementEntry = BuildingPlacementEntry | RoadPlacementEntry | RoadDeleteEntry;
+export interface RoadBatchDeleteEntry {
+  type: 'road-batch-delete';
+  tiles: Array<{ row: number; col: number; roadType: string; tileNum: number }>;
+  neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>;
+}
+
+export type PlacementEntry = BuildingPlacementEntry | RoadPlacementEntry | RoadDeleteEntry | RoadBatchDeleteEntry;
 
 export interface SelectedBuildingInfo {
   row: number;
@@ -65,6 +71,8 @@ interface BuildState {
   selectedRoad: SelectedRoadInfo | null;
   roadPopupScreenPos: { x: number; y: number } | null;
   categoryLoadState: Record<BuildCategory, CategoryLoadState>;
+  roadDeleteMode: boolean;
+  roadDeleteSelection: Set<string>;
 
   selectCategory: (category: BuildCategory) => void;
   selectAsset: (assetKey: string) => void;
@@ -81,6 +89,10 @@ interface BuildState {
   deselectRoad: () => void;
   updateRoadPopupPos: (x: number, y: number) => void;
   loadCategory: (category: BuildCategory) => Promise<void>;
+  enterRoadDeleteMode: () => void;
+  exitRoadDeleteMode: () => void;
+  toggleRoadDeleteTile: (row: number, col: number) => void;
+  clearRoadDeleteSelection: () => void;
 }
 
 function deriveRoadType(assetKey: string | null): RoadType | null {
@@ -110,15 +122,17 @@ export const useBuildStore = create<BuildState>((set, get) => ({
     public: 'idle',
     decorations: 'idle',
   },
+  roadDeleteMode: false,
+  roadDeleteSelection: new Set<string>(),
 
   selectCategory: (category) =>
-    set({ selectedCategory: category, selectedAsset: null, selectedRoadType: null, buildMode: true }),
+    set({ selectedCategory: category, selectedAsset: null, selectedRoadType: null, buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() }),
 
   selectAsset: (assetKey) => {
     if (get().selectedAsset === assetKey) {
       set({ selectedAsset: null, selectedRoadType: null, buildMode: false });
     } else {
-      set({ selectedAsset: assetKey, selectedRoadType: deriveRoadType(assetKey), buildMode: true });
+      set({ selectedAsset: assetKey, selectedRoadType: deriveRoadType(assetKey), buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() });
     }
   },
 
@@ -126,7 +140,7 @@ export const useBuildStore = create<BuildState>((set, get) => ({
     set({ selectedAsset: null, selectedRoadType: null, buildMode: false }),
 
   exitBuildMode: () =>
-    set({ buildMode: false, selectedCategory: null, selectedAsset: null, selectedRoadType: null, selectedRoad: null, roadPopupScreenPos: null }),
+    set({ buildMode: false, selectedCategory: null, selectedAsset: null, selectedRoadType: null, selectedRoad: null, roadPopupScreenPos: null, roadDeleteMode: false, roadDeleteSelection: new Set() }),
 
   pushPlacement: (entry) =>
     set((s) => ({ placementHistory: [...s.placementHistory, entry] })),
@@ -149,6 +163,27 @@ export const useBuildStore = create<BuildState>((set, get) => ({
   selectRoad: (info) => set({ selectedRoad: info, roadPopupScreenPos: null }),
   deselectRoad: () => set({ selectedRoad: null, roadPopupScreenPos: null }),
   updateRoadPopupPos: (x, y) => set({ roadPopupScreenPos: { x, y } }),
+
+  enterRoadDeleteMode: () =>
+    set({ roadDeleteMode: true, roadDeleteSelection: new Set(), selectedAsset: null, selectedRoadType: null, buildMode: true }),
+
+  exitRoadDeleteMode: () =>
+    set({ roadDeleteMode: false, roadDeleteSelection: new Set() }),
+
+  toggleRoadDeleteTile: (row, col) => {
+    const key = `${row},${col}`;
+    const prev = get().roadDeleteSelection;
+    const next = new Set(prev);
+    if (next.has(key)) {
+      next.delete(key);
+    } else {
+      next.add(key);
+    }
+    set({ roadDeleteSelection: next });
+  },
+
+  clearRoadDeleteSelection: () =>
+    set({ roadDeleteSelection: new Set() }),
 
   loadCategory: async (category) => {
     const current = get().categoryLoadState[category];

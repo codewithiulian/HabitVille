@@ -134,9 +134,52 @@ function AssetThumbnail({
 // Main component
 // ---------------------------------------------------------------------------
 
+function RoadDeleteButton({ active }: { active: boolean }) {
+  const handleClick = useCallback(() => {
+    const store = useBuildStore.getState();
+    if (store.roadDeleteMode) {
+      store.exitRoadDeleteMode();
+    } else {
+      store.enterRoadDeleteMode();
+    }
+  }, []);
+
+  return (
+    <button
+      onClick={handleClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 2,
+        width: 76,
+        minWidth: 76,
+        minHeight: 44,
+        padding: 4,
+        border: active ? '2px solid #DC2626' : '2px solid transparent',
+        borderRadius: 8,
+        background: active ? 'rgba(220, 38, 38, 0.1)' : 'transparent',
+        cursor: 'pointer',
+        flexShrink: 0,
+      }}
+    >
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={active ? '#DC2626' : '#666'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <line x1="4" y1="4" x2="20" y2="20" />
+        <line x1="20" y1="4" x2="4" y2="20" />
+        <rect x="1" y="1" width="22" height="22" rx="3" />
+      </svg>
+      <span style={{ fontSize: 9, lineHeight: '11px', color: active ? '#DC2626' : 'rgba(0,0,0,0.55)' }}>
+        Delete
+      </span>
+    </button>
+  );
+}
+
 export default function BuildToolbar() {
   const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, categoryLoadState, loadCategory } =
     useBuildStore();
+  const roadDeleteMode = useBuildStore((s) => s.roadDeleteMode);
 
   // Build asset list for the selected category
   const assets = useMemo(() => {
@@ -221,6 +264,9 @@ export default function BuildToolbar() {
             scrollbarWidth: 'none',
           }}
         >
+          {selectedCategory === 'roads' && (
+            <RoadDeleteButton active={roadDeleteMode} />
+          )}
           {assets.map((asset) => (
             <AssetThumbnail
               key={asset.key}

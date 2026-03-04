@@ -22,6 +22,10 @@ const RoadPopup = dynamic(() => import('@/components/RoadPopup'), {
   ssr: false,
 });
 
+const RoadDeleteConfirm = dynamic(() => import('@/components/RoadDeleteConfirm'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
@@ -29,6 +33,7 @@ export default function Home() {
       <Toast />
       <BuildingPopup />
       <RoadPopup />
+      <RoadDeleteConfirm />
       <BuildToolbar />
     </>
   );

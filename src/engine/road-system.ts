@@ -134,6 +134,8 @@ function restoreGroundTexture(row: number, col: number): void {
     entry.sprite.texture = saved.texture;
     entry.sprite.label = saved.label;
     entry.sprite.scale.x = 1; // Reset flip
+    entry.sprite.tint = 0xffffff;
+    entry.sprite.alpha = 1;
   }
   originalGroundTextures.delete(key);
 }
@@ -827,6 +829,179 @@ export function undoRoadDelete(
 }
 
 // ---------------------------------------------------------------------------
+// Road delete mode — highlight, pointer handler, batch delete
+// ---------------------------------------------------------------------------
+
+const deleteHighlightedTiles = new Set<string>();
+
+export function highlightRoadForDelete(row: number, col: number): void {
+  const entry = roadMap.get(tileKey(row, col));
+  if (!entry) return;
+  entry.sprite.tint = 0xff4444;
+  entry.sprite.alpha = 0.7;
+  deleteHighlightedTiles.add(tileKey(row, col));
+}
+
+export function unhighlightRoad(row: number, col: number): void {
+  const entry = roadMap.get(tileKey(row, col));
+  if (!entry) return;
+  entry.sprite.tint = 0xffffff;
+  entry.sprite.alpha = 1;
+  deleteHighlightedTiles.delete(tileKey(row, col));
+}
+
+export function clearDeleteHighlights(): void {
+  for (const key of deleteHighlightedTiles) {
+    const entry = roadMap.get(key);
+    if (entry) {
+      entry.sprite.tint = 0xffffff;
+      entry.sprite.alpha = 1;
+    }
+  }
+  deleteHighlightedTiles.clear();
+}
+
+/** Tap candidate state for delete mode */
+let deleteTapCandidate: {
+  row: number;
+  col: number;
+  startX: number;
+  startY: number;
+} | null = null;
+
+function onDeleteTapMove(e: PointerEvent): void {
+  if (!deleteTapCandidate) return;
+  const dx = e.clientX - deleteTapCandidate.startX;
+  const dy = e.clientY - deleteTapCandidate.startY;
+  if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+    deleteTapCandidate = null;
+    cleanupDeleteTapListeners();
+  }
+}
+
+function onDeleteTapUp(): void {
+  if (!deleteTapCandidate) {
+    cleanupDeleteTapListeners();
+    return;
+  }
+
+  const { row, col } = deleteTapCandidate;
+  deleteTapCandidate = null;
+  cleanupDeleteTapListeners();
+
+  const key = tileKey(row, col);
+  const store = useBuildStore.getState();
+  if (store.roadDeleteSelection.has(key)) {
+    unhighlightRoad(row, col);
+    store.toggleRoadDeleteTile(row, col);
+  } else {
+    highlightRoadForDelete(row, col);
+    store.toggleRoadDeleteTile(row, col);
+  }
+}
+
+function cleanupDeleteTapListeners(): void {
+  document.removeEventListener('pointermove', onDeleteTapMove);
+  document.removeEventListener('pointerup', onDeleteTapUp);
+}
+
+export function handleRoadDeletePointerDown(screenX: number, screenY: number): boolean {
+  const gridPos = screenToGridPos(screenX, screenY);
+  if (!gridPos) return false;
+
+  const entry = roadMap.get(tileKey(gridPos.row, gridPos.col));
+  if (!entry) return false;
+
+  // Set up tap candidate (confirmed on pointer-up if no drag)
+  deleteTapCandidate = {
+    row: gridPos.row,
+    col: gridPos.col,
+    startX: screenX,
+    startY: screenY,
+  };
+  document.addEventListener('pointermove', onDeleteTapMove);
+  document.addEventListener('pointerup', onDeleteTapUp);
+
+  return false; // allow camera pan; tap detected on pointer-up
+}
+
+export function deleteRoadBatch(tileKeys: string[]): void {
+  const deletedTiles: Array<{ row: number; col: number; roadType: string; tileNum: number }> = [];
+  const allNeighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }> = [];
+  const deleteDbKeys: string[] = [];
+
+  // First, collect info for undo before removing
+  for (const key of tileKeys) {
+    const entry = roadMap.get(key);
+    if (!entry) continue;
+    const [row, col] = key.split(',').map(Number);
+    deletedTiles.push({ row, col, roadType: entry.roadType, tileNum: entry.tileNum });
+  }
+
+  // Remove all roads
+  for (const tile of deletedTiles) {
+    restoreGroundTexture(tile.row, tile.col);
+    roadMap.delete(tileKey(tile.row, tile.col));
+    deleteDbKeys.push(`${tile.row},${tile.col}`);
+  }
+
+  // Recalc neighbors of all deleted tiles
+  const recalced = new Set<string>();
+  for (const tile of deletedTiles) {
+    for (const dir of CARDINAL_DIRS) {
+      const nr = tile.row + dir.dr;
+      const nc = tile.col + dir.dc;
+      const nk = tileKey(nr, nc);
+      if (recalced.has(nk)) continue;
+      recalced.add(nk);
+
+      const neighbor = roadMap.get(nk);
+      if (!neighbor) continue;
+
+      const mask = computeBitmask(nr, nc, neighbor.roadType, getRoadTypeAt);
+      const newTile = bitmaskToTile(mask);
+      const newFlip = bitmaskToFlipX(mask);
+      if (newTile !== neighbor.tileNum || newFlip !== neighbor.flipX) {
+        updateRoadSprite(neighbor, newTile, newFlip);
+        allNeighborChanges.push({ row: nr, col: nc, roadType: neighbor.roadType, tileNum: newTile });
+      }
+    }
+  }
+
+  // Persist
+  if (deleteDbKeys.length > 0) {
+    persistRoadDeleteBatch(deleteDbKeys);
+  }
+  if (allNeighborChanges.length > 0) {
+    persistRoadBatch(allNeighborChanges);
+  }
+
+  // Push single undo entry
+  if (deletedTiles.length > 0) {
+    useBuildStore.getState().pushPlacement({
+      type: 'road-batch-delete',
+      tiles: deletedTiles,
+      neighborChanges: allNeighborChanges,
+    });
+  }
+
+  // Clear highlights
+  deleteHighlightedTiles.clear();
+}
+
+export function undoRoadBatchDelete(
+  tiles: Array<{ row: number; col: number; roadType: string; tileNum: number }>,
+  _neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>,
+): void {
+  // Re-place all deleted roads
+  for (const tile of tiles) {
+    placeRoad(tile.row, tile.col, tile.roadType);
+  }
+  // Neighbor changes are handled by placeRoad's recalc
+  void _neighborChanges;
+}
+
+// ---------------------------------------------------------------------------
 // Find road at screen position (for non-road-mode tapping)
 // ---------------------------------------------------------------------------
 
@@ -871,6 +1046,10 @@ export function destroyRoadSystem(): void {
 
   roadTapCandidate = null;
   cleanupRoadTapListeners();
+
+  deleteTapCandidate = null;
+  cleanupDeleteTapListeners();
+  clearDeleteHighlights();
 
   lastRoadPopupX = 0;
   lastRoadPopupY = 0;

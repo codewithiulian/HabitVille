@@ -11,10 +11,12 @@ import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
 import {
   handleRoadPointerDown,
+  handleRoadDeletePointerDown,
   findRoadAtScreen,
   selectRoadForRemoval,
   undoRoadPlace,
   undoRoadDelete,
+  undoRoadBatchDelete,
   hasRoad,
 } from './road-system';
 
@@ -499,8 +501,13 @@ function findOccupantAtScreen(screenX: number, screenY: number): {
 function handleBuildingPickup(screenX: number, screenY: number): boolean {
   if (!containers) return false;
 
+  // Delegate to road delete mode if active
+  const { selectedRoadType, roadDeleteMode } = useBuildStore.getState();
+  if (roadDeleteMode) {
+    return handleRoadDeletePointerDown(screenX, screenY);
+  }
+
   // Delegate to road system if a road type is selected
-  const { selectedRoadType } = useBuildStore.getState();
   if (selectedRoadType) {
     return handleRoadPointerDown(screenX, screenY);
   }
@@ -716,6 +723,8 @@ export function undoLastPlacement(): void {
     undoRoadPlace(entry.tiles, entry.neighborChanges);
   } else if (entry.type === 'road-delete') {
     undoRoadDelete(entry.row, entry.col, entry.roadType, entry.tileNum, entry.neighborChanges);
+  } else if (entry.type === 'road-batch-delete') {
+    undoRoadBatchDelete(entry.tiles, entry.neighborChanges);
   }
 }
 
