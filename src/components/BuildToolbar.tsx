@@ -1,14 +1,15 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useMemo, useCallback } from 'react';
 import { useBuildStore, type BuildCategory } from '@/stores/build-store';
 import { getAssetsByCategory } from '@/engine/asset-registry';
-import type { AssetCategory, AssetEntry } from '@/types/assets';
+import { undoLastPlacement, startToolbarDrag } from '@/engine/build-system';
+import type { AssetEntry } from '@/types/assets';
 
 // ---------------------------------------------------------------------------
 // Category → Asset Registry mapping
 // ---------------------------------------------------------------------------
-const CATEGORY_MAP: Record<BuildCategory, AssetCategory[]> = {
+const CATEGORY_MAP: Record<BuildCategory, string[]> = {
   roads: ['road', 'sidewalk'],
   residential: ['building-residential'],
   commercial: ['building-commercial', 'restaurant'],
@@ -40,19 +41,21 @@ const ROAD_REPRESENTATIVES = new Set([
 function AssetThumbnail({
   asset,
   selected,
-  onSelect,
 }: {
   asset: AssetEntry;
   selected: boolean;
-  onSelect: () => void;
 }) {
-  const [hasError, setHasError] = useState(false);
-
-  if (hasError) return null;
+  const handlePointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      startToolbarDrag(asset.key, e.clientX, e.clientY);
+    },
+    [asset.key],
+  );
 
   return (
     <button
-      onClick={onSelect}
+      onPointerDown={handlePointerDown}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -65,8 +68,9 @@ function AssetThumbnail({
         border: selected ? '2px solid #7C3AED' : '2px solid transparent',
         borderRadius: 8,
         background: selected ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
-        cursor: 'pointer',
+        cursor: 'grab',
         flexShrink: 0,
+        touchAction: 'none',
       }}
     >
       <img
@@ -74,11 +78,11 @@ function AssetThumbnail({
         alt={asset.displayName}
         loading="lazy"
         draggable={false}
-        onError={() => setHasError(true)}
         style={{
           width: 52,
           height: 52,
           objectFit: 'contain',
+          pointerEvents: 'none',
         }}
       />
       <span
@@ -91,6 +95,7 @@ function AssetThumbnail({
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
           width: '100%',
+          pointerEvents: 'none',
         }}
       >
         {asset.displayName}
@@ -104,7 +109,7 @@ function AssetThumbnail({
 // ---------------------------------------------------------------------------
 
 export default function BuildToolbar() {
-  const { selectedCategory, selectedAsset, selectCategory, selectAsset, exitBuildMode } =
+  const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, placementHistory } =
     useBuildStore();
 
   // Build asset list for the selected category
@@ -114,7 +119,7 @@ export default function BuildToolbar() {
     const categories = CATEGORY_MAP[selectedCategory];
     let list: AssetEntry[] = [];
     for (const cat of categories) {
-      list = list.concat(getAssetsByCategory(cat));
+      list = list.concat(getAssetsByCategory(cat as AssetEntry['category']));
     }
 
     // For roads, show only representative tiles
@@ -134,6 +139,7 @@ export default function BuildToolbar() {
 
   return (
     <div
+      data-build-toolbar
       style={{
         position: 'fixed',
         bottom: 0,
@@ -150,7 +156,7 @@ export default function BuildToolbar() {
         flexDirection: 'column',
       }}
     >
-      {/* Selected asset label */}
+      {/* Selected asset label + undo */}
       {selectedAssetName && (
         <div
           style={{
@@ -160,9 +166,30 @@ export default function BuildToolbar() {
             color: '#6D28D9',
             textAlign: 'center',
             borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
           }}
         >
-          {selectedAssetName}
+          <span style={{ flex: 1 }}>{selectedAssetName}</span>
+          {placementHistory.length > 0 && (
+            <button
+              onClick={undoLastPlacement}
+              style={{
+                padding: '2px 10px',
+                fontSize: 11,
+                fontWeight: 500,
+                color: '#6D28D9',
+                background: 'rgba(124, 58, 237, 0.08)',
+                border: '1px solid rgba(124, 58, 237, 0.2)',
+                borderRadius: 6,
+                cursor: 'pointer',
+              }}
+            >
+              Undo
+            </button>
+          )}
         </div>
       )}
 
@@ -184,7 +211,6 @@ export default function BuildToolbar() {
               key={asset.key}
               asset={asset}
               selected={selectedAsset === asset.key}
-              onSelect={() => selectAsset(asset.key)}
             />
           ))}
         </div>

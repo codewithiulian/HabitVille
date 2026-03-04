@@ -51,15 +51,17 @@ habitville/
 │   │   ├── game.ts             # Game facade — init/destroy/accessors
 │   │   ├── grid.ts             # Grid data model + tile rendering
 │   │   ├── iso-utils.ts        # gridToScreen / screenToGrid conversions
-│   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds
+│   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds, pointer interceptor
+│   │   ├── build-system.ts     # Drag-to-place & building move system (occupancy, ghost, undo)
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
 │   │   ├── asset-loader.ts     # Manifest builder + preloader with progress
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
-│   │   └── build-store.ts      # Build mode state (selected category/asset)
+│   │   └── build-store.ts      # Build mode state (category/asset, placement history, toast)
 │   ├── components/             # React UI components (overlays)
 │   │   ├── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
-│   │   └── BuildToolbar.tsx    # Build mode toolbar (category tabs + asset picker)
+│   │   ├── BuildToolbar.tsx    # Build mode toolbar (drag-from-toolbar initiation)
+│   │   └── Toast.tsx           # Auto-dismiss toast for placement errors
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
@@ -209,6 +211,22 @@ Auto-tiling approach:
 - `GameCanvas.tsx` sets `touchAction: 'none'` to prevent default browser touch gestures
 - Tunable constants in `src/config/camera-constants.ts`
 
+### Build System (Drag-to-Place)
+
+- **Drag-based UX** — drag asset from toolbar onto grid to place; tap existing building to pick up and move
+- Camera panning and building placement are completely separate gestures (no tap-to-place)
+- **Occupancy map** is a `Map<string, { sprite, assetKey }>` keyed by `"row,col"` — stores sprite references
+- **Pointer-down interceptor** on camera: build system checks if tap hits a placed building's visual bounds (`sprite.getBounds()`), returns `true` to block camera pan
+- **Drag state machine**: `preDrag` (pre-threshold, < 8px movement) → `activeDrag` (ghost visible, snapping to grid)
+- **Ghost sprites**: alpha 0.6, green tint on valid tiles, red on invalid, `eventMode = 'none'`
+- **Height offset**: before `screenToGrid()`, world Y is offset by `texture.height * (anchor.y - 0.5)` so buildings with bottom-center anchors appear under the cursor, not above it
+- **Building pickup hit test**: uses `sprite.getBounds()` (screen-space) rather than grid-based lookup, so tapping the visible building works regardless of anchor offset
+- **Bounce animation** on successful place/move: scale 1.15→1.0 over 12 frames
+- **Undo** supports both `'place'` (destroy sprite) and `'move'` (snap back to original position)
+- **Toast** ("Can't build here"): React component reads `toastMessage` from build store, auto-dismisses after 1.5s
+- Dropping back onto toolbar area silently cancels placement (no toast)
+- Document-level `pointermove`/`pointerup` listeners are added during drag and cleaned up on drop
+
 ### Asset Registry & Loading
 
 - **Asset keys** = descriptive stem (e.g. `House_Blue_Type1`, `Grass`, `Restaurant_Pizza`)
@@ -257,9 +275,21 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Phase 2.2 — Asset Picker UI (Build Toolbar)
-**What works:** All previous features + React overlay toolbar at bottom of screen for selecting buildings/items to place. 5 category tabs (Roads, Homes, Shops, Public, Decor) expand to show scrollable asset thumbnails. Zustand `useBuildStore` bridges selection state between React UI and game engine. Road tab shows representative tiles only. `npm run build` succeeds.
-**Next up:** Phase 2.3
+**Last completed unit:** Phase 2.3 — Drag-to-Place UX
+**What works:** All previous features + drag-based building placement. Drag asset thumbnails from toolbar onto the grid to place buildings. Tap placed buildings to pick up and move them. Ghost preview with green/red tint snaps to grid during drag. Bounce animation on placement. Undo supports both place and move operations. Toast notification for invalid placements. Camera panning is separate from building interaction. Grid loads empty (no test buildings). `npm run build` succeeds.
+**Next up:** Phase 3
+
+### Phase 2.3 checklist (Drag-to-Place UX):
+
+- [x] `build-system.ts` — Full rewrite: occupancy Map, drag state machine, drag-from-toolbar, building move, ghost sprites, bounce animation, undo rework
+- [x] `camera.ts` — Simplified: removed tap/move callbacks, added pointer-down interceptor for building pickup
+- [x] `build-store.ts` — Extended PlacementEntry with type/fromRow/fromCol, added toast state
+- [x] `BuildToolbar.tsx` — Replaced onClick with onPointerDown for drag initiation, added data-build-toolbar attribute
+- [x] `Toast.tsx` — New component: auto-dismiss toast pill for placement errors
+- [x] `game.ts` — Updated markOccupied signature, removed test buildings
+- [x] `page.tsx` — Added Toast component to layout
+- [x] Build verification — `npm run build` succeeds
+- [x] Update ARCHITECTURE.md
 
 ### Phase 2.2 checklist (Asset Picker UI — Build Toolbar):
 

@@ -10,10 +10,15 @@ const BuildToolbar = dynamic(() => import('@/components/BuildToolbar'), {
   ssr: false,
 });
 
+const Toast = dynamic(() => import('@/components/Toast'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
       <GameCanvas />
+      <Toast />
       <BuildToolbar />
     </>
   );

@@ -22,6 +22,9 @@ let isPinching = false;
 let lastPointer = { x: 0, y: 0 };
 let velocity: Velocity = { x: 0, y: 0 };
 
+// Pointer-down interceptor — build system can claim a pointer before camera pans
+let pointerDownInterceptor: ((screenX: number, screenY: number) => boolean) | null = null;
+
 let activeTouches: TouchPoint[] = [];
 let lastPinchDist = 0;
 let lastPinchMid = { x: 0, y: 0 };
@@ -139,6 +142,11 @@ function touchListToPoints(touches: TouchList): TouchPoint[] {
 
 function handlePointerDown(e: PointerEvent): void {
   if (isPinching) return;
+
+  // Let the build system intercept (e.g. picking up a building)
+  if (pointerDownInterceptor && pointerDownInterceptor(e.clientX, e.clientY)) {
+    return; // build system claimed this pointer
+  }
 
   isDragging = true;
   lastPointer.x = e.clientX;
@@ -320,6 +328,17 @@ export function destroyCamera(): void {
   onTouchMove = null;
   onTouchEnd = null;
   tickerCallback = null;
+  pointerDownInterceptor = null;
+}
+
+export function setPointerDownInterceptor(
+  cb: ((screenX: number, screenY: number) => boolean) | null,
+): void {
+  pointerDownInterceptor = cb;
+}
+
+export function getGameWorld(): Container | null {
+  return gameWorld;
 }
 
 export function getCameraState(): CameraState {
