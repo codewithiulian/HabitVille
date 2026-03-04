@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useCallback } from 'react';
+import { useMemo, useCallback, useRef } from 'react';
 import { useBuildStore, type BuildCategory } from '@/stores/build-store';
 import { getAssetsByCategory } from '@/engine/asset-registry';
 import { undoLastPlacement, startToolbarDrag } from '@/engine/build-system';
@@ -45,17 +45,31 @@ function AssetThumbnail({
   asset: AssetEntry;
   selected: boolean;
 }) {
+  const didDragRef = useRef(false);
+
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
-      e.preventDefault();
-      startToolbarDrag(asset.key, e.clientX, e.clientY);
+      didDragRef.current = false;
+      if (selected) {
+        // Already selected → start drag-to-place
+        e.preventDefault();
+        startToolbarDrag(asset.key, e.clientX, e.clientY);
+        didDragRef.current = true;
+      }
+      // Unselected: do nothing — onClick handles tap-to-select
     },
-    [asset.key],
+    [asset.key, selected],
   );
+
+  const handleClick = useCallback(() => {
+    if (didDragRef.current) return;
+    useBuildStore.getState().selectAsset(asset.key);
+  }, [asset.key]);
 
   return (
     <button
       onPointerDown={handlePointerDown}
+      onClick={handleClick}
       style={{
         display: 'flex',
         flexDirection: 'column',
@@ -68,9 +82,9 @@ function AssetThumbnail({
         border: selected ? '2px solid #7C3AED' : '2px solid transparent',
         borderRadius: 8,
         background: selected ? 'rgba(124, 58, 237, 0.1)' : 'transparent',
-        cursor: 'grab',
+        cursor: selected ? 'grab' : 'pointer',
         flexShrink: 0,
-        touchAction: 'none',
+        touchAction: selected ? 'none' : 'pan-x',
       }}
     >
       <img
