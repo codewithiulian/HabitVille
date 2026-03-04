@@ -1,4 +1,5 @@
 import { Application, Container } from 'pixi.js';
+import { createBackground } from './create-background';
 
 export interface SceneContainers {
   gameWorld: Container;
@@ -33,7 +34,9 @@ export function setupStage(app: Application): SceneContainers {
   const decorLayer = new Container();
   decorLayer.label = 'decorLayer';
 
+  const backgroundLayer = createBackground(app);
   gameWorld.addChild(
+    backgroundLayer,
     groundLayer,
     borderLayer,
     roadLayer,
