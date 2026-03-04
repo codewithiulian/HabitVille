@@ -46,7 +46,7 @@ export const CARDINAL_DIRS = [
 export const BITMASK_TO_TILE: Record<number, number> = {
   0: 8,   // isolated → E+W straight
   1: 7,   // N dead-end → N+S straight
-  2: 8,   // E dead-end → E+W straight
+  2: 7,   // E dead-end → horizontal straight (flipX)
   3: 6,   // N+E corner
   4: 7,   // S dead-end → N+S straight
   5: 7,   // N+S straight
@@ -68,7 +68,8 @@ export function bitmaskToTile(mask: number): number {
 
 /** Returns true when the tile sprite should be flipped horizontally. */
 export function bitmaskToFlipX(mask: number): boolean {
-  return (mask & 0xf) === 10; // E+W straight uses Tile7 flipped
+  const m = mask & 0xf;
+  return m === 10 || m === 2; // E+W straight & E dead-end use Tile7 flipped
 }
 
 // ---------------------------------------------------------------------------
