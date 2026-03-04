@@ -5,8 +5,8 @@
   "scripts": {
     "dev": "concurrently \"npm:dev:local\" \"npm:dev:tunnel\" \"npm:dev:open\"",
     "dev:local": "next dev",
-    "dev:tunnel": "ngrok http --url=flexile-kole-ultramodern.ngrok-free.dev --host-header=rewrite 3000",
-    "dev:open": "open-cli https://flexile-kole-ultramodern.ngrok-free.dev --delay 3",
+    "dev:tunnel": "ngrok http --url=$NGROK_DOMAIN --host-header=rewrite 3000",
+    "dev:open": "open-cli https://$NGROK_DOMAIN --delay 3",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
