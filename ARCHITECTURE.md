@@ -48,7 +48,10 @@ habitville/
 │   ├── engine/                 # PixiJS game engine (no React imports)
 │   │   ├── create-app.ts       # PixiJS Application factory (async init)
 │   │   ├── setup-stage.ts      # Container hierarchy skeleton per spec
-│   │   └── game.ts             # Game facade — init/destroy/accessors
+│   │   ├── game.ts             # Game facade — init/destroy/accessors
+│   │   ├── grid.ts             # Grid data model + tile rendering
+│   │   ├── iso-utils.ts        # gridToScreen / screenToGrid conversions
+│   │   └── camera.ts           # Camera system — pan, zoom, momentum, bounds
 │   ├── stores/                 # Zustand stores
 │   │   └── .gitkeep
 │   ├── components/             # React UI components (overlays)
@@ -56,9 +59,11 @@ habitville/
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   └── .gitkeep
 │   ├── types/                  # Shared TypeScript types
-│   │   └── .gitkeep
+│   │   ├── grid.ts             # Grid, GridCell, GroundType
+│   │   └── camera.ts           # CameraState, Velocity, TouchPoint
 │   └── config/                 # Constants, level tables, building catalog
-│       └── .gitkeep
+│       ├── grid-constants.ts   # GRID_SIZE, TILE_WIDTH/HEIGHT, BORDER_WIDTH
+│       └── camera-constants.ts # CAMERA_*_ZOOM, friction, velocity, bounds
 ├── public/
 │   ├── manifest.json           # PWA manifest (basic — installable on iOS)
 │   └── assets/                 # All game assets (raw packs — not yet reorganized)
@@ -181,6 +186,24 @@ Auto-tiling approach:
 - Three road types available: paved (Road), dirt (DirtRoad), grass (GrassRoad)
 - Sidewalks (9 variants) and StonePaths (4 variants) available for pedestrian areas
 
+### Camera System
+
+- Camera transforms `gameWorld` only — `hudLayer` and React overlays are unaffected
+- Module-scoped state in `src/engine/camera.ts` (same pattern as `game.ts`, `grid.ts`)
+- Pointer events for pan (mouse + single touch), touch events for pinch-to-zoom, wheel for desktop zoom
+- `isPinching` flag prevents pan during pinch gestures
+- Touch listeners use `{ passive: false }` to allow `preventDefault()` (stops browser zoom)
+- Zoom formula preserves world point under cursor/finger:
+  ```
+  worldX = (screenX - gameWorld.x) / oldZoom
+  gameWorld.scale.set(newZoom)
+  gameWorld.x = screenX - worldX * newZoom
+  ```
+- Momentum: ticker applies velocity with friction decay each frame
+- Bounds clamping: map diamond can't scroll entirely off viewport; centers if smaller than viewport
+- `GameCanvas.tsx` sets `touchAction: 'none'` to prevent default browser touch gestures
+- Tunable constants in `src/config/camera-constants.ts`
+
 ### State Management (Zustand)
 
 - One store per domain: `useGameStore`, `useHabitStore`, `usePlayerStore`
@@ -206,9 +229,28 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Unit 2 — PixiJS Canvas Bootstrap
-**What works:** Full-screen PixiJS canvas renders at 60fps on dark green background (#1a5c1a). Canvas auto-resizes with window. Container hierarchy (gameWorld with 6 child layers + hudLayer) is established. React StrictMode double-mount handled safely. `npm run build` succeeds.
-**Next up:** Unit 3 — Asset Loading / Tilemap
+**Last completed unit:** Unit 4 — Camera System
+**What works:** 30×30 isometric grass grid renders with full camera controls. Mouse drag pans, mouse wheel zooms toward cursor, touch drag pans, pinch-to-zoom on mobile, momentum/inertia on release, bounds clamping prevents scrolling off map. Default zoom (0.15) shows ~5 tiles across on mobile. hudLayer stays fixed (unaffected by camera). `npm run build` succeeds.
+**Next up:** Unit 5
+
+### Unit 4 checklist:
+
+- [x] `camera-constants.ts` — Tunable camera parameters (zoom range, friction, velocity, bounds)
+- [x] `types/camera.ts` — CameraState, Velocity, TouchPoint types
+- [x] `camera.ts` — Camera module (pan, zoom, pinch, momentum, bounds clamping)
+- [x] `game.ts` — Integrate camera init/destroy, apply default zoom + centered positioning
+- [x] `GameCanvas.tsx` — Add `touchAction: 'none'` to prevent browser gestures
+- [x] Build verification — `npm run build` succeeds
+- [x] Update ARCHITECTURE.md
+
+### Unit 3 checklist:
+
+- [x] `grid-constants.ts` — Grid size, tile dimensions, border width, asset path
+- [x] `types/grid.ts` — Grid, GridCell, GroundType types
+- [x] `iso-utils.ts` — gridToScreen / screenToGrid conversion functions
+- [x] `grid.ts` — Grid data model + tile rendering with depth sorting
+- [x] `game.ts` — Integrate grid creation, rendering, centering
+- [x] Update ARCHITECTURE.md
 
 ### Unit 2 checklist:
 

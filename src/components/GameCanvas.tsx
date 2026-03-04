@@ -37,6 +37,7 @@ export default function GameCanvas() {
         width: '100vw',
         height: '100vh',
         overflow: 'hidden',
+        touchAction: 'none',
       }}
     />
   );
