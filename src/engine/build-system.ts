@@ -8,12 +8,13 @@ import { getAsset } from './asset-registry';
 import { placeOnGrid } from './place-on-grid';
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
+import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
 
 // ---------------------------------------------------------------------------
 // Occupancy map — stores sprite + assetKey per tile
 // ---------------------------------------------------------------------------
 
-const occupied = new Map<string, { sprite: Sprite; assetKey: string }>();
+const occupied = new Map<string, { sprite: Sprite; assetKey: string; buildingId: string }>();
 
 function tileKey(row: number, col: number): string {
   return `${row},${col}`;
@@ -23,12 +24,12 @@ export function isOccupied(row: number, col: number): boolean {
   return occupied.has(tileKey(row, col));
 }
 
-export function getOccupant(row: number, col: number): { sprite: Sprite; assetKey: string } | undefined {
+export function getOccupant(row: number, col: number): { sprite: Sprite; assetKey: string; buildingId: string } | undefined {
   return occupied.get(tileKey(row, col));
 }
 
-export function markOccupied(row: number, col: number, sprite: Sprite, assetKey: string): void {
-  occupied.set(tileKey(row, col), { sprite, assetKey });
+export function markOccupied(row: number, col: number, sprite: Sprite, assetKey: string, buildingId: string): void {
+  occupied.set(tileKey(row, col), { sprite, assetKey, buildingId });
 }
 
 export function markFree(row: number, col: number): void {
@@ -74,14 +75,80 @@ function clearHighlight(): void {
 }
 
 // ---------------------------------------------------------------------------
+// Tap candidate (for selecting buildings by tapping)
+// ---------------------------------------------------------------------------
+
+let tapCandidate: {
+  row: number;
+  col: number;
+  assetKey: string;
+  sprite: Sprite;
+  buildingId: string;
+  startX: number;
+  startY: number;
+} | null = null;
+
+function onTapCandidateMove(e: PointerEvent): void {
+  if (!tapCandidate) return;
+  const dx = e.clientX - tapCandidate.startX;
+  const dy = e.clientY - tapCandidate.startY;
+  if (Math.sqrt(dx * dx + dy * dy) >= DRAG_THRESHOLD) {
+    // User dragged — cancel tap, let camera continue panning
+    tapCandidate = null;
+    cleanupTapListeners();
+  }
+}
+
+function onTapCandidateUp(): void {
+  if (!tapCandidate) {
+    cleanupTapListeners();
+    return;
+  }
+
+  const hit = tapCandidate;
+  tapCandidate = null;
+  cleanupTapListeners();
+
+  const { selectedBuilding } = useBuildStore.getState();
+  // Toggle off if tapping the already-selected building
+  if (
+    selectedBuilding &&
+    hit.row === selectedBuilding.row &&
+    hit.col === selectedBuilding.col
+  ) {
+    clearHighlight();
+    useBuildStore.getState().deselectBuilding();
+  } else {
+    // Select this building
+    const asset = getAsset(hit.assetKey);
+    if (asset) {
+      highlightSprite(hit.sprite);
+      useBuildStore.getState().selectBuilding({
+        row: hit.row,
+        col: hit.col,
+        assetKey: hit.assetKey,
+        displayName: asset.displayName,
+        textureKey: asset.textureKey,
+      });
+    }
+  }
+}
+
+function cleanupTapListeners(): void {
+  document.removeEventListener('pointermove', onTapCandidateMove);
+  document.removeEventListener('pointerup', onTapCandidateUp);
+}
+
+// ---------------------------------------------------------------------------
 // Pending move (from popup "Move" button)
 // ---------------------------------------------------------------------------
 
-let pendingMove: { assetKey: string; row: number; col: number; sprite: Sprite } | null = null;
+let pendingMove: { assetKey: string; row: number; col: number; sprite: Sprite; buildingId: string } | null = null;
 
 function cancelPendingMove(): void {
   if (!pendingMove) return;
   pendingMove.sprite.alpha = 1;
+  pendingMove.sprite.visible = true;
   pendingMove = null;
 }
 
@@ -96,6 +163,7 @@ interface DragState {
   valid: boolean;
   lastRow: number;
   lastCol: number;
+  buildingId?: string;
   // Move-specific: snap-back on invalid drop
   originalRow?: number;
   originalCol?: number;
@@ -110,6 +178,7 @@ let preDrag: {
   assetKey: string;
   startX: number;
   startY: number;
+  buildingId?: string;
   // Move-specific
   originalRow?: number;
   originalCol?: number;
@@ -240,19 +309,11 @@ function onDocumentPointerMove(e: PointerEvent): void {
         valid: false,
         lastRow: -1,
         lastCol: -1,
+        buildingId: preDrag.buildingId,
         originalRow: preDrag.originalRow,
         originalCol: preDrag.originalCol,
         originalSprite: preDrag.originalSprite,
       };
-
-      // If moving a building, hide the original sprite
-      if (preDrag.type === 'move' && preDrag.originalSprite) {
-        preDrag.originalSprite.visible = false;
-        // Free the original tile so ghost shows green on it
-        if (preDrag.originalRow !== undefined && preDrag.originalCol !== undefined) {
-          markFree(preDrag.originalRow, preDrag.originalCol);
-        }
-      }
 
       preDrag = null;
       updateGhostAtScreen(e.clientX, e.clientY);
@@ -272,29 +333,6 @@ function onDocumentPointerUp(e: PointerEvent): void {
       // Tap on toolbar thumbnail → just select the asset
       useBuildStore.getState().selectAsset(preDrag.assetKey);
     }
-    if (preDrag.type === 'move' && preDrag.originalSprite) {
-      const { selectedBuilding } = useBuildStore.getState();
-      // Toggle off if tapping the already-selected building
-      if (selectedBuilding &&
-          preDrag.originalRow === selectedBuilding.row &&
-          preDrag.originalCol === selectedBuilding.col) {
-        clearHighlight();
-        useBuildStore.getState().deselectBuilding();
-      } else {
-        // Select this building
-        const asset = getAsset(preDrag.assetKey);
-        if (asset) {
-          highlightSprite(preDrag.originalSprite);
-          useBuildStore.getState().selectBuilding({
-            row: preDrag.originalRow!,
-            col: preDrag.originalCol!,
-            assetKey: preDrag.assetKey,
-            displayName: asset.displayName,
-            textureKey: asset.textureKey,
-          });
-        }
-      }
-    }
     preDrag = null;
     cleanupDragListeners();
     return;
@@ -309,15 +347,17 @@ function onDocumentPointerUp(e: PointerEvent): void {
     // Place or move the building
     if (activeDrag.type === 'new') {
       // Create a permanent sprite
+      const buildingId = crypto.randomUUID();
       const asset = getAsset(activeDrag.assetKey);
       const texture = Assets.get(asset!.textureKey);
       const sprite = new Sprite(texture);
       sprite.label = `building_${activeDrag.assetKey}_${activeDrag.lastRow}_${activeDrag.lastCol}`;
       placeOnGrid(sprite, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
       containers.buildingLayer.addChild(sprite);
-      markOccupied(activeDrag.lastRow, activeDrag.lastCol, sprite, activeDrag.assetKey);
+      markOccupied(activeDrag.lastRow, activeDrag.lastCol, sprite, activeDrag.assetKey, buildingId);
       depthSort();
       bounceAnimation(sprite, pixiApp.ticker);
+      persistPlace(buildingId, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
 
       useBuildStore.getState().pushPlacement({
         type: 'place',
@@ -325,15 +365,19 @@ function onDocumentPointerUp(e: PointerEvent): void {
         row: activeDrag.lastRow,
         col: activeDrag.lastCol,
         assetKey: activeDrag.assetKey,
+        buildingId,
       });
     } else {
       // Move: reposition the original sprite
       const origSprite = activeDrag.originalSprite!;
+      const moveId = activeDrag.buildingId!;
       placeOnGrid(origSprite, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
+      origSprite.alpha = 1;
       origSprite.visible = true;
-      markOccupied(activeDrag.lastRow, activeDrag.lastCol, origSprite, activeDrag.assetKey);
+      markOccupied(activeDrag.lastRow, activeDrag.lastCol, origSprite, activeDrag.assetKey, moveId);
       depthSort();
       bounceAnimation(origSprite, pixiApp.ticker);
+      persistMove(moveId, activeDrag.lastRow, activeDrag.lastCol);
 
       useBuildStore.getState().pushPlacement({
         type: 'move',
@@ -341,6 +385,7 @@ function onDocumentPointerUp(e: PointerEvent): void {
         row: activeDrag.lastRow,
         col: activeDrag.lastCol,
         assetKey: activeDrag.assetKey,
+        buildingId: moveId,
         fromRow: activeDrag.originalRow,
         fromCol: activeDrag.originalCol,
       });
@@ -365,8 +410,9 @@ function onDocumentPointerUp(e: PointerEvent): void {
       // Move: snap back to original position
       const origSprite = activeDrag.originalSprite!;
       placeOnGrid(origSprite, activeDrag.originalRow!, activeDrag.originalCol!, activeDrag.assetKey);
+      origSprite.alpha = 1;
       origSprite.visible = true;
-      markOccupied(activeDrag.originalRow!, activeDrag.originalCol!, origSprite, activeDrag.assetKey);
+      markOccupied(activeDrag.originalRow!, activeDrag.originalCol!, origSprite, activeDrag.assetKey, activeDrag.buildingId!);
       depthSort();
     }
   }
@@ -416,7 +462,7 @@ export function startToolbarDrag(assetKey: string, startX: number, startY: numbe
 // ---------------------------------------------------------------------------
 
 function findOccupantAtScreen(screenX: number, screenY: number): {
-  row: number; col: number; sprite: Sprite; assetKey: string;
+  row: number; col: number; sprite: Sprite; assetKey: string; buildingId: string;
 } | null {
   // getBounds() returns screen-space coords, so compare directly with screen coords
   for (const [key, occupant] of occupied) {
@@ -429,15 +475,14 @@ function findOccupantAtScreen(screenX: number, screenY: number): {
       screenY <= bounds.y + bounds.height
     ) {
       const [r, c] = key.split(',').map(Number);
-      return { row: r, col: c, sprite: s, assetKey: occupant.assetKey };
+      return { row: r, col: c, sprite: s, assetKey: occupant.assetKey, buildingId: occupant.buildingId };
     }
   }
   return null;
 }
 
 function handleBuildingPickup(screenX: number, screenY: number): boolean {
-  const { buildMode } = useBuildStore.getState();
-  if (!buildMode || !containers) return false;
+  if (!containers) return false;
 
   // Handle pending move from popup "Move" button
   if (pendingMove) {
@@ -453,7 +498,7 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
     if (!ghost) {
       pm.sprite.visible = true;
       pm.sprite.alpha = 1;
-      markOccupied(pm.row, pm.col, pm.sprite, pm.assetKey);
+      markOccupied(pm.row, pm.col, pm.sprite, pm.assetKey, pm.buildingId);
       return false;
     }
 
@@ -464,6 +509,7 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
       valid: false,
       lastRow: -1,
       lastCol: -1,
+      buildingId: pm.buildingId,
       originalRow: pm.row,
       originalCol: pm.col,
       originalSprite: pm.sprite,
@@ -485,21 +531,17 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
     return false; // allow camera pan
   }
 
-  // Start a move pre-drag
-  preDrag = {
-    type: 'move',
-    assetKey: hit.assetKey,
+  // Set up tap candidate for selection — camera handles any dragging
+  tapCandidate = {
+    ...hit,
     startX: screenX,
     startY: screenY,
-    originalRow: hit.row,
-    originalCol: hit.col,
-    originalSprite: hit.sprite,
   };
 
-  document.addEventListener('pointermove', onDocumentPointerMove);
-  document.addEventListener('pointerup', onDocumentPointerUp);
+  document.addEventListener('pointermove', onTapCandidateMove);
+  document.addEventListener('pointerup', onTapCandidateUp);
 
-  return true; // block camera pan
+  return false; // allow camera pan; tap detected on pointer-up
 }
 
 // ---------------------------------------------------------------------------
@@ -513,11 +555,13 @@ export function deleteSelectedBuilding(): void {
   const occupant = getOccupant(selectedBuilding.row, selectedBuilding.col);
   if (!occupant) return;
 
-  // Remove from display but DON'T destroy (needed for undo)
-  occupant.sprite.removeFromParent();
-  markFree(selectedBuilding.row, selectedBuilding.col);
+  // Clear visual state first, then remove from display (DON'T destroy — needed for undo)
   clearHighlight();
+  occupant.sprite.visible = false;
+  containers.buildingLayer.removeChild(occupant.sprite);
+  markFree(selectedBuilding.row, selectedBuilding.col);
   useBuildStore.getState().deselectBuilding();
+  persistDelete(occupant.buildingId);
 
   useBuildStore.getState().pushPlacement({
     type: 'delete',
@@ -525,6 +569,7 @@ export function deleteSelectedBuilding(): void {
     row: selectedBuilding.row,
     col: selectedBuilding.col,
     assetKey: occupant.assetKey,
+    buildingId: occupant.buildingId,
   });
 }
 
@@ -549,6 +594,7 @@ export function moveSelectedBuilding(): void {
     row: selectedBuilding.row,
     col: selectedBuilding.col,
     sprite: occupant.sprite,
+    buildingId: occupant.buildingId,
   };
 }
 
@@ -564,19 +610,23 @@ export function undoLastPlacement(): void {
     entry.sprite.removeFromParent();
     entry.sprite.destroy();
     markFree(entry.row, entry.col);
+    persistDelete(entry.buildingId);
   } else if (entry.type === 'move') {
     // Move: return sprite to original position
     placeOnGrid(entry.sprite, entry.fromRow!, entry.fromCol!, entry.assetKey);
     markFree(entry.row, entry.col);
-    markOccupied(entry.fromRow!, entry.fromCol!, entry.sprite, entry.assetKey);
+    markOccupied(entry.fromRow!, entry.fromCol!, entry.sprite, entry.assetKey, entry.buildingId);
     depthSort();
+    persistMove(entry.buildingId, entry.fromRow!, entry.fromCol!);
   } else if (entry.type === 'delete') {
     // Delete: restore sprite to grid
+    entry.sprite.visible = true;
     containers!.buildingLayer.addChild(entry.sprite);
     placeOnGrid(entry.sprite, entry.row, entry.col, entry.assetKey);
-    markOccupied(entry.row, entry.col, entry.sprite, entry.assetKey);
+    markOccupied(entry.row, entry.col, entry.sprite, entry.assetKey, entry.buildingId);
     depthSort();
     if (pixiApp) bounceAnimation(entry.sprite, pixiApp.ticker);
+    persistPlace(entry.buildingId, entry.row, entry.col, entry.assetKey);
   }
 }
 
@@ -612,11 +662,13 @@ export function initBuildSystem(app: Application, sceneContainers: SceneContaine
   setPointerDownInterceptor(handleBuildingPickup);
   app.ticker.add(updatePopupPosition);
 
-  // Cancel pending move when build mode turns off
+  // Cancel pending move when build mode transitions off
+  let prevBuildMode = useBuildStore.getState().buildMode;
   unsubBuildMode = useBuildStore.subscribe((state) => {
-    if (!state.buildMode) {
+    if (prevBuildMode && !state.buildMode) {
       cancelPendingMove();
     }
+    prevBuildMode = state.buildMode;
   });
 }
 
@@ -637,7 +689,9 @@ export function destroyBuildSystem(): void {
     activeDrag = null;
   }
   preDrag = null;
+  tapCandidate = null;
   cleanupDragListeners();
+  cleanupTapListeners();
 
   clearHighlight();
   cancelPendingMove();

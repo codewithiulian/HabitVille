@@ -64,7 +64,9 @@ habitville/
 │   │   ├── Toast.tsx           # Auto-dismiss toast for placement errors
 │   │   └── BuildingPopup.tsx  # Contextual popup for selected buildings (Move/Delete)
 │   ├── db/                     # Dexie.js database schema & helpers
-│   │   └── .gitkeep
+│   │   ├── db.ts               # Dexie database: 'habitville' with city + gameState tables
+│   │   ├── city-persistence.ts # Fire-and-forget write helpers (place/move/delete/camera)
+│   │   └── city-restore.ts     # Restore buildings + camera from IndexedDB on startup
 │   ├── types/                  # Shared TypeScript types
 │   │   ├── grid.ts             # Grid, GridCell, GroundType
 │   │   ├── camera.ts           # CameraState, Velocity, TouchPoint
@@ -216,7 +218,7 @@ Auto-tiling approach:
 
 - **Drag-based UX** — drag asset from toolbar onto grid to place; tap existing building to pick up and move
 - Camera panning and building placement are completely separate gestures (no tap-to-place)
-- **Occupancy map** is a `Map<string, { sprite, assetKey }>` keyed by `"row,col"` — stores sprite references
+- **Occupancy map** is a `Map<string, { sprite, assetKey, buildingId }>` keyed by `"row,col"` — stores sprite references + persistence ID
 - **Pointer-down interceptor** on camera: build system checks if tap hits a placed building's visual bounds (`sprite.getBounds()`), returns `true` to block camera pan
 - **Drag state machine**: `preDrag` (pre-threshold, < 8px movement) → `activeDrag` (ghost visible, snapping to grid)
 - **Ghost sprites**: alpha 0.6, green tint on valid tiles, red on invalid, `eventMode = 'none'`
@@ -265,10 +267,14 @@ Auto-tiling approach:
 
 ### Persistence (Dexie.js)
 
-- Database defined in `src/db/database.ts`
-- All IDs use `crypto.randomUUID()`
-- Tables follow singular naming: `habit`, `completion`, `building`, etc.
-- Save on meaningful actions (place building, complete habit), not on every frame
+- Database defined in `src/db/db.ts`, name `'habitville'`, version 1
+- Tables: `city` (buildings on grid), `gameState` (camera position)
+- All IDs use `crypto.randomUUID()` (buildings) or fixed key `'current'` (gameState)
+- **Write pattern**: fire-and-forget — all writes `.catch(() => {})`, never block the game loop
+- **Camera persistence**: debounced 500ms via `setTimeout`/`clearTimeout` in `persistCamera()`
+- **Restore on startup**: `restoreCity()` loads buildings from IndexedDB, `restoreCameraState()` loads camera
+- **Occupancy map** is the in-memory source of truth; IndexedDB is the durable backup
+- Save on meaningful actions (place/move/delete building, camera settle), not on every frame
 
 ### Naming Conventions
 
@@ -281,9 +287,21 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Phase 2.4 — Tile Interaction (Select, Delete, Move Popup)
-**What works:** All previous features + tap-to-select buildings. Tapping a placed building shows a contextual popup with Move and Delete actions. Move uses a two-tap UX (tap Move → tap destination). Delete removes the building with undo support. Selection highlight via ColorMatrixFilter. Popup tracks building position through pan/zoom via ticker. Deselects on empty-space tap, toolbar drag, or toggling the same building. `npm run build` succeeds.
+**Last completed unit:** Phase 2.5 — Grid State Persistence with Dexie.js
+**What works:** All previous features + IndexedDB persistence. Buildings placed/moved/deleted are persisted to IndexedDB via Dexie.js. Camera position (pan/zoom) is saved with 500ms debounce. On reload, buildings and camera state are restored from IndexedDB. Undo operations correctly update persistence. First launch (empty DB) shows default empty grid. `npm run build` succeeds.
 **Next up:** Phase 3
+
+### Phase 2.5 checklist (Grid State Persistence — Dexie.js):
+
+- [x] `db/db.ts` — Dexie database schema: city + gameState tables with EntityTable typing
+- [x] `db/city-persistence.ts` — Fire-and-forget helpers: persistPlace, persistMove, persistDelete, persistCamera (debounced 500ms)
+- [x] `db/city-restore.ts` — restoreCity() + restoreCameraState() for startup restore
+- [x] `stores/build-store.ts` — Added `buildingId: string` to PlacementEntry
+- [x] `engine/build-system.ts` — Extended occupancy map with buildingId, threaded through all mutations + undo, added persistence calls
+- [x] `engine/camera.ts` — Added persistCamera calls after clampBounds in pan/zoom/pinch/momentum
+- [x] `engine/game.ts` — Integrated restoreCity + restoreCameraState between grid render and camera init
+- [x] `ARCHITECTURE.md` — Updated file tree, persistence docs, current state
+- [ ] Build verification — `npm run build` succeeds
 
 ### Phase 2.4 checklist (Tile Interaction — Select, Delete, Move Popup):
 

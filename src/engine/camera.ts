@@ -11,6 +11,7 @@ import {
 import { gridToScreen } from './iso-utils';
 import { GRID_SIZE, TILE_HEIGHT } from '../config/grid-constants';
 import type { CameraState, Velocity, TouchPoint } from '../types/camera';
+import { persistCamera } from '../db/city-persistence';
 
 // --- Module state ---
 
@@ -112,6 +113,7 @@ function zoomAt(screenX: number, screenY: number, newZoom: number): void {
   gameWorld.y = screenY - worldY * clamped;
 
   clampBounds();
+  persistCamera(getCameraState());
 }
 
 // --- Pinch helpers ---
@@ -172,6 +174,7 @@ function handlePointerMove(e: PointerEvent): void {
   lastPointer.y = e.clientY;
 
   clampBounds();
+  persistCamera(getCameraState());
 }
 
 function handlePointerUp(): void {
@@ -224,6 +227,7 @@ function handleTouchMove(e: TouchEvent): void {
     lastPinchMid = mid;
 
     clampBounds();
+    persistCamera(getCameraState());
   }
 }
 
@@ -253,6 +257,7 @@ function onTick(): void {
   velocity.y *= CAMERA_FRICTION;
 
   clampBounds();
+  persistCamera(getCameraState());
 }
 
 // --- Public API ---

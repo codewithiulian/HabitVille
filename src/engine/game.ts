@@ -9,13 +9,21 @@ import { loadAllAssets } from './asset-loader';
 import { GRID_SIZE } from '../config/grid-constants';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
 import { destroyBackground } from './create-background';
+import { restoreCity, restoreCameraState } from '../db/city-restore';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
+let initPromise: Promise<HTMLCanvasElement> | null = null;
 
 export async function initGame(): Promise<HTMLCanvasElement> {
-  if (app) return app.canvas;
+  // De-dup concurrent calls (React strict-mode double-mount)
+  if (!initPromise) {
+    initPromise = doInitGame();
+  }
+  return initPromise;
+}
 
+async function doInitGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
@@ -28,15 +36,25 @@ export async function initGame(): Promise<HTMLCanvasElement> {
   createGrid();
   await renderGrid(containers.groundLayer, containers.decorLayer);
 
-  // Apply default zoom
-  containers.gameWorld.scale.set(CAMERA_DEFAULT_ZOOM);
+  // Restore persisted buildings
+  await restoreCity(containers);
 
-  // Center the grid diamond on screen, accounting for zoom
-  const center = gridToScreen(GRID_SIZE / 2, GRID_SIZE / 2);
-  containers.gameWorld.position.set(
-    app.screen.width / 2 - center.x * CAMERA_DEFAULT_ZOOM,
-    app.screen.height / 2 - center.y * CAMERA_DEFAULT_ZOOM,
-  );
+  // Restore camera or use defaults
+  const savedCamera = await restoreCameraState();
+  if (savedCamera) {
+    containers.gameWorld.scale.set(savedCamera.cameraZoom);
+    containers.gameWorld.position.set(savedCamera.cameraX, savedCamera.cameraY);
+  } else {
+    // Apply default zoom
+    containers.gameWorld.scale.set(CAMERA_DEFAULT_ZOOM);
+
+    // Center the grid diamond on screen, accounting for zoom
+    const center = gridToScreen(GRID_SIZE / 2, GRID_SIZE / 2);
+    containers.gameWorld.position.set(
+      app.screen.width / 2 - center.x * CAMERA_DEFAULT_ZOOM,
+      app.screen.height / 2 - center.y * CAMERA_DEFAULT_ZOOM,
+    );
+  }
 
   initCamera(app, containers.gameWorld);
   initBuildSystem(app, containers);
@@ -54,6 +72,7 @@ export function destroyGame(): void {
   app.destroy(true, { children: true });
   app = null;
   containers = null;
+  initPromise = null;
 }
 
 export function getApp(): Application | null {

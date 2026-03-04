@@ -9,6 +9,7 @@ export interface PlacementEntry {
   row: number;
   col: number;
   assetKey: string;
+  buildingId: string;
   fromRow?: number;  // only for 'move'
   fromCol?: number;  // only for 'move'
 }
