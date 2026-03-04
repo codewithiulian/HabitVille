@@ -123,7 +123,7 @@ function AssetThumbnail({
 // ---------------------------------------------------------------------------
 
 export default function BuildToolbar() {
-  const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, placementHistory } =
+  const { selectedCategory, selectedAsset, selectCategory, exitBuildMode, placementHistory, categoryLoadState, loadCategory } =
     useBuildStore();
 
   // Build asset list for the selected category
@@ -208,7 +208,21 @@ export default function BuildToolbar() {
       )}
 
       {/* Asset grid (scrollable row) */}
-      {selectedCategory && assets.length > 0 && (
+      {selectedCategory && categoryLoadState[selectedCategory] === 'loading' && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            padding: '14px 8px',
+          }}
+        >
+          <span className="category-spinner" />
+          <span style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>Loading...</span>
+        </div>
+      )}
+      {selectedCategory && categoryLoadState[selectedCategory] === 'loaded' && assets.length > 0 && (
         <div
           className="hide-scrollbar"
           style={{
@@ -240,7 +254,10 @@ export default function BuildToolbar() {
         {(Object.keys(CATEGORY_LABELS) as BuildCategory[]).map((cat) => (
           <button
             key={cat}
-            onClick={() => selectCategory(cat)}
+            onClick={() => {
+              selectCategory(cat);
+              loadCategory(cat);
+            }}
             style={{
               flex: 1,
               minHeight: 44,

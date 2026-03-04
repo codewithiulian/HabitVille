@@ -54,7 +54,7 @@ habitville/
 │   │   ├── camera.ts           # Camera system — pan, zoom, momentum, bounds, pointer interceptor
 │   │   ├── build-system.ts     # Drag-to-place, building move, select/delete/move-from-popup system
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
-│   │   ├── asset-loader.ts     # Manifest builder + preloader with progress
+│   │   ├── asset-loader.ts     # Lazy-loader: essential assets at startup, per-category on demand
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
 │   │   └── build-store.ts      # Build mode state (category/asset, placement history, toast, selection)
@@ -242,11 +242,21 @@ Auto-tiling approach:
 - **Registry** is static — built at import time from pattern generators, not dynamically scanned
 - **Default anchors**: ground tiles `(0.5, 0)` (top-center), buildings/decor/plants `(0.5, 1.0)` (bottom-center foot point)
 - **gridOffset** defaults to `(0, 0)` — adjusted per-sprite during visual calibration
-- **Loading**: `loadAllAssets()` loads all bundles grouped by category with progress callback
-- **Missing textures** log a warning and skip — never crash
+- **Missing textures** skip silently — never crash
 - **Placement**: `placeOnGrid(sprite, row, col, assetKey)` uses registry metadata for anchor + offset
 - Houses are in color subdirectories: `Houses/{Color}/House_Type{1-20}.png` (8 colors × 20 types)
 - Apartments use original pack spelling: `Appartments/Appartment_{Color}_{Size}_Level{1-3}.png`
+
+### Lazy-Loading Pattern
+
+Assets are **not** loaded all at once. The loading strategy is:
+
+1. **Startup (`loadEssentialAssets`)**: Loads only Grass.png + Dirt.png (grid tiles) plus textures for any saved buildings from IndexedDB. This keeps startup to ~2-50 textures instead of ~600+.
+2. **Per-category (`loadBuildCategory`)**: When a toolbar category tab is tapped, all PixiJS textures for that category are loaded on demand. Zustand tracks load state per category (`idle` → `loading` → `loaded`).
+3. **Toolbar thumbnails**: Use raw `<img src>` tags (not PixiJS textures), so they display instantly regardless of PixiJS loading state.
+4. **No unloading**: All loaded textures stay in PixiJS cache for the session (~600 max).
+5. **Defensive null-check**: `build-system.ts` checks for null texture before creating placement sprites, in case a user somehow initiates drag before the category finishes loading.
+6. **Cache headers**: `vercel.json` sets `Cache-Control: public, max-age=31536000, immutable` on `/assets/` for repeat visits.
 
 ### React Overlay Toolbar
 
@@ -287,8 +297,8 @@ Auto-tiling approach:
 
 ## Current State
 
-**Last completed unit:** Phase 2.5 — Grid State Persistence with Dexie.js
-**What works:** All previous features + IndexedDB persistence. Buildings placed/moved/deleted are persisted to IndexedDB via Dexie.js. Camera position (pan/zoom) is saved with 500ms debounce. On reload, buildings and camera state are restored from IndexedDB. Undo operations correctly update persistence. First launch (empty DB) shows default empty grid. `npm run build` succeeds.
+**Last completed unit:** Lazy-Load Assets Per Category
+**What works:** All previous features + lazy asset loading. Startup loads only essential textures (grid tiles + saved buildings). Toolbar category tabs trigger per-category PixiJS texture loading with spinner UI. Thumbnails use `<img>` tags for instant display. `vercel.json` adds immutable cache headers for assets.
 **Next up:** Phase 3
 
 ### Phase 2.5 checklist (Grid State Persistence — Dexie.js):

@@ -5,8 +5,9 @@ import { createGrid, renderGrid, destroyGrid } from './grid';
 import { initCamera, destroyCamera } from './camera';
 import { initBuildSystem, destroyBuildSystem } from './build-system';
 import { gridToScreen } from './iso-utils';
-import { loadAllAssets } from './asset-loader';
+import { loadEssentialAssets } from './asset-loader';
 import { GRID_SIZE } from '../config/grid-constants';
+import { db } from '../db/db';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
 import { destroyBackground } from './create-background';
 import { restoreCity, restoreCameraState } from '../db/city-restore';
@@ -27,8 +28,10 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
-  // Load all assets with progress bar
-  await loadAllAssets((progress) => {
+  // Load essential assets (grid tiles + saved buildings) with progress bar
+  const savedBuildings = await db.city.toArray();
+  const savedAssetKeys = [...new Set(savedBuildings.map((b) => b.assetKey))];
+  await loadEssentialAssets(savedAssetKeys, (progress) => {
     const bar = document.getElementById('loading-progress');
     if (bar) bar.style.width = `${Math.round(progress * 100)}%`;
   });

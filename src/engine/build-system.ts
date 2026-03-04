@@ -350,6 +350,12 @@ function onDocumentPointerUp(e: PointerEvent): void {
       const buildingId = crypto.randomUUID();
       const asset = getAsset(activeDrag.assetKey);
       const texture = Assets.get(asset!.textureKey);
+      if (!texture) {
+        destroyGhost();
+        activeDrag = null;
+        cleanupDragListeners();
+        return;
+      }
       const sprite = new Sprite(texture);
       sprite.label = `building_${activeDrag.assetKey}_${activeDrag.lastRow}_${activeDrag.lastCol}`;
       placeOnGrid(sprite, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);

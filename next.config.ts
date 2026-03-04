@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  allowedDevOrigins: ["https://flexile-kole-ultramodern.ngrok-free.dev"],
+  allowedDevOrigins: [
+    "dev.habitville.co.uk",
+  ],
 };
 
 export default nextConfig;
