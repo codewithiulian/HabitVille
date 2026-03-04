@@ -9,6 +9,7 @@ import { getAsset } from './asset-registry';
 import { placeOnGrid } from './place-on-grid';
 import { GRID_SIZE } from '../config/grid-constants';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
+import { destroyBackground } from './create-background';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
@@ -26,7 +27,7 @@ export async function initGame(): Promise<HTMLCanvasElement> {
   });
 
   createGrid();
-  await renderGrid(containers.groundLayer);
+  await renderGrid(containers.groundLayer, containers.decorLayer);
 
   // Place test buildings
   placeTestBuildings(containers);
@@ -82,6 +83,7 @@ export function destroyGame(): void {
 
   destroyCamera();
   destroyGrid();
+  destroyBackground(app);
   app.destroy(true, { children: true });
   app = null;
   containers = null;

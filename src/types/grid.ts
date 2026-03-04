@@ -1,4 +1,4 @@
-export type GroundType = 'grass';
+export type GroundType = 'grass' | 'dirt';
 
 export interface GridCell {
   row: number;
