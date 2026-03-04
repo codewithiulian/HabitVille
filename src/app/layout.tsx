@@ -11,6 +11,14 @@ export const viewport: Viewport = {
 export const metadata: Metadata = {
   title: "Habitville",
   description: "Build your city by building your habits",
+  icons: {
+    icon: [
+      { url: "/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/assets/logo/logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/assets/logo/logo-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/assets/logo/apple-touch-icon.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
