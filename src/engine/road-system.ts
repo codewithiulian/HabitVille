@@ -19,6 +19,7 @@ import {
   roadAssetKey,
   computeBitmask,
   bitmaskToTile,
+  bitmaskToFlipX,
   CARDINAL_DIRS,
 } from './road-tiles';
 
@@ -30,6 +31,7 @@ interface RoadEntry {
   sprite: Sprite;
   roadType: string;
   tileNum: number;
+  flipX: boolean;
 }
 
 const roadMap = new Map<string, RoadEntry>();
@@ -82,6 +84,7 @@ function createRoadSprite(
   col: number,
   roadType: string,
   tileNum: number,
+  flipX = false,
 ): Sprite | null {
   const assetKey = roadAssetKey(roadType, tileNum);
   const asset = getAsset(assetKey);
@@ -102,12 +105,13 @@ function createRoadSprite(
   // Swap texture on the existing ground sprite
   groundSprite.texture = texture;
   groundSprite.label = `road_${roadType}_${row}_${col}`;
+  groundSprite.scale.x = flipX ? -1 : 1;
 
   return groundSprite;
 }
 
-function updateRoadSprite(entry: RoadEntry, newTileNum: number): void {
-  if (entry.tileNum === newTileNum) return;
+function updateRoadSprite(entry: RoadEntry, newTileNum: number, newFlipX: boolean): void {
+  if (entry.tileNum === newTileNum && entry.flipX === newFlipX) return;
 
   const assetKey = roadAssetKey(entry.roadType, newTileNum);
   const asset = getAsset(assetKey);
@@ -117,7 +121,9 @@ function updateRoadSprite(entry: RoadEntry, newTileNum: number): void {
   if (!texture) return;
 
   entry.sprite.texture = texture;
+  entry.sprite.scale.x = newFlipX ? -1 : 1;
   entry.tileNum = newTileNum;
+  entry.flipX = newFlipX;
 }
 
 function restoreGroundTexture(row: number, col: number): void {
@@ -127,6 +133,7 @@ function restoreGroundTexture(row: number, col: number): void {
   if (saved && entry) {
     entry.sprite.texture = saved.texture;
     entry.sprite.label = saved.label;
+    entry.sprite.scale.x = 1; // Reset flip
   }
   originalGroundTextures.delete(key);
 }
@@ -150,8 +157,9 @@ function recalcTileAndNeighbors(row: number, col: number): TileChange[] {
   if (self) {
     const mask = computeBitmask(row, col, self.roadType, getRoadTypeAt);
     const newTile = bitmaskToTile(mask);
-    if (newTile !== self.tileNum) {
-      updateRoadSprite(self, newTile);
+    const newFlip = bitmaskToFlipX(mask);
+    if (newTile !== self.tileNum || newFlip !== self.flipX) {
+      updateRoadSprite(self, newTile, newFlip);
       changes.push({ row, col, roadType: self.roadType, tileNum: newTile });
     }
   }
@@ -165,8 +173,9 @@ function recalcTileAndNeighbors(row: number, col: number): TileChange[] {
 
     const mask = computeBitmask(nr, nc, neighbor.roadType, getRoadTypeAt);
     const newTile = bitmaskToTile(mask);
-    if (newTile !== neighbor.tileNum) {
-      updateRoadSprite(neighbor, newTile);
+    const newFlip = bitmaskToFlipX(mask);
+    if (newTile !== neighbor.tileNum || newFlip !== neighbor.flipX) {
+      updateRoadSprite(neighbor, newTile, newFlip);
       changes.push({ row: nr, col: nc, roadType: neighbor.roadType, tileNum: newTile });
     }
   }
@@ -213,11 +222,13 @@ export function placeRoad(row: number, col: number, roadType: string): TileChang
   }
 
   // Initial tile number (will be recalculated)
-  const initialTile = bitmaskToTile(computeBitmask(row, col, roadType, getRoadTypeAt));
-  const sprite = createRoadSprite(row, col, roadType, initialTile);
+  const initialMask = computeBitmask(row, col, roadType, getRoadTypeAt);
+  const initialTile = bitmaskToTile(initialMask);
+  const initialFlip = bitmaskToFlipX(initialMask);
+  const sprite = createRoadSprite(row, col, roadType, initialTile, initialFlip);
   if (!sprite) return null;
 
-  roadMap.set(tileKey(row, col), { sprite, roadType, tileNum: initialTile });
+  roadMap.set(tileKey(row, col), { sprite, roadType, tileNum: initialTile, flipX: initialFlip });
 
   const changes = recalcTileAndNeighbors(row, col);
   depthSortRoads();
@@ -268,11 +279,13 @@ export function placeRoadBatch(
       roadMap.delete(tileKey(t.row, t.col));
     }
 
-    const initialTile = bitmaskToTile(computeBitmask(t.row, t.col, roadType, getRoadTypeAt));
-    const sprite = createRoadSprite(t.row, t.col, roadType, initialTile);
+    const initMask = computeBitmask(t.row, t.col, roadType, getRoadTypeAt);
+    const initialTile = bitmaskToTile(initMask);
+    const initialFlip = bitmaskToFlipX(initMask);
+    const sprite = createRoadSprite(t.row, t.col, roadType, initialTile, initialFlip);
     if (!sprite) continue;
 
-    roadMap.set(tileKey(t.row, t.col), { sprite, roadType, tileNum: initialTile });
+    roadMap.set(tileKey(t.row, t.col), { sprite, roadType, tileNum: initialTile, flipX: initialFlip });
     placed.push({ row: t.row, col: t.col });
   }
 
@@ -284,8 +297,9 @@ export function placeRoadBatch(
     if (self) {
       const mask = computeBitmask(t.row, t.col, self.roadType, getRoadTypeAt);
       const newTile = bitmaskToTile(mask);
-      if (newTile !== self.tileNum) {
-        updateRoadSprite(self, newTile);
+      const newFlip = bitmaskToFlipX(mask);
+      if (newTile !== self.tileNum || newFlip !== self.flipX) {
+        updateRoadSprite(self, newTile, newFlip);
       }
       recalced.add(tileKey(t.row, t.col));
     }
@@ -301,8 +315,9 @@ export function placeRoadBatch(
 
       const mask = computeBitmask(nr, nc, neighbor.roadType, getRoadTypeAt);
       const newTile = bitmaskToTile(mask);
-      if (newTile !== neighbor.tileNum) {
-        updateRoadSprite(neighbor, newTile);
+      const newFlip = bitmaskToFlipX(mask);
+      if (newTile !== neighbor.tileNum || newFlip !== neighbor.flipX) {
+        updateRoadSprite(neighbor, newTile, newFlip);
         allNeighborChanges.push({ row: nr, col: nc, roadType: neighbor.roadType, tileNum: newTile });
       }
       recalced.add(nk);
@@ -337,13 +352,23 @@ export function restoreRoadSprite(
   roadType: string,
   tileNum: number,
 ): void {
+  // flipX will be corrected in depthSortAfterRestore once all roads are loaded
   const sprite = createRoadSprite(row, col, roadType, tileNum);
   if (!sprite) return;
-  roadMap.set(tileKey(row, col), { sprite, roadType, tileNum });
+  roadMap.set(tileKey(row, col), { sprite, roadType, tileNum, flipX: false });
 }
 
 export function depthSortAfterRestore(): void {
-  // No-op: road textures are on ground sprites (already depth-sorted)
+  // Apply flipX for E+W straight roads now that all roads are loaded
+  for (const [key, entry] of roadMap) {
+    const [row, col] = key.split(',').map(Number);
+    const mask = computeBitmask(row, col, entry.roadType, getRoadTypeAt);
+    const flipX = bitmaskToFlipX(mask);
+    if (flipX !== entry.flipX) {
+      entry.sprite.scale.x = flipX ? -1 : 1;
+      entry.flipX = flipX;
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -419,6 +444,7 @@ function createPreviewSprite(
   roadType: string,
   tileNum: number,
   valid = true,
+  flipX = false,
 ): Sprite | null {
   const assetKey = roadAssetKey(roadType, tileNum);
   const asset = getAsset(assetKey);
@@ -433,6 +459,7 @@ function createPreviewSprite(
   sprite.tint = valid ? 0xffffff : 0xff0000;
   sprite.label = 'road_preview';
   sprite.eventMode = 'none';
+  sprite.scale.x = flipX ? -1 : 1;
 
   const pos = gridToScreen(row, col);
   sprite.position.set(pos.x, pos.y);
@@ -511,7 +538,8 @@ function updatePreview(screenX: number, screenY: number): void {
   for (const t of previewTiles) {
     const mask = previewBitmask(t.row, t.col, roadDrag.roadType, pathSet);
     const tileNum = bitmaskToTile(mask);
-    const sprite = createPreviewSprite(t.row, t.col, roadDrag.roadType, tileNum, t.valid);
+    const flipX = bitmaskToFlipX(mask);
+    const sprite = createPreviewSprite(t.row, t.col, roadDrag.roadType, tileNum, t.valid, flipX);
     if (sprite) {
       roadDrag.previewSprites.push(sprite);
     }
@@ -773,7 +801,8 @@ export function undoRoadPlace(
     // Recalculate from current state (after removal)
     const mask = computeBitmask(nc.row, nc.col, entry.roadType, getRoadTypeAt);
     const newTile = bitmaskToTile(mask);
-    updateRoadSprite(entry, newTile);
+    const newFlip = bitmaskToFlipX(mask);
+    updateRoadSprite(entry, newTile, newFlip);
     persistRoad(nc.row, nc.col, entry.roadType, entry.tileNum);
   }
 

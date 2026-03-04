@@ -590,7 +590,7 @@ function handleBuildingPickup(screenX: number, screenY: number): boolean {
 let roadTapCandidateForSelect: {
   row: number;
   col: number;
-  entry: { sprite: Sprite; roadType: string; tileNum: number };
+  entry: { sprite: Sprite; roadType: string; tileNum: number; flipX: boolean };
   startX: number;
   startY: number;
 } | null = null;

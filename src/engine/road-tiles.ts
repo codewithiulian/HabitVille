@@ -54,7 +54,7 @@ export const BITMASK_TO_TILE: Record<number, number> = {
   7: 1,   // N+E+S missing T → crossroads
   8: 8,   // W dead-end → E+W straight
   9: 4,   // N+W corner
-  10: 8,  // E+W straight
+  10: 7,  // E+W straight (flipX)
   11: 1,  // N+E+W missing T → crossroads
   12: 5,  // S+W corner
   13: 2,  // N+S+W T-junction
@@ -64,6 +64,11 @@ export const BITMASK_TO_TILE: Record<number, number> = {
 
 export function bitmaskToTile(mask: number): number {
   return BITMASK_TO_TILE[mask & 0xf] ?? 8;
+}
+
+/** Returns true when the tile sprite should be flipped horizontally. */
+export function bitmaskToFlipX(mask: number): boolean {
+  return (mask & 0xf) === 10; // E+W straight uses Tile7 flipped
 }
 
 // ---------------------------------------------------------------------------

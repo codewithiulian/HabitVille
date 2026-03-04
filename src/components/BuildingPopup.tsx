@@ -9,96 +9,73 @@ export default function BuildingPopup() {
 
   if (!selectedBuilding || !popupScreenPos) return null;
 
+  const btnBase: React.CSSProperties = {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    border: 'none',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    cursor: 'pointer',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.12)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+  };
+
   return (
     <div
       style={{
         position: 'fixed',
         left: 0,
         top: 0,
-        transform: `translate(${popupScreenPos.x}px, ${popupScreenPos.y}px) translate(-50%, -100%)`,
+        transform: `translate(${popupScreenPos.x}px, ${popupScreenPos.y}px) translate(-50%, -50%)`,
         zIndex: 150,
         pointerEvents: 'auto',
       }}
     >
       <div
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
-          backdropFilter: 'blur(12px)',
-          WebkitBackdropFilter: 'blur(12px)',
-          borderRadius: 12,
-          padding: '8px 12px',
-          boxShadow: '0 2px 12px rgba(0, 0, 0, 0.12)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
           display: 'flex',
-          alignItems: 'center',
-          gap: 10,
+          gap: 8,
           marginBottom: 8,
-          whiteSpace: 'nowrap',
         }}
       >
-        {/* Thumbnail */}
-        <img
-          src={`/${selectedBuilding.textureKey}`}
-          alt={selectedBuilding.displayName}
-          draggable={false}
-          style={{
-            width: 36,
-            height: 36,
-            objectFit: 'contain',
-            pointerEvents: 'none',
-          }}
-        />
-
-        {/* Name */}
-        <span
-          style={{
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#1a1a1a',
-            maxWidth: 100,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-          }}
-        >
-          {selectedBuilding.displayName}
-        </span>
-
         {/* Move button */}
         <button
           onClick={moveSelectedBuilding}
           style={{
-            minWidth: 44,
-            minHeight: 44,
-            padding: '6px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#6D28D9',
-            background: 'rgba(124, 58, 237, 0.08)',
-            border: '1px solid rgba(124, 58, 237, 0.2)',
-            borderRadius: 8,
-            cursor: 'pointer',
+            ...btnBase,
+            background: 'rgba(255,255,255,0.92)',
           }}
+          title="Move"
         >
-          Move
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="5 9 2 12 5 15" />
+            <polyline points="9 5 12 2 15 5" />
+            <polyline points="15 19 12 22 9 19" />
+            <polyline points="19 9 22 12 19 15" />
+            <line x1="2" y1="12" x2="22" y2="12" />
+            <line x1="12" y1="2" x2="12" y2="22" />
+          </svg>
         </button>
 
         {/* Delete button */}
         <button
           onClick={deleteSelectedBuilding}
           style={{
-            minWidth: 44,
-            minHeight: 44,
-            padding: '6px 12px',
-            fontSize: 12,
-            fontWeight: 600,
-            color: '#DC2626',
-            background: 'rgba(220, 38, 38, 0.08)',
-            border: '1px solid rgba(220, 38, 38, 0.2)',
-            borderRadius: 8,
-            cursor: 'pointer',
+            ...btnBase,
+            background: 'rgba(254,226,226,0.92)',
           }}
+          title="Delete"
         >
-          Delete
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#DC2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <polyline points="3 6 5 6 21 6" />
+            <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+            <path d="M10 11v6" />
+            <path d="M14 11v6" />
+            <path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+          </svg>
         </button>
       </div>
     </div>
