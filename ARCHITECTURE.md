@@ -55,6 +55,8 @@ habitville/
 │   │   ├── build-system.ts     # Drag-to-place, building move, select/delete/move-from-popup system
 │   │   ├── road-tiles.ts       # Pure auto-tile logic: bitmask lookup, asset key helpers
 │   │   ├── road-system.ts      # Road state, rendering, drag placement, removal, restore
+│   │   ├── sidewalk-tiles.ts   # Pure auto-tile logic for sidewalks (reuses road bitmask mapping)
+│   │   ├── sidewalk-system.ts  # Auto-sidewalk generation, accessory spawning, sync invariant
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
 │   │   ├── asset-loader.ts     # Lazy-loader: essential assets at startup, per-category on demand
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
@@ -226,6 +228,27 @@ Roads are ground-level tiles rendered in `roadLayer` (above ground, below buildi
 - DB: `roads` table with `CityRoad { id: "row,col", row, col, roadType, tileNum, placedAt }`
 - Persistence: fire-and-forget `persistRoad/persistRoadBatch/persistRoadDelete/persistRoadDeleteBatch`
 
+### Sidewalk System (Auto-Generation)
+
+Sidewalks are auto-generated ground tiles flanking roads, with deterministic street furniture accessories.
+
+**Architecture:**
+- `sidewalk-tiles.ts` — Pure auto-tile logic reusing road bitmask mapping. `sidewalkAssetKey(tileNum)` → `Sidewalk_Tile${tileNum}`.
+- `sidewalk-system.ts` — Core state (`sidewalkMap`, `accessoryMap`), invariant-based sync, restore helpers, init/destroy.
+- Sidewalk rendering: same ground-sprite texture-swap pattern as roads (saves original texture for restore).
+- Accessory rendering: new sprites in `decorLayer` with UPRIGHT_ANCHOR (0.5, 1.0).
+
+**Invariant:** A sidewalk exists at `(r,c)` if and only if: tile is buildable, has no road, and at least one cardinal neighbor has a road. `syncSidewalksForArea(positions)` enforces this after every road mutation. `recalcSidewalksAfterRestore()` validates the invariant on startup (removes stale sidewalks from DB, regenerates accessories with correct frequencies).
+
+**Accessory seed logic** (`pickAccessory(row, col)`): deterministic using `(row * 31 + col * 17) % 120`. Rates: 12.5% street lamp (~1 per 4 road tiles), 4.2% fire hydrant (~1 per 12), 5% trash can (~1 per 10), 3.3% mailbox (~1 per 15), 75% nothing. Max 1 accessory per sidewalk tile. Accessories ONLY spawn on sidewalk tiles, never on grass or road tiles.
+
+**Building interaction:** New sidewalks skip occupied tiles, but existing sidewalks remain under buildings. Buildings CAN be placed on sidewalk tiles.
+
+**Data model:**
+- In-memory: `sidewalkMap: Map<string, SidewalkEntry>`, `accessoryMap: Map<string, AccessoryEntry>`
+- DB: `sidewalks` + `accessories` tables (v3)
+- Persistence: fire-and-forget batch helpers
+
 ### Camera System
 
 - Camera transforms `gameWorld` only — `hudLayer` and React overlays are unaffected
@@ -308,11 +331,11 @@ Assets are **not** loaded all at once. The loading strategy is:
 ### Persistence (Dexie.js)
 
 - Database defined in `src/db/db.ts`, name `'habitville'`, version 4
-- Tables: `city` (buildings on grid), `roads` (road tiles on grid), `gameState` (camera position), `habits` (habit definitions), `checkins` (daily check-ins)
+- Tables: `city` (buildings), `roads` (road tiles), `sidewalks` (auto-generated sidewalks), `accessories` (street furniture), `gameState` (camera), `habits` (habit definitions), `checkins` (daily check-ins)
 - All IDs use `crypto.randomUUID()` (buildings) or fixed key `'current'` (gameState)
 - **Write pattern**: fire-and-forget — all writes `.catch(() => {})`, never block the game loop
 - **Camera persistence**: debounced 500ms via `setTimeout`/`clearTimeout` in `persistCamera()`
-- **Restore on startup**: `restoreCity()` loads buildings from IndexedDB, `restoreCameraState()` loads camera
+- **Restore on startup**: `restoreCity()` → `restoreRoads()` → `restoreSidewalks()` → `restoreAccessories()` → `recalcSidewalksAfterRestore()`
 - **Occupancy map** is the in-memory source of truth; IndexedDB is the durable backup
 - Save on meaningful actions (place/move/delete building, camera settle), not on every frame
 
@@ -336,7 +359,7 @@ Assets are **not** loaded all at once. The loading strategy is:
 ## Current State
 
 **Last completed unit:** Phase 5.1 — Habits System (CRUD, Check-ins, Streaks)
-**What works:** All previous features + habit tracking. Create/edit/archive habits with icon, color, frequency (daily/weekdays/weekends/custom). Daily check-in via bottom sheet. Streak tracking (current + longest) with flame badge. Progress FAB with ring indicator. All data persists in IndexedDB (habits + checkins tables). Habit components use Tailwind utility classes.
+**What works:** All previous features (including Phase 3.2 auto-sidewalks) + habit tracking. Create/edit/archive habits with icon, color, frequency (daily/weekdays/weekends/custom). Daily check-in via bottom sheet with Today/This Week/All view toggle. Streak tracking (current + longest) with flame badge. Progress FAB with ring indicator. All data persists in IndexedDB (habits + checkins tables, v4). Habit components use Tailwind utility classes.
 **Next up:** Phase 6 (Economy/XP)
 
 ### Phase 5.1 checklist (Habits System — CRUD, Check-ins, Streaks):
@@ -345,9 +368,9 @@ Assets are **not** loaded all at once. The loading strategy is:
 - [x] `db/db.ts` — Version 4: habits + checkins tables with compound index [habitId+date]
 - [x] `stores/habit-store.ts` — Zustand store: loadHabits, addHabit, updateHabit, archiveHabit, toggleCheckin, streak calculation
 - [x] `components/habits/HabitFAB.tsx` — Floating action button with progress ring (z-index 90, hidden in build mode)
-- [x] `components/habits/HabitList.tsx` — Bottom sheet with today's habits, progress bar, empty state
-- [x] `components/habits/HabitItem.tsx` — Habit row: checkbox, icon, name, streak badge, edit dots
-- [x] `components/habits/HabitForm.tsx` — Slide-up form: name, icon grid, color swatches, frequency pills, custom day picker, archive
+- [x] `components/habits/HabitList.tsx` — Bottom sheet with Today/This Week/All toggle, progress bar, empty state
+- [x] `components/habits/HabitItem.tsx` — Habit row: checkbox in completion mode, edit dots in all mode
+- [x] `components/habits/HabitForm.tsx` — Slide-up form: name, icon grid, color swatches, frequency pills, Monday-first custom day picker, archive
 - [x] `components/habits/StreakBadge.tsx` — Flame + streak count for streaks >= 2
 - [x] `page.tsx` — Added HabitFAB + HabitList dynamic imports
 - [x] `ARCHITECTURE.md` — Updated file tree, persistence docs, current state

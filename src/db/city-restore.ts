@@ -6,6 +6,11 @@ import { getAsset } from '../engine/asset-registry';
 import { placeOnGrid } from '../engine/place-on-grid';
 import { markOccupied } from '../engine/build-system';
 import { restoreRoadSprite, depthSortAfterRestore } from '../engine/road-system';
+import {
+  restoreSidewalkSprite,
+  restoreAccessorySprite,
+  recalcSidewalksAfterRestore,
+} from '../engine/sidewalk-system';
 
 // ---------------------------------------------------------------------------
 // Restore buildings from IndexedDB
@@ -45,6 +50,36 @@ export async function restoreRoads(): Promise<void> {
 
   depthSortAfterRestore();
 }
+
+// ---------------------------------------------------------------------------
+// Restore sidewalks from IndexedDB
+// ---------------------------------------------------------------------------
+
+export async function restoreSidewalks(): Promise<void> {
+  const sidewalks = await db.sidewalks.toArray();
+
+  for (const s of sidewalks) {
+    restoreSidewalkSprite(s.row, s.col, s.tileNum);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Restore accessories from IndexedDB
+// ---------------------------------------------------------------------------
+
+export async function restoreAccessories(): Promise<void> {
+  const accessories = await db.accessories.toArray();
+
+  for (const a of accessories) {
+    restoreAccessorySprite(a.row, a.col, a.assetKey);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Recalculate sidewalk bitmasks after full restore
+// ---------------------------------------------------------------------------
+
+export { recalcSidewalksAfterRestore };
 
 // ---------------------------------------------------------------------------
 // Restore camera state

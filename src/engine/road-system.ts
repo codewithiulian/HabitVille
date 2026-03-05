@@ -22,6 +22,11 @@ import {
   bitmaskToFlipX,
   CARDINAL_DIRS,
 } from './road-tiles';
+import {
+  syncSidewalksForArea,
+  hasSidewalk,
+  removeSidewalkBeforeRoad,
+} from './sidewalk-system';
 
 // ---------------------------------------------------------------------------
 // Road map — in-memory road state
@@ -67,6 +72,7 @@ function getRoadTypeAt(r: number, c: number): string | undefined {
 
 let containers: SceneContainers | null = null;
 let pixiApp: Application | null = null;
+let suppressSidewalkSync = false;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -95,6 +101,11 @@ function createRoadSprite(
 
   const groundSprite = getGroundSprite(row, col);
   if (!groundSprite) return null;
+
+  // If there's a sidewalk here, remove it first so we save the original grass texture
+  if (hasSidewalk(row, col)) {
+    removeSidewalkBeforeRoad(row, col);
+  }
 
   // Save original ground texture if not already saved
   const key = tileKey(row, col);
@@ -242,6 +253,10 @@ export function placeRoad(row: number, col: number, roadType: string): TileChang
     persistRoadBatch(changes);
   }
 
+  if (!suppressSidewalkSync) {
+    syncSidewalksForArea([{ row, col }]);
+  }
+
   return changes;
 }
 
@@ -257,6 +272,10 @@ export function removeRoad(row: number, col: number): TileChange[] | null {
   persistRoadDelete(row, col);
   if (changes.length > 0) {
     persistRoadBatch(changes);
+  }
+
+  if (!suppressSidewalkSync) {
+    syncSidewalksForArea([{ row, col }]);
   }
 
   return changes;
@@ -339,6 +358,10 @@ export function placeRoadBatch(
   }
   if (allPersist.length > 0) {
     persistRoadBatch(allPersist);
+  }
+
+  if (placed.length > 0) {
+    syncSidewalksForArea(placed);
   }
 
   return { placed, neighborChanges: allNeighborChanges };
@@ -811,6 +834,8 @@ export function undoRoadPlace(
   if (deleteKeys.length > 0) {
     persistRoadDeleteBatch(deleteKeys);
   }
+
+  syncSidewalksForArea(tiles);
 }
 
 export function undoRoadDelete(
@@ -996,6 +1021,11 @@ export function deleteRoadBatch(tileKeys: string[]): void {
     persistRoadBatch(allNeighborChanges);
   }
 
+  // Sync sidewalks after batch road removal
+  if (deletedTiles.length > 0) {
+    syncSidewalksForArea(deletedTiles);
+  }
+
   // Push single undo entry
   if (deletedTiles.length > 0) {
     useBuildStore.getState().pushPlacement({
@@ -1013,11 +1043,16 @@ export function undoRoadBatchDelete(
   tiles: Array<{ row: number; col: number; roadType: string; tileNum: number }>,
   _neighborChanges: Array<{ row: number; col: number; roadType: string; tileNum: number }>,
 ): void {
-  // Re-place all deleted roads
+  // Suppress per-road sidewalk sync during batch re-placement
+  suppressSidewalkSync = true;
   for (const tile of tiles) {
     placeRoad(tile.row, tile.col, tile.roadType);
   }
-  // Neighbor changes are handled by placeRoad's recalc
+  suppressSidewalkSync = false;
+
+  // One bulk sidewalk sync at the end
+  syncSidewalksForArea(tiles);
+
   void _neighborChanges;
 }
 

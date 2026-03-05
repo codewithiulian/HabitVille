@@ -11,8 +11,17 @@ import { GRID_SIZE } from '../config/grid-constants';
 import { db } from '../db/db';
 import { CAMERA_DEFAULT_ZOOM } from '../config/camera-constants';
 import { destroyBackground } from './create-background';
-import { restoreCity, restoreCameraState, restoreRoads } from '../db/city-restore';
+import {
+  restoreCity,
+  restoreCameraState,
+  restoreRoads,
+  restoreSidewalks,
+  restoreAccessories,
+  recalcSidewalksAfterRestore,
+} from '../db/city-restore';
 import { roadAssetKey } from './road-tiles';
+import { sidewalkAssetKey } from './sidewalk-tiles';
+import { initSidewalkSystem, destroySidewalkSystem } from './sidewalk-system';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
@@ -30,14 +39,18 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
-  // Load essential assets (grid tiles + saved buildings + saved roads) with progress bar
-  const [savedBuildings, savedRoads] = await Promise.all([
+  // Load essential assets (grid tiles + saved buildings + saved roads + sidewalks + accessories)
+  const [savedBuildings, savedRoads, savedSidewalks, savedAccessories] = await Promise.all([
     db.city.toArray(),
     db.roads.toArray(),
+    db.sidewalks.toArray(),
+    db.accessories.toArray(),
   ]);
   const savedAssetKeys = [...new Set([
     ...savedBuildings.map((b) => b.assetKey),
     ...savedRoads.map((r) => roadAssetKey(r.roadType, r.tileNum)),
+    ...savedSidewalks.map((s) => sidewalkAssetKey(s.tileNum)),
+    ...savedAccessories.map((a) => a.assetKey),
   ])];
   await loadEssentialAssets(savedAssetKeys, (progress) => {
     const bar = document.getElementById('loading-progress');
@@ -47,12 +60,16 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   createGrid();
   await renderGrid(containers.groundLayer, containers.decorLayer);
 
-  // Init road system before restoring
+  // Init road + sidewalk systems before restoring
   initRoadSystem(app, containers);
+  initSidewalkSystem(containers);
 
-  // Restore persisted buildings and roads
+  // Restore persisted buildings, roads, sidewalks, accessories
   await restoreCity(containers);
   await restoreRoads();
+  await restoreSidewalks();
+  await restoreAccessories();
+  recalcSidewalksAfterRestore();
 
   // Restore camera or use defaults
   const savedCamera = await restoreCameraState();
@@ -81,6 +98,7 @@ export function destroyGame(): void {
   if (!app) return;
 
   destroyBuildSystem();
+  destroySidewalkSystem();
   destroyRoadSystem();
   destroyCamera();
   destroyGrid();

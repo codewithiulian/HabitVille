@@ -53,6 +53,56 @@ export function persistRoadDeleteBatch(keys: string[]): void {
 }
 
 // ---------------------------------------------------------------------------
+// Sidewalk persistence — fire-and-forget
+// ---------------------------------------------------------------------------
+
+export function persistSidewalkBatch(
+  sidewalks: Array<{ row: number; col: number; tileNum: number }>,
+): void {
+  db.sidewalks
+    .bulkPut(
+      sidewalks.map((s) => ({
+        id: `${s.row},${s.col}`,
+        row: s.row,
+        col: s.col,
+        tileNum: s.tileNum,
+        parentRoadId: '',
+        placedAt: new Date(),
+      })),
+    )
+    .catch(() => {});
+}
+
+export function persistSidewalkDeleteBatch(keys: string[]): void {
+  db.sidewalks.bulkDelete(keys).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// Accessory persistence — fire-and-forget
+// ---------------------------------------------------------------------------
+
+export function persistAccessoryBatch(
+  accessories: Array<{ row: number; col: number; assetKey: string }>,
+): void {
+  db.accessories
+    .bulkPut(
+      accessories.map((a) => ({
+        id: `${a.row},${a.col}`,
+        row: a.row,
+        col: a.col,
+        assetKey: a.assetKey,
+        parentSidewalkId: `${a.row},${a.col}`,
+        placedAt: new Date(),
+      })),
+    )
+    .catch(() => {});
+}
+
+export function persistAccessoryDeleteBatch(keys: string[]): void {
+  db.accessories.bulkDelete(keys).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
 // Camera persistence — debounced 500ms
 // ---------------------------------------------------------------------------
 

@@ -3,6 +3,7 @@ import { ASSET_REGISTRY, getAsset, getAssetsByCategory } from './asset-registry'
 import type { BuildCategory } from '../stores/build-store';
 import type { AssetCategory } from '../types/assets';
 
+
 // ---------------------------------------------------------------------------
 // BuildCategory → AssetCategory[] mapping
 // ---------------------------------------------------------------------------
