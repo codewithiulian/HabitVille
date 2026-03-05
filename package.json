@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "concurrently -n next,tunnel,open \"next dev\" \"cloudflared tunnel run --url http://localhost:3000 habitville\" \"node scripts/open-browser.js\"",
+    "dev-local": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
