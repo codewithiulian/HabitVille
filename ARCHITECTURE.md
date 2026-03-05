@@ -55,6 +55,8 @@ habitville/
 │   │   ├── build-system.ts     # Drag-to-place, building move, select/delete/move-from-popup system
 │   │   ├── road-tiles.ts       # Pure auto-tile logic: bitmask lookup, asset key helpers
 │   │   ├── road-system.ts      # Road state, rendering, drag placement, removal, restore
+│   │   ├── sidewalk-tiles.ts   # Pure auto-tile logic for sidewalks (reuses road bitmask mapping)
+│   │   ├── sidewalk-system.ts  # Auto-sidewalk generation, accessory spawning, sync invariant
 │   │   ├── asset-registry.ts   # Pattern-based sprite registry (~600 entries)
 │   │   ├── asset-loader.ts     # Lazy-loader: essential assets at startup, per-category on demand
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
@@ -218,6 +220,27 @@ Roads are ground-level tiles rendered in `roadLayer` (above ground, below buildi
 - DB: `roads` table with `CityRoad { id: "row,col", row, col, roadType, tileNum, placedAt }`
 - Persistence: fire-and-forget `persistRoad/persistRoadBatch/persistRoadDelete/persistRoadDeleteBatch`
 
+### Sidewalk System (Auto-Generation)
+
+Sidewalks are auto-generated ground tiles flanking roads, with deterministic street furniture accessories.
+
+**Architecture:**
+- `sidewalk-tiles.ts` — Pure auto-tile logic reusing road bitmask mapping. `sidewalkAssetKey(tileNum)` → `Sidewalk_Tile${tileNum}`.
+- `sidewalk-system.ts` — Core state (`sidewalkMap`, `accessoryMap`), invariant-based sync, restore helpers, init/destroy.
+- Sidewalk rendering: same ground-sprite texture-swap pattern as roads (saves original texture for restore).
+- Accessory rendering: new sprites in `decorLayer` with UPRIGHT_ANCHOR (0.5, 1.0).
+
+**Invariant:** A sidewalk exists at `(r,c)` if and only if: tile is buildable, has no road, and at least one cardinal neighbor has a road. `syncSidewalksForArea(positions)` enforces this after every road mutation. `recalcSidewalksAfterRestore()` validates the invariant on startup (removes stale sidewalks from DB, regenerates accessories with correct frequencies).
+
+**Accessory seed logic** (`pickAccessory(row, col)`): deterministic using `(row * 31 + col * 17) % 120`. Rates: 12.5% street lamp (~1 per 4 road tiles), 4.2% fire hydrant (~1 per 12), 5% trash can (~1 per 10), 3.3% mailbox (~1 per 15), 75% nothing. Max 1 accessory per sidewalk tile. Accessories ONLY spawn on sidewalk tiles, never on grass or road tiles.
+
+**Building interaction:** New sidewalks skip occupied tiles, but existing sidewalks remain under buildings. Buildings CAN be placed on sidewalk tiles.
+
+**Data model:**
+- In-memory: `sidewalkMap: Map<string, SidewalkEntry>`, `accessoryMap: Map<string, AccessoryEntry>`
+- DB: `sidewalks` + `accessories` tables (v3)
+- Persistence: fire-and-forget batch helpers
+
 ### Camera System
 
 - Camera transforms `gameWorld` only — `hudLayer` and React overlays are unaffected
@@ -299,12 +322,12 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ### Persistence (Dexie.js)
 
-- Database defined in `src/db/db.ts`, name `'habitville'`, version 2
-- Tables: `city` (buildings on grid), `roads` (road tiles on grid), `gameState` (camera position)
+- Database defined in `src/db/db.ts`, name `'habitville'`, version 3
+- Tables: `city` (buildings), `roads` (road tiles), `sidewalks` (auto-generated sidewalks), `accessories` (street furniture), `gameState` (camera)
 - All IDs use `crypto.randomUUID()` (buildings) or fixed key `'current'` (gameState)
 - **Write pattern**: fire-and-forget — all writes `.catch(() => {})`, never block the game loop
 - **Camera persistence**: debounced 500ms via `setTimeout`/`clearTimeout` in `persistCamera()`
-- **Restore on startup**: `restoreCity()` loads buildings from IndexedDB, `restoreCameraState()` loads camera
+- **Restore on startup**: `restoreCity()` → `restoreRoads()` → `restoreSidewalks()` → `restoreAccessories()` → `recalcSidewalksAfterRestore()`
 - **Occupancy map** is the in-memory source of truth; IndexedDB is the durable backup
 - Save on meaningful actions (place/move/delete building, camera settle), not on every frame
 
@@ -319,9 +342,9 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ## Current State
 
-**Last completed unit:** Phase 3.1 — Road Placement with Auto-Tiling
-**What works:** All previous features + road placement. Three road types (Road, DirtRoad, GrassRoad) with 4-neighbor auto-tiling. Tap-to-select in toolbar, tap/drag-to-place on grid with L-shaped preview. Road removal via popup. Undo support for place/delete. Roads persist in IndexedDB and restore on startup. Roads rendered in roadLayer (below buildings, above ground).
-**Next up:** Phase 3.2
+**Last completed unit:** Phase 3.2 — Auto-Sidewalks and Road Accessories
+**What works:** All previous features + auto-sidewalks. Sidewalks auto-generate on grass tiles adjacent to roads using invariant-based sync (`syncSidewalksForArea`). Deterministic street accessories (lamps, hydrants, trash cans, mailboxes, traffic signs) spawn on sidewalks via seed logic. Sidewalks use same 9-tile auto-tile bitmask as roads. Accessories near intersections get traffic signs. Buildings can be placed on sidewalk tiles. Full undo/redo support. Sidewalks + accessories persist in IndexedDB (v3) and restore on startup.
+**Next up:** Phase 4
 
 ### Phase 2.5 checklist (Grid State Persistence — Dexie.js):
 
