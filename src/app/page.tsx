@@ -26,6 +26,14 @@ const RoadDeleteConfirm = dynamic(() => import('@/components/RoadDeleteConfirm')
   ssr: false,
 });
 
+const HabitFAB = dynamic(() => import('@/components/habits/HabitFAB'), {
+  ssr: false,
+});
+
+const HabitList = dynamic(() => import('@/components/habits/HabitList'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
@@ -35,6 +43,8 @@ export default function Home() {
       <RoadPopup />
       <RoadDeleteConfirm />
       <BuildToolbar />
+      <HabitFAB />
+      <HabitList />
     </>
   );
 }

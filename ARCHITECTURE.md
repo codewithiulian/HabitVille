@@ -61,13 +61,20 @@ habitville/
 │   │   ├── asset-loader.ts     # Lazy-loader: essential assets at startup, per-category on demand
 │   │   └── place-on-grid.ts    # placeOnGrid() helper for sprite positioning
 │   ├── stores/                 # Zustand stores
-│   │   └── build-store.ts      # Build mode state (category/asset, placement history, toast, selection)
+│   │   ├── build-store.ts      # Build mode state (category/asset, placement history, toast, selection)
+│   │   └── habit-store.ts      # Habits CRUD, check-ins, streaks, UI state
 │   ├── components/             # React UI components (overlays)
 │   │   ├── GameCanvas.tsx      # Mounts/unmounts PixiJS canvas in React
 │   │   ├── BuildToolbar.tsx    # Build mode toolbar (drag-from-toolbar initiation)
 │   │   ├── Toast.tsx           # Auto-dismiss toast for placement errors
 │   │   ├── BuildingPopup.tsx  # Contextual popup for selected buildings (Move/Delete)
-│   │   └── RoadPopup.tsx      # Contextual popup for selected roads (Remove)
+│   │   ├── RoadPopup.tsx      # Contextual popup for selected roads (Remove)
+│   │   └── habits/             # Habit tracking UI (Tailwind utility classes)
+│   │       ├── HabitFAB.tsx    # Floating action button with progress ring
+│   │       ├── HabitList.tsx   # Bottom sheet with today's habits
+│   │       ├── HabitItem.tsx   # Single habit row (checkbox, streak, edit)
+│   │       ├── HabitForm.tsx   # Slide-up form for add/edit habit
+│   │       └── StreakBadge.tsx # Flame + streak count badge
 │   ├── db/                     # Dexie.js database schema & helpers
 │   │   ├── db.ts               # Dexie database: 'habitville' with city + gameState tables
 │   │   ├── city-persistence.ts # Fire-and-forget write helpers (place/move/delete/camera)
@@ -75,7 +82,8 @@ habitville/
 │   ├── types/                  # Shared TypeScript types
 │   │   ├── grid.ts             # Grid, GridCell, GroundType
 │   │   ├── camera.ts           # CameraState, Velocity, TouchPoint
-│   │   └── assets.ts           # AssetCategory, AssetEntry
+│   │   ├── assets.ts           # AssetCategory, AssetEntry
+│   │   └── habits.ts           # Habit, Checkin, StreakInfo, HabitFrequency
 │   └── config/                 # Constants, level tables, building catalog
 │       ├── grid-constants.ts   # GRID_SIZE, TILE_WIDTH/HEIGHT, BORDER_WIDTH
 │       └── camera-constants.ts # CAMERA_*_ZOOM, friction, velocity, bounds
@@ -322,14 +330,22 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ### Persistence (Dexie.js)
 
-- Database defined in `src/db/db.ts`, name `'habitville'`, version 3
-- Tables: `city` (buildings), `roads` (road tiles), `sidewalks` (auto-generated sidewalks), `accessories` (street furniture), `gameState` (camera)
+- Database defined in `src/db/db.ts`, name `'habitville'`, version 4
+- Tables: `city` (buildings), `roads` (road tiles), `sidewalks` (auto-generated sidewalks), `accessories` (street furniture), `gameState` (camera), `habits` (habit definitions), `checkins` (daily check-ins)
 - All IDs use `crypto.randomUUID()` (buildings) or fixed key `'current'` (gameState)
 - **Write pattern**: fire-and-forget — all writes `.catch(() => {})`, never block the game loop
 - **Camera persistence**: debounced 500ms via `setTimeout`/`clearTimeout` in `persistCamera()`
 - **Restore on startup**: `restoreCity()` → `restoreRoads()` → `restoreSidewalks()` → `restoreAccessories()` → `recalcSidewalksAfterRestore()`
 - **Occupancy map** is the in-memory source of truth; IndexedDB is the durable backup
 - Save on meaningful actions (place/move/delete building, camera settle), not on every frame
+
+### Habits System
+
+- **Data model:** `Habit` (name, icon, color, frequency, customDays, sortOrder, archivedAt for soft-delete) + `Checkin` (habitId, date as YYYY-MM-DD, completedAt)
+- **Compound index** `[habitId+date]` enables O(1) "is this habit checked today?" lookup
+- **Streak algorithm:** Walk backward from today through scheduled days only. If today is scheduled but unchecked, start from yesterday (user hasn't had full day). Count consecutive scheduled days with checkins; stop at first miss. Weekday habits skip weekends (no break), custom habits skip non-custom days.
+- **UI pattern:** Bottom sheet (HabitList) triggered by floating action button (HabitFAB). Form slides over the list. All habit components use **Tailwind utility classes** (diverges from inline-style pattern used by build components).
+- **Z-index layers:** FAB=90, BuildToolbar=100, Popups=150, Toast=200, HabitList backdrop=299, HabitList sheet=300, HabitForm=310
 
 ### Naming Conventions
 
@@ -342,9 +358,23 @@ Assets are **not** loaded all at once. The loading strategy is:
 
 ## Current State
 
-**Last completed unit:** Phase 3.2 — Auto-Sidewalks and Road Accessories
-**What works:** All previous features + auto-sidewalks. Sidewalks auto-generate on grass tiles adjacent to roads using invariant-based sync (`syncSidewalksForArea`). Deterministic street accessories (lamps, hydrants, trash cans, mailboxes, traffic signs) spawn on sidewalks via seed logic. Sidewalks use same 9-tile auto-tile bitmask as roads. Accessories near intersections get traffic signs. Buildings can be placed on sidewalk tiles. Full undo/redo support. Sidewalks + accessories persist in IndexedDB (v3) and restore on startup.
-**Next up:** Phase 4
+**Last completed unit:** Phase 5.1 — Habits System (CRUD, Check-ins, Streaks)
+**What works:** All previous features (including Phase 3.2 auto-sidewalks) + habit tracking. Create/edit/archive habits with icon, color, frequency (daily/weekdays/weekends/custom). Daily check-in via bottom sheet with Today/This Week/All view toggle. Streak tracking (current + longest) with flame badge. Progress FAB with ring indicator. All data persists in IndexedDB (habits + checkins tables, v4). Habit components use Tailwind utility classes.
+**Next up:** Phase 6 (Economy/XP)
+
+### Phase 5.1 checklist (Habits System — CRUD, Check-ins, Streaks):
+
+- [x] `types/habits.ts` — Habit, Checkin, StreakInfo, HabitFrequency types
+- [x] `db/db.ts` — Version 4: habits + checkins tables with compound index [habitId+date]
+- [x] `stores/habit-store.ts` — Zustand store: loadHabits, addHabit, updateHabit, archiveHabit, toggleCheckin, streak calculation
+- [x] `components/habits/HabitFAB.tsx` — Floating action button with progress ring (z-index 90, hidden in build mode)
+- [x] `components/habits/HabitList.tsx` — Bottom sheet with Today/This Week/All toggle, progress bar, empty state
+- [x] `components/habits/HabitItem.tsx` — Habit row: checkbox in completion mode, edit dots in all mode
+- [x] `components/habits/HabitForm.tsx` — Slide-up form: name, icon grid, color swatches, frequency pills, Monday-first custom day picker, archive
+- [x] `components/habits/StreakBadge.tsx` — Flame + streak count for streaks >= 2
+- [x] `page.tsx` — Added HabitFAB + HabitList dynamic imports
+- [x] `ARCHITECTURE.md` — Updated file tree, persistence docs, current state
+- [x] Build verification — `npm run build` succeeds
 
 ### Phase 2.5 checklist (Grid State Persistence — Dexie.js):
 
