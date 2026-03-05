@@ -84,13 +84,13 @@ export function computeSidewalkConnectivity(
   row: number,
   col: number,
   hasRoadFn: (r: number, c: number) => boolean,
-  _hasSidewalkFn: (r: number, c: number) => boolean,
+  hasSidewalkFn: (r: number, c: number) => boolean,
 ): number {
   let mask = 0;
   for (const dir of CARDINAL_DIRS) {
     const nr = row + dir.dr;
     const nc = col + dir.dc;
-    if (hasRoadFn(nr, nc)) {
+    if (hasRoadFn(nr, nc) || hasSidewalkFn(nr, nc)) {
       mask |= dir.bit;
     }
   }

@@ -13,12 +13,7 @@ import { GRID_SIZE } from '../config/grid-constants';
 import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
 import { CARDINAL_DIRS } from './road-tiles';
-import {
-  sidewalkAssetKey,
-  computeSidewalkConnectivity,
-  sidewalkBitmaskToTile,
-  sidewalkBitmaskToFlipX,
-} from './sidewalk-tiles';
+import { sidewalkAssetKey } from './sidewalk-tiles';
 import {
   persistSidewalkBatch,
   persistSidewalkDeleteBatch,
@@ -60,12 +55,8 @@ export function hasSidewalk(row: number, col: number): boolean {
 // Tile variant computation
 // ---------------------------------------------------------------------------
 
-function computeVariant(row: number, col: number): { tileNum: number; flipX: boolean } {
-  const mask = computeSidewalkConnectivity(row, col, hasRoad, hasSidewalk);
-  return {
-    tileNum: sidewalkBitmaskToTile(mask),
-    flipX: sidewalkBitmaskToFlipX(mask),
-  };
+function computeVariant(_row: number, _col: number): { tileNum: number; flipX: boolean } {
+  return { tileNum: 9, flipX: false };
 }
 
 // ---------------------------------------------------------------------------
