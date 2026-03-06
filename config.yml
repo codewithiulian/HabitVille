@@ -1,0 +1,596 @@
+# ============================================================================
+# HabitVille — Game Configuration
+# ============================================================================
+#
+# This file defines every tunable parameter in the HabitVille game economy,
+# progression system, and mechanics. Changing values here changes how the
+# game feels, how fast users progress, and how the city grows.
+#
+# DESIGN TARGET:
+# A user with 6 habits (2 easy, 2 medium, 2 hard), completed with near-perfect
+# consistency for a full year, should reach approximately level 150.
+# At 70% consistency, the same user should reach approximately level 80-85.
+#
+# REFERENCE SCENARIO (perfect week):
+# - 2 easy daily habits = 14 easy tasks/week
+# - 2 medium daily habits = 14 medium tasks/week
+# - 2 hard habits (gym 3x + cardio 2x) = 5 hard tasks/week
+# - Total: 33 tasks/week
+# - Base XP/week: (14×10) + (14×20) + (5×30) = 570 XP
+# - Base Villes/week: (14×5) + (14×10) + (5×20) = 310 Villes
+# - With all bonuses: ~2,744 XP and ~1,512 Villes per perfect week
+# - Perfect year: ~142,700 XP and ~78,600 Villes
+# - Total XP to reach level 150: ~132,250 (leaves ~8% buffer for imperfect weeks)
+# ============================================================================
+
+
+# ----------------------------------------------------------------------------
+# HABITS
+# ----------------------------------------------------------------------------
+habits:
+  # The soft cap shown during onboarding. Users can exceed this, but the app
+  # will suggest this range as optimal when creating habits.
+  recommended_min: 3
+  recommended_max: 5
+
+  # There is no hard maximum, but the UI should gently discourage going
+  # above this number by showing a warning.
+  soft_warning_threshold: 10
+
+  # Difficulty tiers. Each habit is assigned one of these on creation.
+  # The user selects this manually based on their personal assessment.
+  difficulty_tiers:
+    - id: easy
+      label: "Easy"
+      description: "Low effort, low friction. Examples: drink water, take vitamins, make your bed."
+    - id: medium
+      label: "Medium"
+      description: "Moderate effort, requires some discipline. Examples: 30-min walk, read 20 mins, wake up early."
+    - id: hard
+      label: "Hard"
+      description: "Significant effort, high discipline. Examples: gym session, run 5km, study 1 hour."
+
+  # Frequency options available when creating a habit.
+  frequency_options:
+    - daily                   # Every day
+    - times_per_week          # X times per week (user specifies count)
+    - specific_days           # User picks which days (e.g., Mon/Wed/Fri)
+    - weekly                  # Once per week
+    - monthly                 # Once per month
+
+  # Time-of-day labels for sorting check-in cards.
+  # Optional — user can leave unset, in which case the habit appears
+  # in creation order.
+  time_of_day_options:
+    - morning
+    - afternoon
+    - evening
+    - anytime                 # Default if unset
+
+  # Categories for icon/color theming on habit cards.
+  # These are purely visual — they don't affect gameplay or economy.
+  categories:
+    - Health
+    - Fitness
+    - Learning
+    - Productivity
+    - Mindfulness
+    - Social
+    - Other
+
+
+# ----------------------------------------------------------------------------
+# XP (Experience Points / Points)
+# ----------------------------------------------------------------------------
+# XP is earned per task completion and through bonuses.
+# XP accumulates toward levels. Lifetime XP = lifetime Points (same number).
+# XP per task is CONSTANT regardless of user level.
+# ----------------------------------------------------------------------------
+xp:
+  # Base XP awarded per habit completion, by difficulty.
+  per_task:
+    easy: 10
+    medium: 20
+    hard: 30
+
+
+# ----------------------------------------------------------------------------
+# VILLES (In-Game Currency)
+# ----------------------------------------------------------------------------
+# Villes are earned per task completion and through bonuses.
+# Villes are spent in the Shop to purchase assets for the city.
+# Villes per task are CONSTANT regardless of user level.
+# ----------------------------------------------------------------------------
+villes:
+  # Base Villes awarded per habit completion, by difficulty.
+  per_task:
+    easy: 5
+    medium: 10
+    hard: 20
+
+
+# ----------------------------------------------------------------------------
+# LEVELS
+# ----------------------------------------------------------------------------
+# Levels are reached by accumulating XP. Each level has an XP threshold.
+# The threshold increases gently across tiers.
+#
+# Total XP to reach level 150 with these values: 132,250 XP
+# This is achievable in ~1 year at near-perfect consistency with 6 habits.
+# ----------------------------------------------------------------------------
+levels:
+  # Maximum level in the game. Levels continue beyond this, but all asset
+  # unlocks are complete by this level.
+  max_unlock_level: 150
+
+  # Whether leveling continues beyond max_unlock_level (for points/bragging).
+  # If true, levels 151+ use the last tier's XP requirement.
+  uncapped_leveling: true
+
+  # XP required per level, defined by tier ranges.
+  # "from" and "to" are inclusive. "xp_required" is per level in that range.
+  tiers:
+    - from: 1
+      to: 5
+      xp_required: 100
+      # Cumulative XP at end of tier: 500
+      # Pace: almost daily with first-week 2x boost
+
+    - from: 6
+      to: 10
+      xp_required: 150
+      # Cumulative XP at end of tier: 1,250
+      # Pace: every 1-2 days
+
+    - from: 11
+      to: 20
+      xp_required: 250
+      # Cumulative XP at end of tier: 3,750
+      # Pace: every 2-3 days
+
+    - from: 21
+      to: 30
+      xp_required: 400
+      # Cumulative XP at end of tier: 7,750
+      # Pace: about twice a week
+
+    - from: 31
+      to: 50
+      xp_required: 600
+      # Cumulative XP at end of tier: 19,750
+      # Pace: once or twice a week
+
+    - from: 51
+      to: 75
+      xp_required: 800
+      # Cumulative XP at end of tier: 39,750
+      # Pace: about once a week
+
+    - from: 76
+      to: 100
+      xp_required: 1000
+      # Cumulative XP at end of tier: 64,750
+      # Pace: about once a week with strong consistency
+
+    - from: 101
+      to: 125
+      xp_required: 1200
+      # Cumulative XP at end of tier: 94,750
+      # Pace: every 7-10 days
+
+    - from: 126
+      to: 150
+      xp_required: 1500
+      # Cumulative XP at end of tier: 132,250
+      # Pace: every 7-10 days, requires high consistency
+
+
+# ----------------------------------------------------------------------------
+# BONUSES
+# ----------------------------------------------------------------------------
+bonuses:
+
+  # -- Random Surprise Bonus --
+  # On each habit check-in, there is a chance of a surprise bonus.
+  # When triggered, the user earns extra XP and Villes equal to a percentage
+  # of the base per-task reward for that specific habit.
+  random_surprise:
+    chance: 0.20                # 20% probability per check-in
+    multiplier: 1.0             # 100% of base reward as bonus (effectively doubles the task)
+    # Example: Hard task (30 XP, 20 Villes) with bonus = 60 XP, 40 Villes total
+    # Expected contribution: ~20% of base weekly earnings added as bonus
+
+  # -- Daily Perfect Day Bonus --
+  # Awarded when the user completes ALL scheduled habits for a single day.
+  # This is all-or-nothing: complete every scheduled habit = bonus. Miss one = no bonus.
+  # No penalty for missing — you simply don't receive the bonus that day.
+  daily_perfect:
+    xp: 50
+    villes: 30
+
+  # -- Weekly Consistency Bonus --
+  # Calculated at end of each week (Sunday) based on overall completion
+  # percentage across all scheduled habits for the week.
+  # The multiplier is applied to the user's total BASE per-task earnings
+  # for the week (before any other bonuses).
+  # Both XP and Villes are multiplied by the same factor.
+  weekly_consistency:
+    tiers:
+      - min_percentage: 100
+        max_percentage: 100
+        multiplier: 3.0
+
+      - min_percentage: 90
+        max_percentage: 99
+        multiplier: 2.5
+
+      - min_percentage: 80
+        max_percentage: 89
+        multiplier: 2.0
+
+      - min_percentage: 70
+        max_percentage: 79
+        multiplier: 1.5
+
+      - min_percentage: 60
+        max_percentage: 69
+        multiplier: 1.0
+
+      - min_percentage: 50
+        max_percentage: 59
+        multiplier: 0.75
+
+      - min_percentage: 1
+        max_percentage: 49
+        multiplier: 0.5
+
+      - min_percentage: 0
+        max_percentage: 0
+        multiplier: 0.0           # Zero tasks completed = no bonus
+
+  # -- First-Week 2x XP Boost --
+  # During the user's first 7 days, all per-task XP is doubled.
+  # This accelerates early leveling for new user engagement.
+  # Applies ONLY to base per-task XP. Does NOT affect:
+  #   - Villes
+  #   - Daily bonuses
+  #   - Weekly bonuses
+  #   - Random surprise bonuses
+  first_week_boost:
+    enabled: true
+    duration_days: 7
+    xp_multiplier: 2.0
+
+  # -- Random 2x XP Events --
+  # Occasional 2x XP multipliers that appear at random, applying to an
+  # entire check-in session (all habits checked during that session).
+  # Frequency is approximate — the app picks random check-in sessions
+  # to apply the boost.
+  random_xp_events:
+    enabled: true
+    average_per_week: 1.5       # Roughly 1-2 times per week
+    xp_multiplier: 2.0
+    applies_to: "per_task_xp"   # Only base per-task XP, not bonuses
+
+
+# ----------------------------------------------------------------------------
+# ASSETS
+# ----------------------------------------------------------------------------
+# Assets are unlocked by leveling up. Each level may unlock one or more
+# asset types. When unlocked, the user receives one copy FREE.
+# Additional copies are purchased with Villes.
+#
+# Total distinct asset types (excluding color variants): ~613
+# Houses count as 20 types (each type has 8 color variants included).
+# People are NOT purchasable — they auto-generate from housing.
+# Roads are always free and available from level 1.
+# ----------------------------------------------------------------------------
+assets:
+
+  categories:
+
+    - id: houses
+      label: "Houses"
+      total_types: 20           # 20 types, each with 8 color variants
+      color_variants_per_type: 8
+      # Unlocking a house type unlocks ALL 8 color variants at once.
+      price_range:
+        min: 100
+        max: 300
+      unlock_levels:
+        start: 1                # First house types available from level 1
+        end: 60                 # Last house types unlocked by level 60
+
+    - id: apartments
+      label: "Apartments"
+      total_types: 54
+      price_range:
+        min: 300
+        max: 800
+      unlock_levels:
+        start: 20               # First apartments unlock around level 20
+        end: 150                # Largest/rarest apartments are late-game
+
+    - id: public_buildings
+      label: "Public Buildings"
+      total_types: 82
+      price_range:
+        min: 300
+        max: 600
+      unlock_levels:
+        start: 15               # Basic public buildings (small clinic, school)
+        end: 130                # Large hospital, specialty buildings
+
+    - id: restaurants
+      label: "Restaurants"
+      total_types: 32
+      price_range:
+        min: 200
+        max: 500
+      unlock_levels:
+        start: 10               # Basic cafes and diners
+        end: 100                # Premium fine dining
+
+    - id: shopping
+      label: "Shopping"
+      total_types: 68
+      price_range:
+        min: 200
+        max: 500
+      unlock_levels:
+        start: 10               # Small kiosks and market stalls
+        end: 120                # Large malls and specialty stores
+
+    - id: vehicles
+      label: "Vehicles"
+      total_types: 102
+      price_range:
+        min: 50
+        max: 150
+      unlock_levels:
+        start: 3                # Basic cars available early
+        end: 140                # Rare/specialty vehicles
+
+    - id: plants
+      label: "Plants"
+      total_types: 82
+      price_range:
+        min: 10
+        max: 30
+      unlock_levels:
+        start: 1                # Basic trees and bushes from the start
+        end: 80                 # Exotic/specialty plants
+
+    - id: decorations
+      label: "Decorations"
+      total_types: 140
+      price_range:
+        min: 10
+        max: 30
+      unlock_levels:
+        start: 1                # Basic decor from the start
+        end: 100                # Premium/rare decorations
+
+    - id: fences
+      label: "Fences"
+      total_types: 33
+      price_range:
+        min: 10
+        max: 20
+      unlock_levels:
+        start: 1                # Basic fences available immediately
+        end: 50                 # All fence types unlocked by mid-game
+
+    - id: roads
+      label: "Roads"
+      total_types: 1            # Placeholder — roads may have variants later
+      price: 0                  # Roads are always free
+      unlock_level: 1           # Available from the start, no unlock needed
+
+  # How many assets unlock per level, roughly.
+  # Early levels are packed with unlocks to keep new users excited.
+  # Later levels space out unlocks but introduce rarer/premium items.
+  # Specific asset-to-level mappings are defined in a separate data file.
+  unlock_distribution:
+    levels_1_to_15: "~120 assets (basic houses, plants, fences, decor, early vehicles, first shops)"
+    levels_16_to_35: "~150 assets (more houses, restaurants, shops, more vehicles, first apartments)"
+    levels_36_to_60: "~130 assets (apartments, public buildings, larger shops, more decor)"
+    levels_61_to_100: "~120 assets (larger apartments, specialty public buildings, premium vehicles)"
+    levels_101_to_150: "~93 assets (rarest buildings, premium decor, specialty vehicles)"
+
+
+# ----------------------------------------------------------------------------
+# POPULATION
+# ----------------------------------------------------------------------------
+# People sprites auto-generate based on housing placed in the city.
+# People are NOT purchased. They appear automatically when housing is placed.
+# People sprites are drawn from a pool and assigned randomly.
+# ----------------------------------------------------------------------------
+population:
+  people_sprite_pool: 37        # Total unique people character designs
+
+  # Residents generated per housing type placed in the city.
+  per_housing_type:
+    house: 4                    # Any house type/color generates 4 residents
+    small_apartment: 20         # Smaller apartment buildings
+    large_apartment: 40         # Largest apartment complexes
+
+  # Threshold for classifying apartments as small vs large.
+  # This maps to specific asset IDs in the asset data file.
+  # As a rule of thumb: apartments taking up 1 grid tile = small,
+  # apartments taking up 2+ grid tiles = large.
+  apartment_size_threshold: "defined_per_asset_in_data_file"
+
+
+# ----------------------------------------------------------------------------
+# CITY
+# ----------------------------------------------------------------------------
+city:
+  # Placement mode: users place assets freely anywhere on the grid.
+  placement_mode: "free"
+
+  # Initial map size (in grid tiles). This is the starting area.
+  initial_map_size:
+    width: 30
+    height: 30
+
+  # City expansion: unlocked at a specific level, increases map area.
+  expansion:
+    unlock_level: 50            # Level at which expansion becomes available
+    expanded_map_size:
+      width: 50
+      height: 50
+    # Future expansions (post-MVP) can be added here.
+
+
+# ----------------------------------------------------------------------------
+# CHECK-IN
+# ----------------------------------------------------------------------------
+check_in:
+  # Check-in UI uses swipe cards, one per scheduled habit.
+  ui_mode: "swipe_cards"
+
+  # Cards sorted by time of day: morning → afternoon → evening → anytime.
+  # Within the same time-of-day group, sorted by creation order.
+  card_sort_order: "time_of_day"
+
+  # Backfill: users can log habits for previous days.
+  allow_backfill: true
+  backfill_max_days: 1          # Can only backfill yesterday, not further back
+
+  # Target check-in duration for UX benchmarking.
+  # Not enforced — this is a design guideline.
+  target_duration_seconds: 10   # For 3-5 habits
+
+
+# ----------------------------------------------------------------------------
+# ANALYTICS
+# ----------------------------------------------------------------------------
+analytics:
+
+  # Weekly City Report: auto-triggered popup at end of each week.
+  weekly_report:
+    enabled: true
+    trigger_day: "sunday"       # Day of week the report appears
+    trigger_time: "21:00"       # Evening, after the day's habits are likely done
+    includes:
+      - overall_completion_percentage
+      - per_habit_breakdown
+      - xp_earned_breakdown
+      - villes_earned_breakdown
+      - weekly_bonus_reward       # Shown as a reward animation
+      - reflection_prompt         # One short question per week
+
+  # Stats menu: always available from the main navigation.
+  stats_menu:
+    views:
+      - id: this_week
+        label: "This Week"
+        includes:
+          - todays_checkin_status
+          - weekly_completion_percentage
+          - projected_weekly_bonus
+          - xp_earned_this_week
+          - villes_earned_this_week
+
+      - id: monthly
+        label: "Monthly"
+        includes:
+          - calendar_heatmap        # Color-coded daily completion rates
+          - per_habit_completion_rates
+          - trend_vs_previous_month
+          - xp_earned_this_month
+          - villes_earned_this_month
+
+      - id: all_time
+        label: "All Time"
+        includes:
+          - current_level
+          - xp_progress_to_next_level
+          - total_lifetime_points   # Same as total XP, displayed as "Points"
+          - total_villes_earned
+          - total_villes_spent
+          - longest_streak_per_habit
+          - total_habits_completed  # Lifetime count of all check-ins
+          - city_value              # Sum of Ville cost of all placed assets
+
+
+# ----------------------------------------------------------------------------
+# STREAKS
+# ----------------------------------------------------------------------------
+# Streaks are tracked per habit but are INFORMATIONAL ONLY.
+# They appear in stats and may trigger small celebrations at milestones.
+# Breaking a streak has NO gameplay consequences — no loss of XP, Villes,
+# assets, or any other penalty.
+# ----------------------------------------------------------------------------
+streaks:
+  enabled: true
+  display_in_stats: true
+  milestone_celebrations: true
+  milestone_thresholds:
+    - 7       # 1 week
+    - 14      # 2 weeks
+    - 30      # 1 month
+    - 60      # 2 months
+    - 90      # 3 months
+    - 180     # 6 months
+    - 365     # 1 year
+  # Streaks count consecutive SCHEDULED completions.
+  # If a habit is scheduled Mon/Wed/Fri, completing Mon and Wed = 2-day streak.
+  # Tuesday is not scheduled so it doesn't break the streak.
+  counts_only_scheduled_days: true
+
+
+# ----------------------------------------------------------------------------
+# CELEBRATIONS & UI EVENTS
+# ----------------------------------------------------------------------------
+celebrations:
+  # Level-up: full-screen celebration showing new level, unlocked assets.
+  level_up:
+    animation: "full_screen"
+    shows_unlocked_assets: true
+    shows_new_level_number: true
+
+  # Asset unlock: glorified popup when a new asset type becomes available.
+  asset_unlock:
+    animation: "popup_showcase"
+    auto_adds_free_copy: true   # First copy is free on unlock
+
+  # Random surprise bonus: treasure chest / coin burst animation.
+  surprise_bonus:
+    animation: "coin_burst"
+
+  # Weekly bonus delivery: part of the Weekly City Report.
+  weekly_bonus:
+    animation: "reward_reveal"
+
+  # Streak milestones: smaller celebration, badge-style.
+  streak_milestone:
+    animation: "badge_earned"
+
+
+# ============================================================================
+# ECONOMY VALIDATION
+# ============================================================================
+# Use these reference calculations to validate that config changes
+# still hit the design target of level 150 in ~1 year.
+#
+# PERFECT WEEK (6 habits: 2 easy daily, 2 medium daily, 2 hard 5x/week):
+#   Tasks:         33 (14 easy + 14 medium + 5 hard)
+#   Base XP:       570 (140 + 280 + 150)
+#   Base Villes:   310 (70 + 140 + 100)
+#   Daily bonus:   350 XP + 210 Villes (7 perfect days × 50 XP + 30 V)
+#   Random bonus:  ~114 XP + ~62 Villes (20% of tasks × 100% base reward)
+#   Weekly bonus:  1,710 XP + 930 Villes (3.0x base at 100% completion)
+#   TOTAL:         ~2,744 XP + ~1,512 Villes per perfect week
+#
+# PERFECT YEAR (52 weeks):
+#   Total XP:      ~142,700 (plus ~570 from first-week 2x boost)
+#   Total Villes:  ~78,600
+#   Level reached:  ~150 (total XP needed: 132,250)
+#
+# 70% CONSISTENCY YEAR:
+#   Estimated XP:  ~62,000
+#   Level reached:  ~80-85
+#   Villes:        ~40,000
+# ============================================================================
