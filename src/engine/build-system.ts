@@ -5,7 +5,7 @@ import { setPointerDownInterceptor, getGameWorld } from './camera';
 import { screenToGrid, gridToScreen } from './iso-utils';
 import { getGrid } from './grid';
 import { getAsset } from './asset-registry';
-import { placeOnGrid, computeUprightAnchorY } from './place-on-grid';
+import { placeOnGrid, computeUprightAnchorX, computeUprightAnchorY } from './place-on-grid';
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
@@ -238,8 +238,14 @@ function createGhostSprite(assetKey: string): Sprite | null {
   if (!texture) return null;
 
   const ghost = new Sprite(texture);
-  const anchorY = asset.anchor.y === 0 ? 0 : computeUprightAnchorY(texture.height);
-  ghost.anchor.set(asset.anchor.x, anchorY);
+  if (asset.anchor.y === 0) {
+    ghost.anchor.set(asset.anchor.x, 0);
+  } else {
+    ghost.anchor.set(
+      computeUprightAnchorX(asset.size.w, asset.size.h),
+      computeUprightAnchorY(texture.height, asset.size.w, asset.size.h),
+    );
+  }
   ghost.alpha = 0.6;
   ghost.tint = VALID_TINT;
   ghost.label = 'drag_ghost';
@@ -263,10 +269,14 @@ function updateGhostAtScreen(screenX: number, screenY: number): void {
   // so the ghost doesn't visually float above the pointer.
   const texture = Assets.get(asset.textureKey);
   const anchorY = texture && asset.anchor.y !== 0
-    ? computeUprightAnchorY(texture.height)
+    ? computeUprightAnchorY(texture.height, asset.size.w, asset.size.h)
     : asset.anchor.y;
+  const anchorX = asset.anchor.y !== 0
+    ? computeUprightAnchorX(asset.size.w, asset.size.h)
+    : asset.anchor.x;
   const heightOffset = texture ? texture.height * (anchorY - 0.5) : 0;
-  const gridPos = screenToGrid(worldPos.x, worldPos.y + heightOffset);
+  const widthOffset = texture ? texture.width * (anchorX - 0.5) : 0;
+  const gridPos = screenToGrid(worldPos.x + widthOffset, worldPos.y + heightOffset);
   const valid = isTileValid(gridPos.row, gridPos.col);
 
   const pos = gridToScreen(gridPos.row, gridPos.col);
