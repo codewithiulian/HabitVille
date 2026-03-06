@@ -14,6 +14,14 @@ import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
 import { CARDINAL_DIRS } from './road-tiles';
 import { sidewalkAssetKey } from './sidewalk-tiles';
+
+const DIAGONAL_DIRS = [
+  { dr: -1, dc: -1 },
+  { dr: -1, dc: 1 },
+  { dr: 1, dc: -1 },
+  { dr: 1, dc: 1 },
+];
+
 import {
   persistSidewalkBatch,
   persistSidewalkDeleteBatch,
@@ -55,8 +63,19 @@ export function hasSidewalk(row: number, col: number): boolean {
 // Tile variant computation
 // ---------------------------------------------------------------------------
 
-function computeVariant(_row: number, _col: number): { tileNum: number; flipX: boolean } {
-  return { tileNum: 9, flipX: false };
+function isSecondSELayer(row: number, col: number): boolean {
+  // Tile is 2 steps SE from a road (road is at row-2 or col-2)
+  if (hasRoad(row - 2, col)) return true; // 2 south of road
+  if (hasRoad(row, col - 2)) return true; // 2 east of road
+  return false;
+}
+
+function computeVariant(row: number, col: number): { tileNum: number; flipX: boolean } {
+  // NW side (road is to S or E): Tile5
+  if (hasRoad(row + 1, col)) return { tileNum: 5, flipX: false };
+  if (hasRoad(row, col + 1)) return { tileNum: 5, flipX: false };
+  // SE side (road is to N or W): Tile4
+  return { tileNum: 4, flipX: false };
 }
 
 // ---------------------------------------------------------------------------
