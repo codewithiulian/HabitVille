@@ -214,28 +214,8 @@ function isBuildableTile(row: number, col: number): boolean {
   return grid[row][col].buildable;
 }
 
-function shouldHaveSidewalk(row: number, col: number): boolean {
-  if (!isBuildableTile(row, col)) return false;
-  if (hasRoad(row, col)) return false;
-
-  // At least one cardinal neighbor must have a road.
-  for (const dir of CARDINAL_DIRS) {
-    if (hasRoad(row + dir.dr, col + dir.dc)) return true;
-  }
-
-  // Corner fill: diagonal road neighbor + at least 2 cardinal sidewalk/road neighbors
-  for (const diag of DIAGONAL_DIRS) {
-    if (hasRoad(row + diag.dr, col + diag.dc)) {
-      let adj = 0;
-      for (const dir of CARDINAL_DIRS) {
-        const nr = row + dir.dr;
-        const nc = col + dir.dc;
-        if (hasRoad(nr, nc) || hasSidewalk(nr, nc)) adj++;
-      }
-      if (adj >= 1) return true;
-    }
-  }
-
+function shouldHaveSidewalk(_row: number, _col: number): boolean {
+  // Sidewalks disabled — roads render without sidewalk overlays
   return false;
 }
 

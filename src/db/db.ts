@@ -1,6 +1,5 @@
 import Dexie from 'dexie';
 import type { EntityTable } from 'dexie';
-import type { Habit, Checkin } from '@/types/habits';
 
 // ---------------------------------------------------------------------------
 // Interfaces
@@ -59,8 +58,6 @@ const db = new Dexie('habitville') as Dexie & {
   sidewalks: EntityTable<CitySidewalk, 'id'>;
   accessories: EntityTable<CityAccessory, 'id'>;
   gameState: EntityTable<GameStateRow, 'id'>;
-  habits: EntityTable<Habit, 'id'>;
-  checkins: EntityTable<Checkin, 'id'>;
 };
 
 db.version(1).stores({
@@ -88,8 +85,6 @@ db.version(4).stores({
   sidewalks: 'id',
   accessories: 'id',
   gameState: 'id',
-  habits: 'id, sortOrder',
-  checkins: 'id, [habitId+date], habitId',
 });
 
 export { db };
