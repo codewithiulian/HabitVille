@@ -4,7 +4,7 @@
 // ground layer — the grass texture is never touched.
 // ---------------------------------------------------------------------------
 
-import { Assets, Sprite } from 'pixi.js';
+import { Assets, Sprite, Text, Texture } from 'pixi.js';
 import type { SceneContainers } from './setup-stage';
 import { getGrid } from './grid';
 import { getAsset } from './asset-registry';
@@ -70,6 +70,16 @@ function isSecondSELayer(row: number, col: number): boolean {
   return false;
 }
 
+function computeRoadDirs(row: number, col: number): string {
+  // Show where THIS tile sits relative to the road (opposite of road direction)
+  const dirs: string[] = [];
+  if (hasRoad(row + 1, col)) dirs.push('NE');  // road to SW → tile is NE
+  if (hasRoad(row, col - 1)) dirs.push('SE');  // road to NW → tile is SE
+  if (hasRoad(row - 1, col)) dirs.push('SW');  // road to NE → tile is SW
+  if (hasRoad(row, col + 1)) dirs.push('NW');  // road to SE → tile is NW
+  return dirs.length > 0 ? dirs.join('+') : 'none';
+}
+
 function computeVariant(row: number, col: number): { tileNum: number; flipX: boolean } {
   // NW side (road is to S or E): Tile5
   if (hasRoad(row + 1, col)) return { tileNum: 5, flipX: false };
@@ -105,6 +115,29 @@ function createSidewalkSprite(
 
   const pos = gridToScreen(row, col);
   sprite.position.set(pos.x, pos.y);
+
+  // Debug label: tile name + road direction (localhost only)
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    const dirs = computeRoadDirs(row, col);
+    const debugText = new Text({
+      text: `Tile${tileNum}\n${dirs}`,
+      style: {
+        fontSize: 9,
+        fill: 0xffffff,
+        align: 'center',
+      },
+    });
+    debugText.anchor.set(0.5, 0.5);
+    debugText.position.set(0, texture.height * 0.5);
+    const bg = new Sprite(Texture.WHITE);
+    bg.tint = 0xff0000;
+    bg.anchor.set(0.5, 0.5);
+    bg.position.set(0, texture.height * 0.5);
+    bg.width = debugText.width + 4;
+    bg.height = debugText.height + 2;
+    sprite.addChild(bg);
+    sprite.addChild(debugText);
+  }
 
   containers.roadLayer.addChild(sprite);
   return sprite;
