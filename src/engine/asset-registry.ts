@@ -1,11 +1,10 @@
 import type { AssetCategory, AssetEntry } from '../types/assets';
-import { TILE_HEIGHT } from '../config/grid-constants';
 
 // ---------------------------------------------------------------------------
 // Category defaults — anchor & offset
 // ---------------------------------------------------------------------------
 const GROUND_ANCHOR = { x: 0.5, y: 0 };    // top-center (matches current grass tile)
-const UPRIGHT_ANCHOR = { x: 0.5, y: 0.5 };  // image center — lower half aligns with tile
+const UPRIGHT_ANCHOR = { x: 0.5, y: 1 };   // marker for upright sprites — actual anchor_y computed at runtime
 const GROUND_OFFSET = { x: 0, y: 0 };
 const UPRIGHT_OFFSET = { x: 0, y: 0 };
 const DEFAULT_SIZE = { w: 1, h: 1 };

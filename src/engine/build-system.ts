@@ -5,7 +5,7 @@ import { setPointerDownInterceptor, getGameWorld } from './camera';
 import { screenToGrid, gridToScreen } from './iso-utils';
 import { getGrid } from './grid';
 import { getAsset } from './asset-registry';
-import { placeOnGrid } from './place-on-grid';
+import { placeOnGrid, computeUprightAnchorY } from './place-on-grid';
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
@@ -238,7 +238,8 @@ function createGhostSprite(assetKey: string): Sprite | null {
   if (!texture) return null;
 
   const ghost = new Sprite(texture);
-  ghost.anchor.set(asset.anchor.x, asset.anchor.y);
+  const anchorY = asset.anchor.y === 0 ? 0 : computeUprightAnchorY(texture.height);
+  ghost.anchor.set(asset.anchor.x, anchorY);
   ghost.alpha = 0.6;
   ghost.tint = VALID_TINT;
   ghost.label = 'drag_ghost';
@@ -258,10 +259,13 @@ function updateGhostAtScreen(screenX: number, screenY: number): void {
   if (!asset) return;
 
   // Offset cursor position to account for sprite height above its anchor.
-  // With anchor.y > 0.5 the sprite extends upward; this shifts the cursor
+  // With a dynamic anchor the sprite extends upward; this shifts the cursor
   // so the ghost doesn't visually float above the pointer.
   const texture = Assets.get(asset.textureKey);
-  const heightOffset = texture ? texture.height * (asset.anchor.y - 0.5) : 0;
+  const anchorY = texture && asset.anchor.y !== 0
+    ? computeUprightAnchorY(texture.height)
+    : asset.anchor.y;
+  const heightOffset = texture ? texture.height * (anchorY - 0.5) : 0;
   const gridPos = screenToGrid(worldPos.x, worldPos.y + heightOffset);
   const valid = isTileValid(gridPos.row, gridPos.col);
 
