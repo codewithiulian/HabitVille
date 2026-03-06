@@ -1,3 +1,0 @@
-[22:22:50.166] Server  ERROR   Error: ENOENT: no such file or directory, scandir 'D:\Projects\HabitVille\.claude\worktrees\water-layer\src\app'
-[22:22:50.173] Server  ERROR   ⨯ "unhandledRejection:" Error: ENOENT: no such file or directory, scandir 'D:\Projects\HabitVille\.claude\worktrees\water-layer\src\app'
-[22:22:50.179] Server  ERROR   ⨯ "unhandledRejection: " Error: ENOENT: no such file or directory, scandir 'D:\Projects\HabitVille\.claude\worktrees\water-layer\src\app'
