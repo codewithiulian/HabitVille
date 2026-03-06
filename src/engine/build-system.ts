@@ -200,12 +200,24 @@ let preDrag: {
 // ---------------------------------------------------------------------------
 
 function isTileValid(row: number, col: number): boolean {
-  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return false;
+  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: out of bounds`);
+    return false;
+  }
   const grid = getGrid();
   if (!grid) return false;
-  if (!grid[row][col].buildable) return false;
-  if (isOccupied(row, col)) return false;
-  if (hasRoad(row, col)) return false;
+  if (!grid[row][col].buildable) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: not buildable`);
+    return false;
+  }
+  if (isOccupied(row, col)) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: occupied`);
+    return false;
+  }
+  if (hasRoad(row, col)) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: hasRoad`);
+    return false;
+  }
   return true;
 }
 
@@ -246,8 +258,8 @@ function updateGhostAtScreen(screenX: number, screenY: number): void {
   if (!asset) return;
 
   // Offset cursor position to account for sprite height above its anchor.
-  // Buildings use anchor.y=1.0 (bottom-center), so the sprite extends upward.
-  // Without this, the ghost visually appears above the cursor.
+  // With anchor.y > 0.5 the sprite extends upward; this shifts the cursor
+  // so the ghost doesn't visually float above the pointer.
   const texture = Assets.get(asset.textureKey);
   const heightOffset = texture ? texture.height * (asset.anchor.y - 0.5) : 0;
   const gridPos = screenToGrid(worldPos.x, worldPos.y + heightOffset);
