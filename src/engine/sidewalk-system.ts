@@ -246,7 +246,6 @@ function shouldHaveSidewalk(row: number, col: number): boolean {
 export function syncSidewalksForArea(
   positions: Array<{ row: number; col: number }>,
 ): void {
-  return; // TEMP: disabled sidewalks for debugging
   // 1. Expand affected positions to include cardinal + diagonal neighbors
   const affected = new Set<string>();
   for (const p of positions) {
@@ -343,7 +342,6 @@ export function removeSidewalkBeforeRoad(row: number, col: number): void {
 // ---------------------------------------------------------------------------
 
 export function restoreSidewalkSprite(row: number, col: number, tileNum: number): void {
-  return; // TEMP: disabled sidewalks for debugging
   // Place with the persisted tileNum; flipX, variant, and double will be corrected
   // in recalcSidewalksAfterRestore once all roads & sidewalks are loaded.
   const sprite = createSidewalkSprite(row, col, tileNum, false);
