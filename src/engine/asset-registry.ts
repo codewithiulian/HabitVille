@@ -4,8 +4,9 @@ import type { AssetCategory, AssetEntry } from '../types/assets';
 // Category defaults — anchor & offset
 // ---------------------------------------------------------------------------
 const GROUND_ANCHOR = { x: 0.5, y: 0 };    // top-center (matches current grass tile)
-const UPRIGHT_ANCHOR = { x: 0.5, y: 1.0 };  // bottom-center ("foot" of sprite)
-const DEFAULT_OFFSET = { x: 0, y: 0 };
+const UPRIGHT_ANCHOR = { x: 0.5, y: 1 };   // marker for upright sprites — actual anchor_y computed at runtime
+const GROUND_OFFSET = { x: 0, y: 0 };
+const UPRIGHT_OFFSET = { x: 0, y: 0 };
 const DEFAULT_SIZE = { w: 1, h: 1 };
 
 const BASE = 'assets/GiantCityBuilder';
@@ -19,7 +20,7 @@ function entry(
   displayName: string,
   category: AssetCategory,
   anchor = UPRIGHT_ANCHOR,
-  gridOffset = DEFAULT_OFFSET,
+  gridOffset = UPRIGHT_OFFSET,
   size = DEFAULT_SIZE,
 ): AssetEntry {
   return { key, textureKey, displayName, anchor, gridOffset, category, size };
@@ -29,7 +30,7 @@ function entry(
 // Tile helpers
 // ---------------------------------------------------------------------------
 function tileEntry(filename: string, displayName: string, category: AssetCategory = 'tile'): AssetEntry {
-  return entry(filename, `${BASE}/Tiles/${filename}.png`, displayName, category, GROUND_ANCHOR);
+  return entry(filename, `${BASE}/Tiles/${filename}.png`, displayName, category, GROUND_ANCHOR, GROUND_OFFSET);
 }
 
 // ---------------------------------------------------------------------------
@@ -106,6 +107,7 @@ function generateHouses(): AssetEntry[] {
       g.replace('_', ' '),
       'building-residential',
       GROUND_ANCHOR, // gardens are ground-level
+      GROUND_OFFSET,
     ));
   }
 
@@ -128,7 +130,7 @@ function generateApartments(): AssetEntry[] {
           `${color} Apartment ${size} L${level}`,
           'building-residential',
           UPRIGHT_ANCHOR,
-          DEFAULT_OFFSET,
+          UPRIGHT_OFFSET,
           gridSize,
         ));
       }

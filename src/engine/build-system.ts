@@ -5,7 +5,7 @@ import { setPointerDownInterceptor, getGameWorld } from './camera';
 import { screenToGrid, gridToScreen } from './iso-utils';
 import { getGrid } from './grid';
 import { getAsset } from './asset-registry';
-import { placeOnGrid } from './place-on-grid';
+import { placeOnGrid, computeUprightAnchorX, computeUprightAnchorY } from './place-on-grid';
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
@@ -200,12 +200,24 @@ let preDrag: {
 // ---------------------------------------------------------------------------
 
 function isTileValid(row: number, col: number): boolean {
-  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) return false;
+  if (row < 0 || row >= GRID_SIZE || col < 0 || col >= GRID_SIZE) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: out of bounds`);
+    return false;
+  }
   const grid = getGrid();
   if (!grid) return false;
-  if (!grid[row][col].buildable) return false;
-  if (isOccupied(row, col)) return false;
-  if (hasRoad(row, col)) return false;
+  if (!grid[row][col].buildable) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: not buildable`);
+    return false;
+  }
+  if (isOccupied(row, col)) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: occupied`);
+    return false;
+  }
+  if (hasRoad(row, col)) {
+    console.log(`[isTileValid] (${row},${col}) FAIL: hasRoad`);
+    return false;
+  }
   return true;
 }
 
@@ -226,7 +238,14 @@ function createGhostSprite(assetKey: string): Sprite | null {
   if (!texture) return null;
 
   const ghost = new Sprite(texture);
-  ghost.anchor.set(asset.anchor.x, asset.anchor.y);
+  if (asset.anchor.y === 0) {
+    ghost.anchor.set(asset.anchor.x, 0);
+  } else {
+    ghost.anchor.set(
+      computeUprightAnchorX(texture.width),
+      computeUprightAnchorY(texture.height, texture.width),
+    );
+  }
   ghost.alpha = 0.6;
   ghost.tint = VALID_TINT;
   ghost.label = 'drag_ghost';
@@ -246,11 +265,18 @@ function updateGhostAtScreen(screenX: number, screenY: number): void {
   if (!asset) return;
 
   // Offset cursor position to account for sprite height above its anchor.
-  // Buildings use anchor.y=1.0 (bottom-center), so the sprite extends upward.
-  // Without this, the ghost visually appears above the cursor.
+  // With a dynamic anchor the sprite extends upward; this shifts the cursor
+  // so the ghost doesn't visually float above the pointer.
   const texture = Assets.get(asset.textureKey);
-  const heightOffset = texture ? texture.height * (asset.anchor.y - 0.5) : 0;
-  const gridPos = screenToGrid(worldPos.x, worldPos.y + heightOffset);
+  const anchorY = texture && asset.anchor.y !== 0
+    ? computeUprightAnchorY(texture.height, texture.width)
+    : asset.anchor.y;
+  const anchorX = texture && asset.anchor.y !== 0
+    ? computeUprightAnchorX(texture.width)
+    : asset.anchor.x;
+  const heightOffset = texture ? texture.height * (anchorY - 0.5) : 0;
+  const widthOffset = texture ? texture.width * (anchorX - 0.5) : 0;
+  const gridPos = screenToGrid(worldPos.x + widthOffset, worldPos.y + heightOffset);
   const valid = isTileValid(gridPos.row, gridPos.col);
 
   const pos = gridToScreen(gridPos.row, gridPos.col);

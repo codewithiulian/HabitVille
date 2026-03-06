@@ -4,21 +4,24 @@
 // ground layer — the grass texture is never touched.
 // ---------------------------------------------------------------------------
 
-import { Assets, Sprite } from 'pixi.js';
+import { Assets, Sprite, Text, Texture } from 'pixi.js';
 import type { SceneContainers } from './setup-stage';
 import { getGrid } from './grid';
 import { getAsset } from './asset-registry';
 import { gridToScreen } from './iso-utils';
-import { GRID_SIZE } from '../config/grid-constants';
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT } from '../config/grid-constants';
 import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
 import { CARDINAL_DIRS } from './road-tiles';
-import {
-  sidewalkAssetKey,
-  computeSidewalkConnectivity,
-  sidewalkBitmaskToTile,
-  sidewalkBitmaskToFlipX,
-} from './sidewalk-tiles';
+import { sidewalkAssetKey } from './sidewalk-tiles';
+
+const DIAGONAL_DIRS = [
+  { dr: -1, dc: -1 },
+  { dr: -1, dc: 1 },
+  { dr: 1, dc: -1 },
+  { dr: 1, dc: 1 },
+];
+
 import {
   persistSidewalkBatch,
   persistSidewalkDeleteBatch,
@@ -30,8 +33,10 @@ import {
 
 interface SidewalkEntry {
   sprite: Sprite;
+  sprite2?: Sprite;      // second Tile3 when using double-Tile3 instead of Tile5
   tileNum: number;
   flipX: boolean;
+  double?: boolean;       // true when NE side uses 2× Tile3
 }
 
 // ---------------------------------------------------------------------------
@@ -60,12 +65,32 @@ export function hasSidewalk(row: number, col: number): boolean {
 // Tile variant computation
 // ---------------------------------------------------------------------------
 
-function computeVariant(row: number, col: number): { tileNum: number; flipX: boolean } {
-  const mask = computeSidewalkConnectivity(row, col, hasRoad, hasSidewalk);
-  return {
-    tileNum: sidewalkBitmaskToTile(mask),
-    flipX: sidewalkBitmaskToFlipX(mask),
-  };
+function isSecondSELayer(row: number, col: number): boolean {
+  // Tile is 2 steps SE from a road (road is at row-2 or col-2)
+  if (hasRoad(row - 2, col)) return true; // 2 south of road
+  if (hasRoad(row, col - 2)) return true; // 2 east of road
+  return false;
+}
+
+function computeRoadDirs(row: number, col: number): string {
+  // Show where THIS tile sits relative to the road (opposite of road direction)
+  const dirs: string[] = [];
+  if (hasRoad(row + 1, col)) dirs.push('NE');  // road to SW → tile is NE
+  if (hasRoad(row, col - 1)) dirs.push('SE');  // road to NW → tile is SE
+  if (hasRoad(row - 1, col)) dirs.push('SW');  // road to NE → tile is SW
+  if (hasRoad(row, col + 1)) dirs.push('NW');  // road to SE → tile is NW
+  return dirs.length > 0 ? dirs.join('+') : 'none';
+}
+
+function computeVariant(row: number, col: number): { tileNum: number; flipX: boolean; double?: boolean } {
+  // NE side (road is to S): 2× Tile3 side-by-side (one normal + one flipX)
+  if (hasRoad(row + 1, col)) return { tileNum: 3, flipX: false, double: true };
+  // NW side (road is to E): Tile5
+  if (hasRoad(row, col + 1)) return { tileNum: 5, flipX: false };
+  // SE side (road is to N or W): Tile4
+  if (hasRoad(row - 1, col) || hasRoad(row, col - 1)) return { tileNum: 4, flipX: false };
+  // Corner fill (diagonal road): use Tile3 double like NE side
+  return { tileNum: 3, flipX: false, double: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -96,6 +121,29 @@ function createSidewalkSprite(
   const pos = gridToScreen(row, col);
   sprite.position.set(pos.x, pos.y);
 
+  // Debug label: tile name + road direction (localhost only)
+  if (typeof window !== 'undefined' && window.location.hostname === 'localhost') {
+    const dirs = computeRoadDirs(row, col);
+    const debugText = new Text({
+      text: `Tile${tileNum}\n${dirs}`,
+      style: {
+        fontSize: 9,
+        fill: 0xffffff,
+        align: 'center',
+      },
+    });
+    debugText.anchor.set(0.5, 0.5);
+    debugText.position.set(0, texture.height * 0.5);
+    const bg = new Sprite(Texture.WHITE);
+    bg.tint = 0xff0000;
+    bg.anchor.set(0.5, 0.5);
+    bg.position.set(0, texture.height * 0.5);
+    bg.width = debugText.width + 4;
+    bg.height = debugText.height + 2;
+    sprite.addChild(bg);
+    sprite.addChild(debugText);
+  }
+
   containers.roadLayer.addChild(sprite);
   return sprite;
 }
@@ -106,6 +154,10 @@ function removeSidewalkSpriteAt(row: number, col: number): void {
   if (!entry) return;
   entry.sprite.removeFromParent();
   entry.sprite.destroy();
+  if (entry.sprite2) {
+    entry.sprite2.removeFromParent();
+    entry.sprite2.destroy();
+  }
   sidewalkMap.delete(key);
 }
 
@@ -115,8 +167,8 @@ function updateSidewalkVariant(row: number, col: number): boolean {
   const entry = sidewalkMap.get(key);
   if (!entry) return false;
 
-  const { tileNum, flipX } = computeVariant(row, col);
-  if (entry.tileNum === tileNum && entry.flipX === flipX) return false;
+  const { tileNum, flipX, double } = computeVariant(row, col);
+  if (entry.tileNum === tileNum && entry.flipX === flipX && !!entry.double === !!double) return false;
 
   const assetKey = sidewalkAssetKey(tileNum);
   const asset = getAsset(assetKey);
@@ -129,6 +181,25 @@ function updateSidewalkVariant(row: number, col: number): boolean {
   entry.sprite.scale.x = flipX ? -1 : 1;
   entry.tileNum = tileNum;
   entry.flipX = flipX;
+
+  // Handle double ↔ single transitions
+  if (double && !entry.sprite2) {
+    const s2 = createSidewalkSprite(row, col, tileNum, true);
+    if (s2) {
+      s2.position.x += TILE_WIDTH / 4;
+      s2.position.y -= TILE_HEIGHT / 4;
+      entry.sprite2 = s2;
+    }
+  } else if (!double && entry.sprite2) {
+    entry.sprite2.removeFromParent();
+    entry.sprite2.destroy();
+    entry.sprite2 = undefined;
+  } else if (double && entry.sprite2) {
+    entry.sprite2.texture = texture;
+    entry.sprite2.scale.x = -1;
+  }
+  entry.double = double;
+
   return true;
 }
 
@@ -151,6 +222,20 @@ function shouldHaveSidewalk(row: number, col: number): boolean {
   for (const dir of CARDINAL_DIRS) {
     if (hasRoad(row + dir.dr, col + dir.dc)) return true;
   }
+
+  // Corner fill: diagonal road neighbor + at least 2 cardinal sidewalk/road neighbors
+  for (const diag of DIAGONAL_DIRS) {
+    if (hasRoad(row + diag.dr, col + diag.dc)) {
+      let adj = 0;
+      for (const dir of CARDINAL_DIRS) {
+        const nr = row + dir.dr;
+        const nc = col + dir.dc;
+        if (hasRoad(nr, nc) || hasSidewalk(nr, nc)) adj++;
+      }
+      if (adj >= 1) return true;
+    }
+  }
+
   return false;
 }
 
@@ -161,12 +246,15 @@ function shouldHaveSidewalk(row: number, col: number): boolean {
 export function syncSidewalksForArea(
   positions: Array<{ row: number; col: number }>,
 ): void {
-  // 1. Expand affected positions to include their 4 neighbors
+  // 1. Expand affected positions to include cardinal + diagonal neighbors
   const affected = new Set<string>();
   for (const p of positions) {
     affected.add(tileKey(p.row, p.col));
     for (const dir of CARDINAL_DIRS) {
       affected.add(tileKey(p.row + dir.dr, p.col + dir.dc));
+    }
+    for (const diag of DIAGONAL_DIRS) {
+      affected.add(tileKey(p.row + diag.dr, p.col + diag.dc));
     }
   }
 
@@ -198,11 +286,21 @@ export function syncSidewalksForArea(
   // 4. Add missing sidewalks — compute correct tile variant via bitmask
   const addSidewalks: Array<{ row: number; col: number; tileNum: number }> = [];
   for (const { row, col } of toAdd) {
-    const { tileNum, flipX } = computeVariant(row, col);
+    const { tileNum, flipX, double } = computeVariant(row, col);
     const sprite = createSidewalkSprite(row, col, tileNum, flipX);
     if (!sprite) continue;
 
-    sidewalkMap.set(tileKey(row, col), { sprite, tileNum, flipX });
+    let sprite2: Sprite | undefined;
+    if (double) {
+      const s2 = createSidewalkSprite(row, col, tileNum, true);
+      if (s2) {
+        s2.position.x -= TILE_WIDTH / 4;
+        s2.position.y -= TILE_HEIGHT / 4;
+        sprite2 = s2;
+      }
+    }
+
+    sidewalkMap.set(tileKey(row, col), { sprite, sprite2, tileNum, flipX, double });
     addSidewalks.push({ row, col, tileNum });
   }
 
@@ -244,7 +342,7 @@ export function removeSidewalkBeforeRoad(row: number, col: number): void {
 // ---------------------------------------------------------------------------
 
 export function restoreSidewalkSprite(row: number, col: number, tileNum: number): void {
-  // Place with the persisted tileNum; flipX and variant will be corrected
+  // Place with the persisted tileNum; flipX, variant, and double will be corrected
   // in recalcSidewalksAfterRestore once all roads & sidewalks are loaded.
   const sprite = createSidewalkSprite(row, col, tileNum, false);
   if (!sprite) return;
@@ -301,6 +399,10 @@ export function destroySidewalkSystem(): void {
   for (const [, entry] of sidewalkMap) {
     entry.sprite.removeFromParent();
     entry.sprite.destroy();
+    if (entry.sprite2) {
+      entry.sprite2.removeFromParent();
+      entry.sprite2.destroy();
+    }
   }
   sidewalkMap.clear();
   containers = null;
