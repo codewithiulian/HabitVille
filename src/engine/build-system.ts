@@ -242,8 +242,8 @@ function createGhostSprite(assetKey: string): Sprite | null {
     ghost.anchor.set(asset.anchor.x, 0);
   } else {
     ghost.anchor.set(
-      computeUprightAnchorX(asset.size.w, asset.size.h),
-      computeUprightAnchorY(texture.height, asset.size.w, asset.size.h),
+      computeUprightAnchorX(texture.width),
+      computeUprightAnchorY(texture.height, texture.width),
     );
   }
   ghost.alpha = 0.6;
@@ -269,10 +269,10 @@ function updateGhostAtScreen(screenX: number, screenY: number): void {
   // so the ghost doesn't visually float above the pointer.
   const texture = Assets.get(asset.textureKey);
   const anchorY = texture && asset.anchor.y !== 0
-    ? computeUprightAnchorY(texture.height, asset.size.w, asset.size.h)
+    ? computeUprightAnchorY(texture.height, texture.width)
     : asset.anchor.y;
-  const anchorX = asset.anchor.y !== 0
-    ? computeUprightAnchorX(asset.size.w, asset.size.h)
+  const anchorX = texture && asset.anchor.y !== 0
+    ? computeUprightAnchorX(texture.width)
     : asset.anchor.x;
   const heightOffset = texture ? texture.height * (anchorY - 0.5) : 0;
   const widthOffset = texture ? texture.width * (anchorX - 0.5) : 0;
