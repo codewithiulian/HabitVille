@@ -56,6 +56,7 @@ export function getScheduledHabitsForWeek(
 
 /**
  * Calculate weekly completion percentage and per-habit breakdown.
+ * Uses frequency-aware targets: a "weekly" habit = 1 slot, not 7.
  */
 export function calculateWeeklyCompletion(
   weekStart: string,
@@ -69,24 +70,46 @@ export function calculateWeeklyCompletion(
     }
   }
 
+  const weekDates: string[] = [];
+  for (let i = 0; i < 7; i++) {
+    weekDates.push(addDays(weekStart, i));
+  }
+
   const perHabit = new Map<string, { completed: number; scheduled: number }>();
   let total = 0;
   let completed = 0;
 
-  for (let i = 0; i < 7; i++) {
-    const date = addDays(weekStart, i);
-    const scheduled = getScheduledHabitsForDate(date, habits);
+  for (const habit of habits) {
+    const freq = habit.frequency;
+    let scheduled: number;
 
-    for (const habit of scheduled) {
-      total++;
-      const wasCompleted = completedByDateAndHabit.has(`${date}:${habit.id}`);
-      if (wasCompleted) completed++;
-
-      const entry = perHabit.get(habit.id) ?? { completed: 0, scheduled: 0 };
-      entry.scheduled++;
-      if (wasCompleted) entry.completed++;
-      perHabit.set(habit.id, entry);
+    if (freq.type === 'weekly') {
+      const active = weekDates.some((d) => isScheduledForDate(habit, d));
+      scheduled = active ? 1 : 0;
+    } else if (freq.type === 'times_per_week') {
+      const activeDays = weekDates.filter((d) => isScheduledForDate(habit, d)).length;
+      scheduled = Math.min(freq.timesPerWeek ?? 1, activeDays);
+    } else if (freq.type === 'monthly') {
+      const active = weekDates.some((d) => isScheduledForDate(habit, d));
+      scheduled = active ? 1 : 0;
+    } else {
+      // daily, specific_days: count actual scheduled days in the week
+      scheduled = weekDates.filter((d) => isScheduledForDate(habit, d)).length;
     }
+
+    if (scheduled === 0) {
+      perHabit.set(habit.id, { completed: 0, scheduled: 0 });
+      continue;
+    }
+
+    let habitCompleted = weekDates.filter((d) =>
+      completedByDateAndHabit.has(`${d}:${habit.id}`),
+    ).length;
+    habitCompleted = Math.min(habitCompleted, scheduled);
+
+    total += scheduled;
+    completed += habitCompleted;
+    perHabit.set(habit.id, { completed: habitCompleted, scheduled });
   }
 
   const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
