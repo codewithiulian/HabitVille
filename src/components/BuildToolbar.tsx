@@ -2,6 +2,7 @@
 
 import { useMemo, useCallback, useRef } from 'react';
 import { useBuildStore, type BuildCategory } from '@/stores/build-store';
+import { useGameStore } from '@/stores/game-store';
 import { getAssetsByCategory } from '@/engine/asset-registry';
 import { startToolbarDrag } from '@/engine/build-system';
 import type { AssetEntry } from '@/types/assets';
@@ -181,6 +182,8 @@ export default function BuildToolbar() {
     useBuildStore();
   const roadDeleteMode = useBuildStore((s) => s.roadDeleteMode);
 
+  const currentMode = useGameStore((s) => s.currentMode);
+
   // Build asset list for the selected category
   const assets = useMemo(() => {
     if (!selectedCategory) return [];
@@ -199,7 +202,37 @@ export default function BuildToolbar() {
     return list;
   }, [selectedCategory]);
 
+  const toggleBuildMode = useGameStore((s) => s.toggleBuildMode);
+
+  if (currentMode !== 'build') return null;
+
   return (
+    <>
+    {/* Close button — top right */}
+    <button
+      onClick={toggleBuildMode}
+      style={{
+        position: 'fixed',
+        top: 'max(env(safe-area-inset-top), 12px)',
+        right: 12,
+        zIndex: 101,
+        width: 36,
+        height: 36,
+        borderRadius: '50%',
+        background: 'rgba(0, 0, 0, 0.5)',
+        backdropFilter: 'blur(8px)',
+        border: 'none',
+        color: 'white',
+        fontSize: 18,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        cursor: 'pointer',
+      }}
+      aria-label="Exit build mode"
+    >
+      ✕
+    </button>
     <div
       data-build-toolbar
       style={{
@@ -338,5 +371,6 @@ export default function BuildToolbar() {
         )}
       </div>
     </div>
+    </>
   );
 }
