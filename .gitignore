@@ -45,3 +45,4 @@ next-env.d.ts
 
 # generated config
 src/config/game-config.gen.json
+src/config/asset-catalog.gen.json

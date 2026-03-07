@@ -1,40 +1,7 @@
 import { create } from 'zustand';
 import { db } from '@/db/db';
-import { GAME_CONFIG } from '@/config/game-config';
-import type { LevelTier } from '@/config/game-config';
+import { getLevelFromXP } from '@/lib/leveling-engine';
 import type { PlayerProfile } from '@/types/player';
-
-// ---------------------------------------------------------------------------
-// Pure helper
-// ---------------------------------------------------------------------------
-
-export function calculateLevel(totalXP: number, tiers: LevelTier[]): number {
-  let remaining = totalXP;
-  let level = 1;
-
-  for (const tier of tiers) {
-    const levelsInTier = tier.to - tier.from + 1;
-    const xpForTier = levelsInTier * tier.xp_required;
-
-    if (remaining >= xpForTier) {
-      remaining -= xpForTier;
-      level = tier.to + 1;
-    } else {
-      const levelsEarned = Math.floor(remaining / tier.xp_required);
-      level = tier.from + levelsEarned;
-      return level;
-    }
-  }
-
-  // Uncapped leveling beyond last tier
-  if (GAME_CONFIG.levels.uncapped_leveling && tiers.length > 0) {
-    const lastTier = tiers[tiers.length - 1];
-    const extraLevels = Math.floor(remaining / lastTier.xp_required);
-    level += extraLevels;
-  }
-
-  return level;
-}
 
 // ---------------------------------------------------------------------------
 // Store
@@ -110,7 +77,7 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
   addXP: (amount) => {
     const state = get();
     const newXP = state.xp + amount;
-    const newLevel = calculateLevel(newXP, GAME_CONFIG.levels.tiers);
+    const newLevel = getLevelFromXP(newXP);
     const now = new Date().toISOString();
 
     set({
