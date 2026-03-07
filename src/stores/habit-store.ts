@@ -25,7 +25,7 @@ interface HabitState {
   createHabit: (data: Omit<Habit, 'id' | 'sortOrder' | 'archived' | 'createdAt' | 'updatedAt'>) => string;
   updateHabit: (id: string, data: Partial<Omit<Habit, 'id' | 'createdAt' | 'updatedAt'>>) => void;
   archiveHabit: (id: string) => void;
-  checkIn: (habitId: string, date: string) => CheckIn;
+  checkIn: (habitId: string, date: string, xpEarned?: number, coinsEarned?: number) => CheckIn;
   skipHabit: (habitId: string, date: string) => CheckIn;
   getScheduledForDate: (date: string) => Habit[];
   getCheckInsForDate: (date: string) => Promise<CheckIn[]>;
@@ -84,7 +84,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     db.habits.update(id, { archived: 1 as unknown as boolean, updatedAt: now }).catch(() => {});
   },
 
-  checkIn: (habitId, date) => {
+  checkIn: (habitId, date, xpEarned = 0, coinsEarned = 0) => {
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
     const checkIn: CheckIn = {
@@ -93,8 +93,8 @@ export const useHabitStore = create<HabitState>((set, get) => ({
       date,
       completed: true,
       skipped: false,
-      xpEarned: 0,
-      coinsEarned: 0,
+      xpEarned,
+      coinsEarned,
       createdAt: now,
       updatedAt: now,
     };

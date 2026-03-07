@@ -46,6 +46,10 @@ const TutorialOverlay = dynamic(() => import('@/components/TutorialOverlay'), {
   ssr: false,
 });
 
+const CheckInScreen = dynamic(() => import('@/components/CheckInScreen'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
@@ -58,6 +62,7 @@ export default function Home() {
       <BuildToolbar />
       <BuildToggle />
       <HabitFab />
+      <CheckInScreen />
       <Onboarding />
       <TutorialOverlay />
     </>

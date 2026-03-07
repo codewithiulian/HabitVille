@@ -178,9 +178,20 @@ All stores follow the `useBuildStore` pattern. DB writes are fire-and-forget `.c
 - **Streak algorithm:** Walk backward from today through scheduled days only. If today is scheduled but unchecked, start from yesterday. Count consecutive scheduled days with checkins; stop at first miss. Weekday habits skip weekends, custom habits skip non-custom days.
 - **Streak implementation:** `src/lib/streak-utils.ts` — pure `calculateStreak(habit, checkIns)` function.
 - **Category visuals:** `src/config/habit-categories.ts` — Lucide icon + hex color per `HabitCategory`.
-- **UI pattern:** Bottom sheet (HabitList z-300) triggered by FAB (z-90, bottom-right). Form (z-310) slides over list. Archive confirmation is a centered modal (z-320). Habit components use **Tailwind utility classes** (build components use inline styles).
+- **UI pattern:** Bottom sheet (HabitList z-300) triggered by FAB (z-90, bottom-right) or gear icon in CheckInScreen. Form (z-310) slides over list. Archive confirmation is a centered modal (z-320). Habit components use **Tailwind utility classes** (build components use inline styles).
 - **Onboarding:** Detected via `db.playerProfile.count() === 0` in AppInitializer. Two steps: welcome → habit suggestions (3 hardcoded defaults). After completion, triggers TutorialOverlay (z-500) with 3 coach marks. State in `gameStore.showOnboarding` / `gameStore.tutorialStep` (not persisted to DB).
 - **Build toggle:** Cog button (bottom-left, z-90) toggles `currentMode` between 'view' and 'build'. BuildToolbar only renders in build mode. Close button (top-right) also exits build mode.
+
+### Check-In System
+
+- **Entry points:** FAB button (bottom-right, z-90) opens `gameStore.activeScreen = 'check-in'`; auto-opens on app launch if pending habits exist and not suppressed.
+- **Component:** `src/components/CheckInScreen.tsx` (z-250) — full-screen overlay with date strip, swipe card stack, session summary.
+- **Date strip (backfill):** 7-day week strip (Mon–Sun). Past days tappable for backfill, future days disabled. Each tap reloads cards for that date.
+- **Swipe mechanics:** framer-motion `drag="x"` with no constraints (`dragMomentum={false}`). On release: 80px offset or 400px/s velocity triggers fly-off via `animate(x, ±screenWidth)`, otherwise springs back to center. Rotation follows drag via `useTransform`.
+- **Swipe right (complete):** Rolls surprise bonus, calculates reward via economy engine, persists check-in to DB, grants XP/coins, triggers celebration particles.
+- **Swipe left (skip):** Session-only dismiss — no DB record. Habit reappears on next check-in open.
+- **Session summary:** Shows habits completed, XP earned, coins earned. Perfect day bonus if all scheduled habits completed (race-free check using `sessionCompletedIds` + `initialCompletedIds`).
+- **Auto-open suppression:** "Don't auto-open today" checkbox sets `playerStore.dontShowCheckInToday` — checked in `AppInitializer`.
 
 ### Asset Folder Mapping (Penzilla Pack -> Repo)
 
@@ -203,9 +214,9 @@ All stores follow the `useBuildStore` pattern. DB writes are fire-and-forget `.c
 
 ## Current State
 
-**Last completed unit:** Issue #50 — Habit Management (CRUD + Onboarding)
-**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo, toggle via cog button), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD UI (create/edit/archive forms, bottom sheet list, FAB entry point), streak calculation, first-time onboarding flow (welcome → habit suggestions → tutorial overlay), config loader (YAML→JSON→typed TS), economy data layer (player profile, inventory, placed assets, weekly snapshots), Zustand stores for player/habit/inventory/game state.
-**Next up:** Economy engine (XP/coin calculations, bonuses, level-ups)
+**Last completed unit:** Issue #51 — Check-In Card Stack, Backfill & Session Summary
+**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo, toggle via cog button), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD UI (create/edit/archive forms, bottom sheet list, FAB entry point), streak calculation, first-time onboarding flow (welcome → habit suggestions → tutorial overlay), config loader (YAML→JSON→typed TS), economy data layer (player profile, inventory, placed assets, weekly snapshots), Zustand stores for player/habit/inventory/game state, economy engines (XP/coin calculations, bonuses, streaks, weekly snapshots), check-in card stack (swipe UI with framer-motion, backfill for current week, session summary with perfect day detection, auto-open on app launch).
+**Next up:** Reward reveal animations, level-up celebrations
 
 ---
 
