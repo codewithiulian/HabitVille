@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { db } from '@/db/db';
-import { getLevelFromXP } from '@/lib/leveling-engine';
+import { getLevelFromXP, detectLevelUps } from '@/lib/leveling-engine';
+import { ASSET_CATALOG } from '@/config/asset-catalog';
 import type { PlayerProfile } from '@/types/player';
 
 // ---------------------------------------------------------------------------
@@ -85,6 +86,30 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
       level: newLevel,
       totalPoints: newXP,
     });
+
+    // Detect level-ups and grant free assets
+    if (newLevel > state.level) {
+      const result = detectLevelUps(state.xp, newXP, ASSET_CATALOG);
+      if (result.unlockedAssets.length > 0) {
+        // Lazy-import to avoid circular dependencies
+        import('@/stores/inventory-store').then(({ useInventoryStore }) => {
+          for (const asset of result.unlockedAssets) {
+            useInventoryStore.getState().grantFreeAsset(asset.assetId);
+          }
+        });
+        import('@/stores/shop-store').then(({ useShopStore }) => {
+          useShopStore.getState().addNewlyUnlocked(
+            result.unlockedAssets.map((a) => a.assetId),
+          );
+        });
+      }
+      import('@/stores/game-store').then(({ useGameStore }) => {
+        useGameStore.getState().queueReward({
+          type: 'level-up',
+          payload: { level: newLevel, unlockedAssets: result.unlockedAssets },
+        });
+      });
+    }
 
     db.playerProfile.toArray().then((rows) => {
       if (rows.length > 0) {

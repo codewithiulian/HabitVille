@@ -9,6 +9,9 @@ import { placeOnGrid, computeUprightAnchorX, computeUprightAnchorY } from './pla
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
+import { registryKeyToCatalogId, getCatalogAsset } from '../lib/catalog-helpers';
+import { useInventoryStore } from '../stores/inventory-store';
+import { usePlayerStore } from '../stores/player-store';
 import {
   handleRoadPointerDown,
   handleRoadDeletePointerDown,
@@ -402,6 +405,14 @@ function onDocumentPointerUp(e: PointerEvent): void {
       bounceAnimation(sprite, pixiApp.ticker);
       persistPlace(buildingId, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
 
+      // Inventory tracking: decrement quantity and create placed asset record
+      const catalogId = registryKeyToCatalogId(activeDrag.assetKey);
+      if (catalogId) {
+        const colorMatch = activeDrag.assetKey.match(/^House_(\w+)_Type\d+$/);
+        const colorVariant = colorMatch ? colorMatch[1] : undefined;
+        useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, colorVariant, buildingId);
+      }
+
       useBuildStore.getState().pushPlacement({
         type: 'place',
         sprite,
@@ -409,6 +420,7 @@ function onDocumentPointerUp(e: PointerEvent): void {
         col: activeDrag.lastCol,
         assetKey: activeDrag.assetKey,
         buildingId,
+        catalogAssetId: catalogId ?? undefined,
       });
     } else {
       // Move: reposition the original sprite
@@ -681,6 +693,16 @@ export function deleteSelectedBuilding(): void {
   useBuildStore.getState().deselectBuilding();
   persistDelete(occupant.buildingId);
 
+  // Inventory tracking: return asset to inventory + refund coins
+  const catalogId = registryKeyToCatalogId(occupant.assetKey);
+  if (catalogId) {
+    useInventoryStore.getState().demolishAsset(occupant.buildingId);
+    const catalogAsset = getCatalogAsset(catalogId);
+    if (catalogAsset) {
+      usePlayerStore.getState().addCoins(catalogAsset.price);
+    }
+  }
+
   useBuildStore.getState().pushPlacement({
     type: 'delete',
     sprite: occupant.sprite,
@@ -688,6 +710,7 @@ export function deleteSelectedBuilding(): void {
     col: selectedBuilding.col,
     assetKey: occupant.assetKey,
     buildingId: occupant.buildingId,
+    catalogAssetId: catalogId ?? undefined,
   });
 }
 
@@ -729,6 +752,10 @@ export function undoLastPlacement(): void {
     entry.sprite.destroy();
     markFree(entry.row, entry.col);
     persistDelete(entry.buildingId);
+    // Undo inventory: return asset to inventory
+    if (entry.catalogAssetId) {
+      useInventoryStore.getState().demolishAsset(entry.buildingId);
+    }
   } else if (entry.type === 'move') {
     // Move: return sprite to original position
     placeOnGrid(entry.sprite, entry.fromRow!, entry.fromCol!, entry.assetKey);
@@ -745,6 +772,16 @@ export function undoLastPlacement(): void {
     depthSort();
     if (pixiApp) bounceAnimation(entry.sprite, pixiApp.ticker);
     persistPlace(entry.buildingId, entry.row, entry.col, entry.assetKey);
+    // Undo delete: re-deduct coins and re-place in inventory
+    if (entry.catalogAssetId) {
+      const catalogAsset = getCatalogAsset(entry.catalogAssetId);
+      if (catalogAsset) {
+        usePlayerStore.getState().spendCoins(catalogAsset.price);
+      }
+      const colorMatch = entry.assetKey.match(/^House_(\w+)_Type\d+$/);
+      const colorVariant = colorMatch ? colorMatch[1] : undefined;
+      useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, colorVariant, entry.buildingId);
+    }
   } else if (entry.type === 'road-place') {
     undoRoadPlace(entry.tiles, entry.neighborChanges);
   } else if (entry.type === 'road-delete') {
