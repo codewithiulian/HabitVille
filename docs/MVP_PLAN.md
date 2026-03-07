@@ -20,7 +20,7 @@ The following is already built and is NOT part of this sprint:
 - Next.js 16 + React 19 + TypeScript app scaffold
 - PWA setup (service worker + manifest)
 - Vercel deployment + ngrok dev tunneling
-- NPC pathfinding system (A* grid-based, being completed independently)
+- NPC pathfinding system (A\* grid-based, being completed independently)
 
 ## What This Sprint Builds
 
@@ -38,7 +38,6 @@ Everything on top of the existing city builder to make it a complete gamified ha
 
 ## Key Decisions (Locked)
 
-- **"Villes" renamed to "Coins"** throughout the entire codebase and UI.
 - **Demolish = full coin refund.** Removing a placed asset returns 100% of its coin price. No depreciation.
 - **Backfill = entire current week.** Users can check in habits for any day in the current week (Monday–Sunday), not just yesterday.
 - **City expansion is DEFERRED.** Not planned, not designed, not in any milestone. The map stays at its initial size for MVP.
@@ -66,6 +65,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 **Tables:**
 
 **`habits`**
+
 - `id` (UUID, primary key)
 - `name` (string)
 - `category` (enum: Health, Fitness, Learning, Productivity, Mindfulness, Social, Other)
@@ -79,6 +79,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 - `sortOrder` (number — for preserving creation order within same time-of-day group)
 
 **`checkIns`**
+
 - `id` (UUID, primary key)
 - `habitId` (FK to habits)
 - `date` (ISO date string, YYYY-MM-DD — the day this check-in counts for)
@@ -91,6 +92,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 - `createdAt`, `updatedAt`
 
 **`playerProfile`** (single row — only one player per device)
+
 - `id` (UUID, primary key)
 - `totalXP` (number — lifetime cumulative, never resets)
 - `currentLevel` (number — derived from totalXP but stored for quick access)
@@ -103,6 +105,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 - `createdAt`, `updatedAt`
 
 **`inventory`**
+
 - `id` (UUID, primary key)
 - `assetId` (string — references asset catalog)
 - `quantity` (number — how many the player owns but hasn't placed)
@@ -110,6 +113,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 - `createdAt`, `updatedAt`
 
 **`placedAssets`**
+
 - `id` (UUID, primary key)
 - `assetId` (string — references asset catalog)
 - `gridX` (number)
@@ -118,6 +122,7 @@ Define all IndexedDB tables. Schema must be designed with future Supabase sync i
 - `createdAt`
 
 **`weeklySnapshots`**
+
 - `id` (UUID, primary key)
 - `weekStart` (ISO date, Monday)
 - `weekEnd` (ISO date, Sunday)
@@ -190,6 +195,7 @@ Handles level progression from XP. Levels and totalXP are both stored on `player
 - `detectLevelUps(oldXP: number, newXP: number)` → `{ levelsGained: number[], newLevel: number, unlockedAssets: Asset[] }` — Given old and new XP totals, returns all levels crossed and all assets that unlock at those levels. This is the key function called after every XP award.
 
 **Rules:**
+
 - Level is stored on playerProfile and updated whenever XP changes.
 - Levels beyond 150 continue using the last tier's XP requirement (1,500 per level). No cap on leveling.
 - `detectLevelUps` returns an array of levels gained (could be multiple in one check-in session if bonuses are high) and the full list of assets unlocked across all those levels.
@@ -235,6 +241,7 @@ Per-habit streak tracking. Informational only — no gameplay consequences.
 A build-time script that generates the master asset-to-level mapping. Output is a static JSON file imported by the app.
 
 **Process:**
+
 1. Read all asset categories from config (houses: 20 types, apartments: 54, public: 82, restaurants: 32, shopping: 68, vehicles: 102, plants: 82, decorations: 140, fences: 33).
 2. For each category, distribute its types evenly across its unlock level range (e.g., houses span level 1–60, so ~1 house type every 3 levels).
 3. Assign prices within the category's price range, scaling with unlock level (earlier = cheaper, later = more expensive).
@@ -252,18 +259,22 @@ A build-time script that generates the master asset-to-level mapping. Output is 
 Global state stores that bridge React UI and game logic. These read from/write to Dexie and expose reactive state to components.
 
 **`usePlayerStore`**
+
 - State: `xp`, `coins`, `level`, `totalPoints`, `population`, `firstUseDate`, `dontShowCheckInToday`
 - Actions: `addXP(amount)`, `addCoins(amount)`, `spendCoins(amount)`, `setPopulation(count)`, `setDontShowCheckInToday(date)`, `initialize()` (loads from Dexie on app start)
 
 **`useHabitStore`**
+
 - State: `habits[]`, `todayCheckIns[]`
 - Actions: `createHabit(data)`, `updateHabit(id, data)`, `archiveHabit(id)`, `checkIn(habitId, date)`, `skipHabit(habitId, date)`, `getScheduledForDate(date)`, `getCheckInsForDate(date)`, `getCheckInsForWeek(weekStart)`
 
 **`useInventoryStore`**
+
 - State: `ownedAssets[]`, `placedAssets[]`
 - Actions: `purchaseAsset(assetId, colorVariant?)`, `placeAsset(assetId, gridX, gridY, colorVariant?)`, `demolishAsset(placedAssetId)`, `grantFreeAsset(assetId)`, `getAvailableForPlacement()` (qty > 0 items)
 
 **`useGameStore`**
+
 - State: `currentMode` (build | view), `activeScreen` (city | checkin | shop | stats | weeklyReport), `pendingRewards[]` (queue of animations to show), `doubleXPEventActive`, `firstWeekBoostActive`
 - Actions: `toggleBuildMode()`, `openScreen(screen)`, `queueReward(reward)`, `dequeueReward()`, `setDoubleXPEvent(active)`
 
@@ -280,6 +291,7 @@ Global state stores that bridge React UI and game logic. These read from/write t
 Full-screen form for creating a new habit. Mobile-optimized with large tap targets, smooth transitions between fields, and clear visual hierarchy.
 
 **Fields:**
+
 - **Name** — Text input, required. Placeholder: "e.g., Go to the gym"
 - **Category** — Picker with themed icons for each category (Health, Fitness, Learning, Productivity, Mindfulness, Social, Other). Each category has a distinct color and icon. Selecting one applies the theme color to the card preview.
 - **Frequency** — Segmented selector:
@@ -306,6 +318,7 @@ Full-screen form for creating a new habit. Mobile-optimized with large tap targe
 Scrollable list of all active (non-archived) habits. This is accessible from a settings/management area, NOT the daily check-in.
 
 **Per habit row:**
+
 - Category icon + color accent
 - Habit name
 - Difficulty badge (Easy/Medium/Hard)
@@ -335,6 +348,7 @@ Same layout as Create Habit, pre-filled with existing values. All fields are edi
 Triggered on first app launch (when `playerProfile` doesn't exist in Dexie).
 
 **Flow:**
+
 1. **Welcome screen** — Brief animated intro. App name, tagline ("Your habits build your city"), a preview of an isometric city. Single "Get Started" CTA.
 2. **Create your first habits** — Guided version of the Create Habit screen. Pre-suggest 2–3 common habits (e.g., "Drink water" as Easy, "Read for 20 min" as Medium, "Gym session" as Hard). User can customize or skip suggestions. Encourage creating 3–5 habits. Show "You can always add more later."
 3. **Quick tutorial overlay** — 3 brief tips shown over the city view: (a) "Tap the check-in button to complete daily habits" (b) "Earn XP and Coins to level up and buy buildings" (c) "Build your dream city as you grow your habits." Each tip is dismiss-on-tap, max 3 screens.
@@ -353,6 +367,7 @@ Triggered on first app launch (when `playerProfile` doesn't exist in Dexie).
 A full-screen card stack for today's scheduled habits. Opens from the bottom-right floating button or auto-opens on app launch (unless suppressed).
 
 **Card stack behavior:**
+
 - One card visible at a time, with the next card peeking slightly behind.
 - **Swipe right** = complete the habit. Card flies off to the right with a satisfying spring animation.
 - **Swipe left** = skip/later. Card flies off to the left, dimmed. No penalty, no reward.
@@ -360,6 +375,7 @@ A full-screen card stack for today's scheduled habits. Opens from the bottom-rig
 - After the last card, the stack is cleared and the check-in screen shows a summary.
 
 **Card content:**
+
 - Habit name (large, prominent)
 - Category icon + color accent
 - Difficulty badge
@@ -367,16 +383,19 @@ A full-screen card stack for today's scheduled habits. Opens from the bottom-rig
 - Current streak count (small, bottom of card)
 
 **Card sort order:**
+
 - Primary: time of day (morning → afternoon → evening → anytime)
 - Secondary: creation order (`sortOrder` field) within the same time-of-day group
 
 **"Don't show today" checkbox:**
+
 - Located at the bottom of the check-in screen (below the card stack).
 - When checked: store today's date in `playerProfile.dontShowCheckInToday`.
 - Effect: the check-in screen does NOT auto-open on app launch for the rest of this day. The bottom-right button still works for manual access.
 - Resets daily: on each app open, if `dontShowCheckInToday !== today`, auto-open logic applies normally.
 
 **Auto-open logic:**
+
 - On app launch, if there are pending (uncompleted, unskipped) habits for today AND `dontShowCheckInToday !== today` → open check-in screen automatically.
 - If all habits are done or user opted out → go straight to city view.
 
@@ -389,6 +408,7 @@ Users can check in habits for any day in the current week (Monday through today)
 **UI:** At the top of the check-in screen, show day tabs or a horizontal scrollable date strip for the current week (Mon–Sun). Today is selected by default. Tapping a past day loads that day's scheduled habits as a card stack. Future days are disabled.
 
 **Rules:**
+
 - A past day's card stack shows only habits that were scheduled for that day AND haven't been checked in yet.
 - Backfilled check-ins earn the same base XP + Coins as same-day completions.
 - Backfilled check-ins count toward the weekly consistency calculation.
@@ -405,6 +425,7 @@ A single reusable overlay component for all reward/celebration moments across th
 **Component: `RewardReveal`**
 
 **Behavior:**
+
 - Full-screen semi-transparent overlay.
 - Content item grows in from center with a scale + bounce animation.
 - Glow/particle effect behind the item.
@@ -414,16 +435,16 @@ A single reusable overlay component for all reward/celebration moments across th
 
 **Variants (controlled by props):**
 
-| Variant | Content | Animation |
-|---------|---------|-----------|
-| XP Earned | XP icon + amount | Grows in center → floats up to HUD XP bar position → HUD bar glows/sparkles |
-| Coins Earned | Coin icon + amount | Grows in center → floats up to HUD coin counter → counter glows/sparkles |
-| Surprise Bonus | Treasure chest that opens → reveals double XP + Coins | Chest shake → open → coins burst out |
-| Level Up | Large level number with confetti/particles | Number zooms in → confetti burst → shows unlocked assets list |
-| Asset Unlocked | Asset sprite grows + glows | Sprite scales up with glow → "Unlocked!" text → "Free copy added!" |
-| Streak Milestone | Badge icon with streak number | Badge stamps in → streak number appears → small confetti |
-| Weekly Bonus | Coin stack with multiplier text | Stack builds up → multiplier badge slams in |
-| Daily Perfect Day | Star/checkmark icon | Star grows → "Perfect Day!" text → XP + Coins added |
+| Variant           | Content                                               | Animation                                                                   |
+| ----------------- | ----------------------------------------------------- | --------------------------------------------------------------------------- |
+| XP Earned         | XP icon + amount                                      | Grows in center → floats up to HUD XP bar position → HUD bar glows/sparkles |
+| Coins Earned      | Coin icon + amount                                    | Grows in center → floats up to HUD coin counter → counter glows/sparkles    |
+| Surprise Bonus    | Treasure chest that opens → reveals double XP + Coins | Chest shake → open → coins burst out                                        |
+| Level Up          | Large level number with confetti/particles            | Number zooms in → confetti burst → shows unlocked assets list               |
+| Asset Unlocked    | Asset sprite grows + glows                            | Sprite scales up with glow → "Unlocked!" text → "Free copy added!"          |
+| Streak Milestone  | Badge icon with streak number                         | Badge stamps in → streak number appears → small confetti                    |
+| Weekly Bonus      | Coin stack with multiplier text                       | Stack builds up → multiplier badge slams in                                 |
+| Daily Perfect Day | Star/checkmark icon                                   | Star grows → "Perfect Day!" text → XP + Coins added                         |
 
 **Queue system:** `useGameStore.pendingRewards[]` holds an ordered array of reward objects. The component renders the first item. On dismiss, `dequeueReward()` removes it, and the next item renders. When the queue is empty, the overlay closes.
 
@@ -434,6 +455,7 @@ A single reusable overlay component for all reward/celebration moments across th
 The specific sequence that plays when a user swipes right to complete a habit.
 
 **Sequence:**
+
 1. Card swipes off to the right.
 2. Calculate reward using `calculateCheckInReward()`.
 3. If surprise bonus triggered (20% chance): queue Surprise Bonus variant first.
@@ -467,6 +489,7 @@ On opening the check-in screen for a session, roll for a 2x XP event using `roll
 ### 3.6 — First-Week Boost Indicator
 
 If the current date is within 7 days of `playerProfile.firstUseDate`:
+
 - Show a persistent "🚀 2x XP BOOST — First Week!" banner on the check-in screen.
 - All per-task base XP is automatically doubled via `isFirstWeekBoostActive()` check in the reward calculation.
 - This stacks with the random 2x XP event if both are active.
@@ -478,6 +501,7 @@ If the current date is within 7 days of `playerProfile.firstUseDate`:
 After all cards have been swiped (or dismissed), show a brief session summary before returning to the city.
 
 **Content:**
+
 - Total XP earned this session
 - Total Coins earned this session
 - Habits completed: X/Y
@@ -499,19 +523,20 @@ This is a simple static screen, not a RewardReveal animation. It provides closur
 A dedicated full-screen page (not a modal) for browsing and purchasing assets. Gaming-inspired design — think clash-of-clans or any modern mobile game store. Rich, polished, dark or themed background, with clear visual hierarchy.
 
 **Layout:**
+
 - **Header:** "Shop" title, current Coin balance (with coin icon, always visible), close/back button.
 - **Category tabs:** Horizontal scrollable tab bar below the header. Tabs: Houses, Apartments, Public, Restaurants, Shopping, Vehicles, Plants, Decorations, Fences. Active tab is highlighted. Tapping a tab smoothly scrolls/switches to that category's grid.
 - **Asset grid:** Below the tabs, a scrollable grid of asset cards for the selected category. 3 columns on mobile, 4–5 on desktop. Each card is square with the asset sprite centered.
 
 **Asset card states:**
 
-| State | Visual Treatment |
-|-------|-----------------|
-| **Unlocked + affordable** | Full-color sprite. Price tag at bottom. "Buy" button or tap-to-buy. |
-| **Unlocked + already owned** | Full-color sprite. "Owned ×N" badge (top-right). Price tag still shown for buying more. |
-| **Unlocked + can't afford** | Sprite visible but slightly dimmed. Price shown in red. Buy button disabled/greyed. |
-| **Locked** | Sprite shown as silhouette or heavily blurred. Lock icon overlay. "Level X" label. |
-| **Newly unlocked (NEW)** | Full-color sprite with a "NEW" badge (glowing/pulsing). Shown for recently unlocked items until the user views them. |
+| State                        | Visual Treatment                                                                                                     |
+| ---------------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Unlocked + affordable**    | Full-color sprite. Price tag at bottom. "Buy" button or tap-to-buy.                                                  |
+| **Unlocked + already owned** | Full-color sprite. "Owned ×N" badge (top-right). Price tag still shown for buying more.                              |
+| **Unlocked + can't afford**  | Sprite visible but slightly dimmed. Price shown in red. Buy button disabled/greyed.                                  |
+| **Locked**                   | Sprite shown as silhouette or heavily blurred. Lock icon overlay. "Level X" label.                                   |
+| **Newly unlocked (NEW)**     | Full-color sprite with a "NEW" badge (glowing/pulsing). Shown for recently unlocked items until the user views them. |
 
 **Mobile-first:** Cards are large enough to tap comfortably. Scrolling is smooth. The shop feels like a premium experience.
 
@@ -560,6 +585,7 @@ When a level-up unlocks new asset types (determined by `detectLevelUps()`):
 The existing build toolbar must now be driven by inventory data.
 
 **Rules:**
+
 - The build toolbar only shows assets where `inventory.quantity > 0` for that asset.
 - Roads remain always available (free, unlimited).
 - When the user places an asset on the grid: decrement `inventory.quantity` by 1, create a `placedAssets` record.
@@ -579,12 +605,14 @@ The existing build toolbar must now be driven by inventory data.
 A persistent overlay at the top of the city view. Always visible in both build and view modes. Styled as a game HUD — think glassmorphism, subtle gradients, or a clean game-UI bar. NOT a generic web header.
 
 **Contents (left to right):**
+
 - **Level badge** — Circular or shield-shaped badge showing current level number. Subtle glow or border color that changes by level tier.
 - **XP progress bar** — Horizontal bar showing progress toward the next level. Filled portion is animated. **Tappable:** on tap, show a small tooltip/popup: "1,234 / 2,000 XP to Level 23" (current XP in level / XP required for this level).
 - **Coin counter** — Coin icon + current balance number. Animated on change (count-up/down animation).
 - **Population counter** — Small people icon + total population number.
 
 **Animation behavior:**
+
 - When XP is earned: the XP bar fills smoothly. The bar and its icon briefly grow in scale (~110%) and emit a sparkle/glow effect for ~1 second.
 - When Coins are earned: the coin counter number counts up. The coin icon briefly grows (~110%) and sparkles for ~1 second.
 - When Coins are spent: the counter counts down. Brief subtle red flash or drain effect.
@@ -607,6 +635,7 @@ A button located at the **bottom-left** of the screen.
 A floating action button at the **bottom-right** of the screen. Always visible on the city view.
 
 **Appearance:**
+
 - Circular button with a checkmark or calendar icon.
 - **Badge:** shows the number of pending (uncompleted, unskipped) habits for today. Badge is a small red/orange circle with the count. If zero pending, no badge.
 - Tapping opens the check-in screen (Milestone 3).
@@ -620,11 +649,13 @@ A floating action button at the **bottom-right** of the screen. Always visible o
 The check-in screen (opened from the floating button) has two views, switchable via a tab/toggle at the top:
 
 **Daily tab (default):**
+
 - The swipe card stack for today (or selected backfill day).
 - Day selector strip for backfill (current week).
 - This is the core check-in experience from Milestone 3.
 
 **Weekly tab:**
+
 - A 7-column grid representing Mon–Sun of the current week.
 - Each column shows: day name, date, and a list of that day's scheduled habits.
 - Each habit shows: name, completion status (checkmark / empty / skipped).
@@ -640,6 +671,7 @@ The check-in screen (opened from the floating button) has two views, switchable 
 The city view is the home screen. All other screens are overlays or full-screen pages accessible from the city.
 
 **Access points:**
+
 - **Check-in** → Bottom-right floating button (or auto-open).
 - **Shop** → Accessible from a menu button. (Top-right hamburger or a small shop icon in the HUD.)
 - **Stats** → Accessible from the same menu.
@@ -675,6 +707,7 @@ A full-screen report that triggers automatically. This is both a review and a re
 7. **Dismiss button** — "Continue" or "Back to City."
 
 **On trigger:**
+
 1. Run `calculateWeeklyCompletion()` and `calculateWeeklyBonus()`.
 2. Award the weekly bonus XP + Coins to the player profile.
 3. Save the `weeklySnapshot` to Dexie with `delivered: true`.
@@ -687,6 +720,7 @@ A full-screen report that triggers automatically. This is both a review and a re
 Accessible anytime from the menu. Shows the current in-progress week.
 
 **Content:**
+
 - **Today's check-in status** — List of today's scheduled habits with done/pending/skipped status.
 - **Weekly completion %** — Progress toward this week's total. "18/33 habits completed (55%)."
 - **Projected weekly bonus** — Based on current pace: "If you maintain this pace: 1.5x bonus (~855 XP, ~465 Coins)." Updates live as habits are completed.
@@ -700,6 +734,7 @@ Accessible anytime from the menu. Shows the current in-progress week.
 Calendar heatmap and per-habit analysis for the current month.
 
 **Content:**
+
 - **Calendar heatmap** — A 5-row × 7-column grid for the month. Each day cell is color-coded by completion rate: dark green (100%), medium green (70%+), light green (50%+), light grey (below 50%), empty/white (0% or no habits scheduled). Tapping a day could show a detail tooltip.
 - **Per-habit completion rates** — Each habit with a horizontal progress bar: "Gym: 18/22 (82%)", "Read: 25/30 (83%)". Sorted by rate.
 - **Trend vs last month** — Arrow icon: ↑ improved, → same, ↓ declined. Comparison of overall completion percentage. "72% this month vs 68% last month (↑ 4%)."
@@ -712,6 +747,7 @@ Calendar heatmap and per-habit analysis for the current month.
 Lifetime stats and records.
 
 **Content:**
+
 - **Current level + XP bar** — Same as HUD but larger. Shows level number, XP bar with numbers, percentage to next level.
 - **Total lifetime points** — Large number. This is the bragging right number (same as total XP, displayed as "Points").
 - **Total Coins earned** — Lifetime.
@@ -734,6 +770,7 @@ Lifetime stats and records.
 When a building is placed on the grid, determine whether it contributes to population.
 
 **Logic:**
+
 - Look up the placed asset's `category` in the asset catalog.
 - If category is `houses` → population contribution = 4 (from config `population.per_housing_type.house`).
 - If category is `apartments` → determine small vs large based on asset data (defined per-asset in the catalog). Small = 20, Large = 40.
@@ -771,6 +808,7 @@ The population counter can grow to thousands, but the number of visible NPC spri
 Go through every screen and interaction to ensure smooth animations and micro-interactions.
 
 **Checklist:**
+
 - All screen transitions: slide or fade (no hard cuts).
 - Button press states: scale-down on press, spring back on release.
 - Card swipe physics: spring-based, with rotation proportional to drag distance.
@@ -783,6 +821,7 @@ Go through every screen and interaction to ensure smooth animations and micro-in
 - Toast notifications for minor events (habit archived, settings saved).
 
 **CSS/Tailwind animations:**
+
 - Use CSS keyframe animations for repeating effects (glow, sparkle, pulse).
 - Use Tailwind's `transition-*` utilities for state changes.
 - Spring physics for swipe cards (use a small library or CSS spring approximation).
@@ -806,6 +845,7 @@ Go through every screen and interaction to ensure smooth animations and micro-in
 Automated tests (Vitest) that validate the config math against the design targets.
 
 **Test cases:**
+
 - **Perfect week scenario:** 6 habits (2 easy daily, 2 medium daily, 2 hard 5x/week = 33 tasks). Assert total weekly XP ≈ 2,744 and Coins ≈ 1,512 (with typical random bonus variance accounted for).
 - **Perfect year simulation:** Run 52 perfect weeks through the leveling engine. Assert level reached is ~150. Assert total Coins ≈ 78,600.
 - **70% consistency year:** Simulate 52 weeks at 70% completion. Assert level ≈ 80–85.
@@ -850,6 +890,7 @@ Automated tests (Vitest) that validate the config math against the design target
 Document the Supabase Postgres schema that mirrors Dexie.
 
 **Tables:**
+
 - `users` — id (UUID), email, displayName, avatarUrl, authProvider, createdAt
 - `habits` — mirrors Dexie habits table + `userId` FK
 - `check_ins` — mirrors Dexie checkIns table + `userId` FK
@@ -869,6 +910,7 @@ Row Level Security (RLS) policies: each user can only read/write their own rows.
 Document the offline-first sync approach.
 
 **Strategy:**
+
 - Dexie is the source of truth. The app always reads from and writes to Dexie.
 - On connectivity (app open with internet, or returning from offline): push all records where `updatedAt > syncedAt` to Supabase.
 - On app open with internet: pull any records from Supabase that are newer than local (handles multi-device sync).
@@ -883,6 +925,7 @@ Document the offline-first sync approach.
 Document the auth integration approach.
 
 **Flow:**
+
 - Supabase Auth with Google OAuth provider.
 - On first sign-in on a device: if local Dexie data exists (anonymous user), associate it with the new auth user. Upload to Supabase.
 - On first sign-in on a new device: if Supabase has data for this user, pull it down and hydrate Dexie.
@@ -895,6 +938,7 @@ Document the auth integration approach.
 Document how to transition from local-only to synced without data loss.
 
 **Key decisions made in this sprint that enable this:**
+
 - UUIDs as primary keys (not auto-increment) → no collision when merging local data with server.
 - `createdAt` / `updatedAt` on every record → conflict resolution is possible.
 - `syncedAt` field present but unused → ready to flip on.
@@ -904,17 +948,17 @@ Document how to transition from local-only to synced without data loss.
 
 ## Sprint Summary
 
-| Milestone | Name | Depends On |
-|-----------|------|------------|
-| 1 | Data Layer & Economy Engine | Nothing (foundation) |
-| 2 | Habit Management | Milestone 1 (Dexie schema, stores) |
-| 3 | Daily Check-In System | Milestone 1 + 2 (economy engine, habit data) |
-| 4 | Shop & Unlock System | Milestone 1 (asset catalog, inventory store, leveling engine) |
-| 5 | City HUD & Navigation | Milestone 1 + existing city builder |
-| 6 | Analytics & Weekly Report | Milestone 1 (weekly engine, snapshot data) |
-| 7 | Population & Housing | Milestone 1 + existing placement system |
-| 8 | Polish & Integration Testing | All previous milestones |
-| 9 | Supabase & Auth Architecture | Documentation only, no code dependencies |
+| Milestone | Name                         | Depends On                                                    |
+| --------- | ---------------------------- | ------------------------------------------------------------- |
+| 1         | Data Layer & Economy Engine  | Nothing (foundation)                                          |
+| 2         | Habit Management             | Milestone 1 (Dexie schema, stores)                            |
+| 3         | Daily Check-In System        | Milestone 1 + 2 (economy engine, habit data)                  |
+| 4         | Shop & Unlock System         | Milestone 1 (asset catalog, inventory store, leveling engine) |
+| 5         | City HUD & Navigation        | Milestone 1 + existing city builder                           |
+| 6         | Analytics & Weekly Report    | Milestone 1 (weekly engine, snapshot data)                    |
+| 7         | Population & Housing         | Milestone 1 + existing placement system                       |
+| 8         | Polish & Integration Testing | All previous milestones                                       |
+| 9         | Supabase & Auth Architecture | Documentation only, no code dependencies                      |
 
 **Parallelization:** Milestones 2, 4, 5, 6, and 7 can be worked on in parallel (or via separate Claude Code agent sessions) once Milestone 1 is complete. Milestone 3 requires both 1 and 2. Milestone 8 requires everything.
 
@@ -928,10 +972,10 @@ The following values need to be added to `config.yml` to support this plan:
 
 ```yaml
 population:
-  max_visible_npcs: 50           # Cap on rendered NPC sprites on the map
+  max_visible_npcs: 50 # Cap on rendered NPC sprites on the map
 
 check_in:
-  backfill_max_days: 7           # Changed from 1 to cover the full current week (Mon-Sun)
+  backfill_max_days: 7 # Changed from 1 to cover the full current week (Mon-Sun)
 ```
 
 No other config changes are needed. All other values are already defined.

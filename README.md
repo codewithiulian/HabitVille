@@ -34,7 +34,7 @@ All game assets are from [Penzilla](https://penzilla.itch.io/) — a single arti
 
 🏗️ **Actively building.** This is a solo side project built in public. I'm working through it in small units over weekends with the goal of having something playable in ~3 months.
 
-Progress is tracked in [ARCHITECTURE.md](./ARCHITECTURE.md) and the implementation roadmap lives in [ACTION_PLAN.md](./ACTION_PLAN.md).
+Progress is tracked in [ARCHITECTURE.md](./docs/ARCHITECTURE.md) and the implementation roadmap lives in [ACTION_PLAN.md](./ACTION_PLAN.md).
 
 ## Why build this in public?
 

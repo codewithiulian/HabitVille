@@ -26,16 +26,18 @@ No test framework is configured. Verify changes with `npm run build`.
 
 ### Key Directories
 
-| Path | Purpose |
-|---|---|
-| `src/engine/` | Pure PixiJS game engine — **no React imports allowed** |
-| `src/components/` | React UI overlays above the canvas |
-| `src/stores/` | Zustand stores (`use[Domain]Store` pattern) |
-| `src/db/` | Dexie.js (IndexedDB) persistence — fire-and-forget writes |
-| `src/types/` | Shared TypeScript types |
-| `src/config/` | Constants (`UPPER_SNAKE_CASE`) and tunable parameters |
-| `config.yml` | Game economy/progression tuning (XP, coins, levels, bonuses) |
-| `public/assets/` | Penzilla art packs (raw structure) |
+| Path                 | Purpose                                                      |
+| -------------------- | ------------------------------------------------------------ |
+| `src/engine/`        | Pure PixiJS game engine — **no React imports allowed**       |
+| `src/components/`    | React UI overlays above the canvas                           |
+| `src/stores/`        | Zustand stores (`use[Domain]Store` pattern)                  |
+| `src/db/`            | Dexie.js (IndexedDB) persistence — fire-and-forget writes    |
+| `src/types/`         | Shared TypeScript types                                      |
+| `src/config/`        | Constants (`UPPER_SNAKE_CASE`) and tunable parameters        |
+| `config.yml`         | Game economy/progression tuning (XP, coins, levels, bonuses) |
+| `public/assets/`     | Penzilla art packs (raw structure)                           |
+| `docs/MVP_PLAN.md`   | The full sprint plan                                         |
+| `docs/HabitVille.md` | All the rules pf the game                                    |
 
 ### Critical Patterns
 
@@ -61,19 +63,30 @@ No test framework is configured. Verify changes with `npm run build`.
 - "Issue" and "item" mean the same thing — when the user says "do item #12" or "issue #25", look it up on this board via `gh` CLI
 - Repo: `codewithiulian/HabitVille`
 
+### Sprint Rules
+
+- All economy values come from config.yml — zero hardcoded numbers
+- All Dexie record IDs are UUIDs
+- All timestamps are ISO strings
+- Every Dexie record has `createdAt` + `updatedAt` fields
+- Demolish any placed asset = full coin refund
+- Backfill covers the entire current week (Mon–today), not just yesterday
+- Offline-first — everything works without network
+- RewardReveal component is the single reusable overlay for ALL reward/celebration animations — never build a second one
+
 ## Dev Workflow
 
 When working on an issue/item:
 
 1. **Setup**: Create a new worktree with a dedicated branch
-2. **Plan**: Read the issue details and `ARCHITECTURE.md`. Ask questions until scope is clear — never assume
+2. **Plan**: Read the issue details and `docs/ARCHITECTURE.md`. Ask questions until scope is clear — never assume
 3. **Build**: Once the plan is approved, implement it. Run `npm run build` before declaring done
 4. **Review**: Provide a plain-english summary (no jargon) and a minimal test plan covering requirements + nothing broken
 5. **Close out** (after user approves testing):
    - Comment the original plan on the GitHub issue
    - Comment a full summary of what was done on the same issue
    - Create a PR and notify when CI is green
-   - Update `ARCHITECTURE.md` with new files, patterns, and current state
+   - Update `docs/ARCHITECTURE.md` minimally (new files, patterns, current state) — only if the changes warrant it
 
 ## Z-Index Layers
 
