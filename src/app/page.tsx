@@ -26,9 +26,14 @@ const RoadDeleteConfirm = dynamic(() => import('@/components/RoadDeleteConfirm')
   ssr: false,
 });
 
+const AppInitializer = dynamic(() => import('@/components/AppInitializer'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
+      <AppInitializer />
       <GameCanvas />
       <Toast />
       <BuildingPopup />

@@ -146,14 +146,35 @@ Sidewalks are auto-generated ground tiles flanking roads, with deterministic str
 
 ### Persistence (Dexie.js)
 
-- Database: `'habitville'`, version 4
-- Tables: `city`, `roads`, `sidewalks`, `accessories`, `gameState`, `habits`, `checkins`
-- Compound index `[habitId+date]` on checkins for O(1) lookup
+- Database: `'habitville'`, version 5
+- **City tables** (v1–v4): `city`, `roads`, `sidewalks`, `accessories`, `gameState`
+- **Economy tables** (v5): `habits` (indexed: archived), `checkIns` (indexed: [habitId+date], date), `playerProfile`, `inventory` (indexed: assetId), `placedAssets` (indexed: assetId), `weeklySnapshots` (indexed: weekStart)
+- All economy records use UUIDs, ISO timestamps (`createdAt`/`updatedAt`), and `syncedAt?` for future sync
 - **Restore order**: `restoreCity()` -> `restoreRoads()` -> `restoreSidewalks()` -> `restoreAccessories()` -> `recalcSidewalksAfterRestore()`
+
+### Config System
+
+- `config.yml` is the single source of truth for all economy/progression values
+- `scripts/gen-config.js` generates `src/config/game-config.gen.json` at build time (via npm pre-scripts)
+- `src/config/game-config.ts` imports the JSON and exports typed `GAME_CONFIG`
+- The generated JSON is gitignored — always regenerated from YAML
+
+### Zustand Stores (Economy Layer)
+
+All stores follow the `useBuildStore` pattern. DB writes are fire-and-forget `.catch(() => {})`.
+
+| Store | File | Key State |
+|-------|------|-----------|
+| `usePlayerStore` | `src/stores/player-store.ts` | xp, coins, level, population, firstUseDate |
+| `useHabitStore` | `src/stores/habit-store.ts` | habits[], todayCheckIns[] |
+| `useInventoryStore` | `src/stores/inventory-store.ts` | ownedAssets[], placedAssets[] |
+| `useGameStore` | `src/stores/game-store.ts` | currentMode, activeScreen, pendingRewards[], boost flags |
+
+**Initialization order** (in `AppInitializer.tsx`): Player first → Habit + Inventory in parallel → Game last (reads player's firstUseDate).
 
 ### Habits System
 
-- **Data model:** `Habit` (name, icon, color, frequency, customDays, sortOrder, archivedAt) + `Checkin` (habitId, date YYYY-MM-DD, completedAt)
+- **Data model:** `Habit` (name, category, difficulty, frequency, timeOfDay, sortOrder, archived) + `CheckIn` (habitId, date YYYY-MM-DD, completed, skipped, xpEarned, coinsEarned)
 - **Streak algorithm:** Walk backward from today through scheduled days only. If today is scheduled but unchecked, start from yesterday. Count consecutive scheduled days with checkins; stop at first miss. Weekday habits skip weekends, custom habits skip non-custom days.
 - **UI pattern:** Bottom sheet (HabitList) triggered by FAB. Form slides over list. Habit components use **Tailwind utility classes** (build components use inline styles).
 
@@ -178,9 +199,9 @@ Sidewalks are auto-generated ground tiles flanking roads, with deterministic str
 
 ## Current State
 
-**Last completed unit:** Phase 5.1 — Habits System (CRUD, Check-ins, Streaks)
-**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD with check-ins and streak tracking.
-**Next up:** Phase 6 (Economy/XP)
+**Last completed unit:** Issue #48 — Dexie Schema v5, Config Loader & Zustand Stores
+**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD with check-ins and streak tracking, config loader (YAML→JSON→typed TS), economy data layer (player profile, inventory, placed assets, weekly snapshots), Zustand stores for player/habit/inventory/game state.
+**Next up:** Economy engine (XP/coin calculations, bonuses, level-ups)
 
 ---
 
