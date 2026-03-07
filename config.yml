@@ -398,6 +398,7 @@ assets:
 # ----------------------------------------------------------------------------
 population:
   people_sprite_pool: 37 # Total unique people character designs
+  max_visible_npcs: 50 # Cap on rendered NPC sprites on the map
 
   # Residents generated per housing type placed in the city.
   per_housing_type:
@@ -444,12 +445,11 @@ check_in:
 
   # Backfill: users can log habits for previous days.
   allow_backfill: true
-  backfill_max_days: 1 # Can only backfill yesterday, not further back
+  backfill_max_days: 7 # Changed from 1 to cover the full current week (Mon-Sun)
 
   # Target check-in duration for UX benchmarking.
   # Not enforced — this is a design guideline.
   target_duration_seconds: 10 # For 3-5 habits
-
 # ----------------------------------------------------------------------------
 # ANALYTICS
 # ----------------------------------------------------------------------------
