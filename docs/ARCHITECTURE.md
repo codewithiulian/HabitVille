@@ -176,7 +176,11 @@ All stores follow the `useBuildStore` pattern. DB writes are fire-and-forget `.c
 
 - **Data model:** `Habit` (name, category, difficulty, frequency, timeOfDay, sortOrder, archived) + `CheckIn` (habitId, date YYYY-MM-DD, completed, skipped, xpEarned, coinsEarned)
 - **Streak algorithm:** Walk backward from today through scheduled days only. If today is scheduled but unchecked, start from yesterday. Count consecutive scheduled days with checkins; stop at first miss. Weekday habits skip weekends, custom habits skip non-custom days.
-- **UI pattern:** Bottom sheet (HabitList) triggered by FAB. Form slides over list. Habit components use **Tailwind utility classes** (build components use inline styles).
+- **Streak implementation:** `src/lib/streak-utils.ts` — pure `calculateStreak(habit, checkIns)` function.
+- **Category visuals:** `src/config/habit-categories.ts` — Lucide icon + hex color per `HabitCategory`.
+- **UI pattern:** Bottom sheet (HabitList z-300) triggered by FAB (z-90, bottom-right). Form (z-310) slides over list. Archive confirmation is a centered modal (z-320). Habit components use **Tailwind utility classes** (build components use inline styles).
+- **Onboarding:** Detected via `db.playerProfile.count() === 0` in AppInitializer. Two steps: welcome → habit suggestions (3 hardcoded defaults). After completion, triggers TutorialOverlay (z-500) with 3 coach marks. State in `gameStore.showOnboarding` / `gameStore.tutorialStep` (not persisted to DB).
+- **Build toggle:** Cog button (bottom-left, z-90) toggles `currentMode` between 'view' and 'build'. BuildToolbar only renders in build mode. Close button (top-right) also exits build mode.
 
 ### Asset Folder Mapping (Penzilla Pack -> Repo)
 
@@ -199,8 +203,8 @@ All stores follow the `useBuildStore` pattern. DB writes are fire-and-forget `.c
 
 ## Current State
 
-**Last completed unit:** Issue #48 — Dexie Schema v5, Config Loader & Zustand Stores
-**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD with check-ins and streak tracking, config loader (YAML→JSON→typed TS), economy data layer (player profile, inventory, placed assets, weekly snapshots), Zustand stores for player/habit/inventory/game state.
+**Last completed unit:** Issue #50 — Habit Management (CRUD + Onboarding)
+**What works:** Isometric grid, camera (pan/zoom/pinch/momentum), build system (drag-to-place, move, delete, undo, toggle via cog button), road auto-tiling (3 types), sidewalk auto-generation with accessories, IndexedDB persistence for all city state, habit CRUD UI (create/edit/archive forms, bottom sheet list, FAB entry point), streak calculation, first-time onboarding flow (welcome → habit suggestions → tutorial overlay), config loader (YAML→JSON→typed TS), economy data layer (player profile, inventory, placed assets, weekly snapshots), Zustand stores for player/habit/inventory/game state.
 **Next up:** Economy engine (XP/coin calculations, bonuses, level-ups)
 
 ---

@@ -9,6 +9,8 @@ interface GameState {
   pendingRewards: PendingReward[];
   doubleXPEventActive: boolean;
   firstWeekBoostActive: boolean;
+  showOnboarding: boolean;
+  tutorialStep: number | null;
   initialized: boolean;
 
   initialize: () => Promise<void>;
@@ -17,6 +19,8 @@ interface GameState {
   queueReward: (reward: PendingReward) => void;
   dequeueReward: () => PendingReward | undefined;
   setDoubleXPEvent: (active: boolean) => void;
+  setShowOnboarding: (show: boolean) => void;
+  setTutorialStep: (step: number | null) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -25,6 +29,8 @@ export const useGameStore = create<GameState>((set, get) => ({
   pendingRewards: [],
   doubleXPEventActive: false,
   firstWeekBoostActive: false,
+  showOnboarding: false,
+  tutorialStep: null,
   initialized: false,
 
   initialize: async () => {
@@ -75,5 +81,13 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setDoubleXPEvent: (active) => {
     set({ doubleXPEventActive: active });
+  },
+
+  setShowOnboarding: (show) => {
+    set({ showOnboarding: show });
+  },
+
+  setTutorialStep: (step) => {
+    set({ tutorialStep: step });
   },
 }));
