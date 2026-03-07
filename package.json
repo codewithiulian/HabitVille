@@ -3,11 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "predev": "node scripts/gen-config.js",
+    "predev": "node scripts/gen-config.js && node scripts/gen-asset-catalog.js",
     "dev": "concurrently -n next,tunnel,open \"next dev\" \"cloudflared tunnel run --url http://localhost:3000 habitville\" \"node scripts/open-browser.js\"",
-    "predev-local": "node scripts/gen-config.js",
+    "predev-local": "node scripts/gen-config.js && node scripts/gen-asset-catalog.js",
     "dev-local": "next dev --turbopack",
-    "prebuild": "node scripts/gen-config.js",
+    "prebuild": "node scripts/gen-config.js && node scripts/gen-asset-catalog.js",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"
