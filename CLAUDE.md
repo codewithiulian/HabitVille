@@ -54,13 +54,26 @@ No test framework is configured. Verify changes with `npm run build`.
 - Constants: `UPPER_SNAKE_CASE` in `src/config/`
 - Zustand stores: `use[Domain]Store`
 
-## Dev Workflow (from PROMPT.md / DEV_WORKFLOW.md)
+## Project Board & Issues
 
-1. Read ARCHITECTURE.md before writing code
-2. Implement what the ACTION_PLAN specifies, nothing more
-3. Verify with `npm run build` before finishing
-4. Update ARCHITECTURE.md with new files, patterns, and current state
-5. Commit format: `Phase [N]: [short description]`
+- **Board**: https://github.com/users/codewithiulian/projects/5
+- All issues (bugs and enhancements) live on this board in the backlog
+- "Issue" and "item" mean the same thing — when the user says "do item #12" or "issue #25", look it up on this board via `gh` CLI
+- Repo: `codewithiulian/HabitVille`
+
+## Dev Workflow
+
+When working on an issue/item:
+
+1. **Setup**: Create a new worktree with a dedicated branch
+2. **Plan**: Read the issue details and `ARCHITECTURE.md`. Ask questions until scope is clear — never assume
+3. **Build**: Once the plan is approved, implement it. Run `npm run build` before declaring done
+4. **Review**: Provide a plain-english summary (no jargon) and a minimal test plan covering requirements + nothing broken
+5. **Close out** (after user approves testing):
+   - Comment the original plan on the GitHub issue
+   - Comment a full summary of what was done on the same issue
+   - Create a PR and notify when CI is green
+   - Update `ARCHITECTURE.md` with new files, patterns, and current state
 
 ## Z-Index Layers
 
