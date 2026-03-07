@@ -1,8 +1,13 @@
 import Dexie from 'dexie';
 import type { EntityTable } from 'dexie';
+import type { Habit } from '@/types/habit';
+import type { CheckIn } from '@/types/check-in';
+import type { PlayerProfile } from '@/types/player';
+import type { InventoryItem, PlacedAsset } from '@/types/inventory';
+import type { WeeklySnapshot } from '@/types/weekly-snapshot';
 
 // ---------------------------------------------------------------------------
-// Interfaces
+// Interfaces (city layer — existing)
 // ---------------------------------------------------------------------------
 
 export interface CityBuilding {
@@ -58,6 +63,12 @@ const db = new Dexie('habitville') as Dexie & {
   sidewalks: EntityTable<CitySidewalk, 'id'>;
   accessories: EntityTable<CityAccessory, 'id'>;
   gameState: EntityTable<GameStateRow, 'id'>;
+  habits: EntityTable<Habit, 'id'>;
+  checkIns: EntityTable<CheckIn, 'id'>;
+  playerProfile: EntityTable<PlayerProfile, 'id'>;
+  inventory: EntityTable<InventoryItem, 'id'>;
+  placedAssets: EntityTable<PlacedAsset, 'id'>;
+  weeklySnapshots: EntityTable<WeeklySnapshot, 'id'>;
 };
 
 db.version(1).stores({
@@ -85,6 +96,20 @@ db.version(4).stores({
   sidewalks: 'id',
   accessories: 'id',
   gameState: 'id',
+});
+
+db.version(5).stores({
+  city: 'id',
+  roads: 'id',
+  sidewalks: 'id',
+  accessories: 'id',
+  gameState: 'id',
+  habits: 'id, archived',
+  checkIns: 'id, [habitId+date], date',
+  playerProfile: 'id',
+  inventory: 'id, assetId',
+  placedAssets: 'id, assetId',
+  weeklySnapshots: 'id, weekStart',
 });
 
 export { db };
