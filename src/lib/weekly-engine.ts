@@ -1,5 +1,5 @@
 import { GAME_CONFIG } from '@/config/game-config';
-import { isScheduledForDate } from '@/lib/schedule-utils';
+import { isScheduledForDate, formatDateString } from '@/lib/schedule-utils';
 import type { Habit } from '@/types/habit';
 import type { CheckIn } from '@/types/check-in';
 import type { WeeklySnapshot } from '@/types/weekly-snapshot';
@@ -22,10 +22,7 @@ export interface WeeklyCompletion {
 function addDays(dateStr: string, days: number): string {
   const d = new Date(dateStr + 'T00:00:00');
   d.setDate(d.getDate() + days);
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, '0');
-  const day = String(d.getDate()).padStart(2, '0');
-  return `${y}-${m}-${day}`;
+  return formatDateString(d);
 }
 
 // ---------------------------------------------------------------------------
