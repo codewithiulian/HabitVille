@@ -6,6 +6,7 @@ import { usePlayerStore } from '@/stores/player-store';
 import { useHabitStore } from '@/stores/habit-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { useGameStore } from '@/stores/game-store';
+import { formatDateString, isScheduledForDate } from '@/lib/schedule-utils';
 
 export default function AppInitializer() {
   useEffect(() => {
@@ -21,6 +22,26 @@ export default function AppInitializer() {
 
       if (isFirstUse) {
         useGameStore.getState().setShowOnboarding(true);
+        return;
+      }
+
+      // Auto-open check-in if there are pending habits and user hasn't dismissed
+      const today = formatDateString(new Date());
+      const playerState = usePlayerStore.getState();
+      if (playerState.dontShowCheckInToday === today) return;
+
+      const habits = useHabitStore.getState().habits;
+      const scheduled = habits.filter((h) => isScheduledForDate(h, today));
+      if (scheduled.length === 0) return;
+
+      const todayCheckIns = await db.checkIns.where('date').equals(today).toArray();
+      const checkedInIds = new Set(
+        todayCheckIns.filter((c) => c.completed || c.skipped).map((c) => c.habitId),
+      );
+      const hasPending = scheduled.some((h) => !checkedInIds.has(h.id));
+
+      if (hasPending) {
+        useGameStore.getState().openScreen('check-in');
       }
     }
     init();
