@@ -70,7 +70,7 @@ export default function ShopScreen() {
             flexShrink: 0,
           }}
         >
-          <ArrowLeft size={20} color="#333" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
         <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>Shop</span>

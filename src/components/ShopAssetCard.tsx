@@ -171,7 +171,7 @@ export default function ShopAssetCard({ asset }: Props) {
         <span style={{
           fontSize: 10,
           lineHeight: '12px',
-          color: isLocked ? 'var(--text-muted)' : 'rgba(0,0,0,0.65)',
+          color: isLocked ? 'var(--text-muted)' : 'var(--text-label)',
           width: '100%',
           textAlign: 'center',
           overflow: 'hidden',

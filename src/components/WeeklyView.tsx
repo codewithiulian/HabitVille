@@ -224,10 +224,10 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
                     isToday ? 'bg-violet-600/15' : ''
                   }`}
                 >
-                  <span className={`text-xs font-medium ${isToday ? 'text-violet-700 dark:text-violet-300' : 'text-[#666] dark:text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${isToday ? 'text-violet-700 dark:text-violet-300' : ''}`} style={isToday ? undefined : { color: 'var(--text-secondary)' }}>
                     {DAY_LABELS[i]}
                   </span>
-                  <span className={`text-lg font-bold ${isToday ? 'text-[#1a1a1a]' : 'text-[#1a1a1a]'}`}>
+                  <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                     {parseInt(dayNum)}
                   </span>
                 </div>
@@ -245,12 +245,11 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
                         {isCompleted ? (
                           <Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : (
-                          <Circle size={14} className="text-[rgba(0,0,0,0.25)] shrink-0" />
+                          <Circle size={14} className="shrink-0" style={{ color: 'var(--text-faint)' }} />
                         )}
                         <span
-                          className={`text-xs truncate ${
-                            isCompleted ? 'text-[rgba(0,0,0,0.35)] line-through' : 'text-[#1a1a1a]'
-                          }`}
+                          className={`text-xs truncate ${isCompleted ? 'line-through' : ''}`}
+                          style={{ color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}
                         >
                           {habit.name}
                         </span>
@@ -298,8 +297,8 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
               : weeklyStats.multiplier >= 1
                 ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
                 : weeklyStats.multiplier > 0
-                  ? 'bg-[rgba(0,0,0,0.06)] text-[#666]'
-                  : 'bg-[rgba(0,0,0,0.04)] text-[rgba(0,0,0,0.35)]'
+                  ? 'bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.1)] text-[#666] dark:text-gray-400'
+                  : 'bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(255,255,255,0.06)] text-[rgba(0,0,0,0.35)] dark:text-gray-500'
           }`}>
             {weeklyStats.multiplier > 0
               ? `${weeklyStats.multiplier}x bonus`

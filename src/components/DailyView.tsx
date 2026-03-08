@@ -237,8 +237,8 @@ function DateStrip({
                 : isToday
                   ? 'bg-violet-600/15 text-violet-700 dark:bg-violet-600/20 dark:text-violet-300'
                   : isFuture
-                    ? 'opacity-30 pointer-events-none text-[rgba(0,0,0,0.35)]'
-                    : 'text-[#666] active:bg-[rgba(0,0,0,0.05)]'
+                    ? 'opacity-30 pointer-events-none text-[var(--text-muted)]'
+                    : 'text-[var(--text-secondary)] active:bg-[rgba(0,0,0,0.05)] dark:active:bg-[rgba(255,255,255,0.05)]'
             }`}
           >
             <span className="text-[10px]">{DAY_LABELS[i]}</span>

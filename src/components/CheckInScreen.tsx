@@ -105,7 +105,7 @@ export default function CheckInScreen() {
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'daily'
                 ? 'bg-violet-600 text-white'
-                : 'text-[#666]'
+                : 'text-[var(--text-secondary)]'
             }`}
           >
             Daily
@@ -115,7 +115,7 @@ export default function CheckInScreen() {
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'weekly'
                 ? 'bg-violet-600 text-white'
-                : 'text-[#666]'
+                : 'text-[var(--text-secondary)]'
             }`}
           >
             Weekly
