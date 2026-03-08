@@ -1,6 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useGameStore } from '@/stores/game-store';
 
 const GameCanvas = dynamic(() => import('@/components/GameCanvas'), {
   ssr: false,
@@ -46,15 +47,23 @@ const TutorialOverlay = dynamic(() => import('@/components/TutorialOverlay'), {
   ssr: false,
 });
 
-const CoinHud = dynamic(() => import('@/components/CoinHud'), {
+const TopHudBar = dynamic(() => import('@/components/TopHudBar'), {
   ssr: false,
 });
 
-const ShopFab = dynamic(() => import('@/components/ShopFab'), {
+const MenuButton = dynamic(() => import('@/components/MenuButton'), {
   ssr: false,
 });
 
 const ShopScreen = dynamic(() => import('@/components/ShopScreen'), {
+  ssr: false,
+});
+
+const StatsScreen = dynamic(() => import('@/components/StatsScreen'), {
+  ssr: false,
+});
+
+const SettingsScreen = dynamic(() => import('@/components/SettingsScreen'), {
   ssr: false,
 });
 
@@ -65,6 +74,16 @@ const RewardReveal = dynamic(() => import('@/components/RewardReveal'), {
 const CheckInScreen = dynamic(() => import('@/components/CheckInScreen'), {
   ssr: false,
 });
+
+const HabitList = dynamic(() => import('@/components/HabitList'), {
+  ssr: false,
+});
+
+function HabitListFromMenu() {
+  const show = useGameStore((s) => s.showHabitList);
+  if (!show) return null;
+  return <HabitList onClose={() => useGameStore.getState().setShowHabitList(false)} />;
+}
 
 export default function Home() {
   return (
@@ -77,12 +96,15 @@ export default function Home() {
       <RoadDeleteConfirm />
       <BuildToolbar />
       <BuildToggle />
-      <CoinHud />
-      <ShopFab />
+      <TopHudBar />
       <HabitFab />
+      <MenuButton />
       <ShopScreen />
+      <StatsScreen />
+      <SettingsScreen />
       <RewardReveal />
       <CheckInScreen />
+      <HabitListFromMenu />
       <Onboarding />
       <TutorialOverlay />
     </>
