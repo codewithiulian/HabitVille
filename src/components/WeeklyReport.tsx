@@ -60,7 +60,7 @@ export default function WeeklyReport() {
         position: 'fixed',
         inset: 0,
         zIndex: 150,
-        background: 'rgba(10, 12, 20, 0.97)',
+        background: 'rgba(245, 245, 250, 0.97)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -76,10 +76,10 @@ export default function WeeklyReport() {
         }}
       >
         <div>
-          <h1 style={{ fontSize: 20, fontWeight: 700, color: 'white', margin: 0 }}>
+          <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>
             Weekly City Report
           </h1>
-          <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)' }}>
+          <span style={{ fontSize: 13, color: 'rgba(0,0,0,0.35)' }}>
             {formatDateRange(snapshot.weekStart)}
           </span>
         </div>
@@ -90,7 +90,7 @@ export default function WeeklyReport() {
             height: 36,
             borderRadius: '50%',
             border: 'none',
-            background: 'rgba(255,255,255,0.08)',
+            background: 'rgba(0, 0, 0, 0.05)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -98,7 +98,7 @@ export default function WeeklyReport() {
           }}
           aria-label="Close"
         >
-          <X size={20} color="rgba(255,255,255,0.6)" />
+          <X size={20} color="rgba(0, 0, 0, 0.35)" />
         </button>
       </div>
 
@@ -119,14 +119,14 @@ export default function WeeklyReport() {
         </div>
 
         {/* Summary line */}
-        <div style={{ textAlign: 'center', color: 'rgba(255,255,255,0.6)', fontSize: 14 }}>
+        <div style={{ textAlign: 'center', color: 'rgba(0,0,0,0.45)', fontSize: 14 }}>
           {snapshot.totalCompleted} of {snapshot.totalScheduled} habits completed
         </div>
 
         {/* Per-habit breakdown */}
         {sortedHabits.length > 0 && (
           <section>
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.55)', margin: '0 0 12px' }}>
               Habit Breakdown
             </h2>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
@@ -142,8 +142,8 @@ export default function WeeklyReport() {
                         fontSize: 13,
                       }}
                     >
-                      <span style={{ color: 'white' }}>{h.habitName}</span>
-                      <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                      <span style={{ color: '#1a1a1a' }}>{h.habitName}</span>
+                      <span style={{ color: 'rgba(0,0,0,0.45)' }}>
                         {h.completed}/{h.scheduled} ({rate}%)
                       </span>
                     </div>
@@ -151,7 +151,7 @@ export default function WeeklyReport() {
                       style={{
                         height: 6,
                         borderRadius: 3,
-                        background: 'rgba(255,255,255,0.08)',
+                        background: 'rgba(0,0,0,0.06)',
                         overflow: 'hidden',
                       }}
                     >
@@ -176,22 +176,22 @@ export default function WeeklyReport() {
         {/* XP Earned */}
         <section
           style={{
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 14,
             padding: '14px 16px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
             <Zap size={18} color="#3b82f6" />
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'white', margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
               XP Earned
             </h2>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(0,0,0,0.45)', marginBottom: 4 }}>
             <span>Base tasks</span>
             <span>+{snapshot.baseXPEarned.toLocaleString()} XP</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
             <span>Weekly bonus ({snapshot.consistencyTier})</span>
             <span>+{snapshot.bonusXPEarned.toLocaleString()} XP</span>
           </div>
@@ -204,26 +204,26 @@ export default function WeeklyReport() {
         {/* Coins Earned */}
         <section
           style={{
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 14,
             padding: '14px 16px',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-            <Coins size={18} color="#facc15" />
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'white', margin: 0 }}>
+            <Coins size={18} color="#ca8a04" />
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: '#1a1a1a', margin: 0 }}>
               Coins Earned
             </h2>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 4 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(0,0,0,0.45)', marginBottom: 4 }}>
             <span>Base tasks</span>
             <span>+{snapshot.baseCoinEarned.toLocaleString()}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(255,255,255,0.5)', marginBottom: 8 }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 13, color: 'rgba(0,0,0,0.45)', marginBottom: 8 }}>
             <span>Weekly bonus ({snapshot.consistencyTier})</span>
             <span>+{snapshot.bonusCoinEarned.toLocaleString()}</span>
           </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, color: '#facc15' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, fontWeight: 700, color: '#ca8a04' }}>
             <span>Total</span>
             <span>+{totalCoins.toLocaleString()}</span>
           </div>
@@ -232,21 +232,21 @@ export default function WeeklyReport() {
         {/* Weekly Bonus Reveal */}
         <section
           style={{
-            background: 'linear-gradient(135deg, rgba(139,92,246,0.15), rgba(59,130,246,0.15))',
-            border: '1px solid rgba(139,92,246,0.2)',
+            background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(59,130,246,0.08))',
+            border: '1px solid rgba(124,58,237,0.15)',
             borderRadius: 14,
             padding: '20px 16px',
             textAlign: 'center',
           }}
         >
           <TrendingUp size={28} color="#8b5cf6" style={{ marginBottom: 8 }} />
-          <div style={{ fontSize: 14, color: 'rgba(255,255,255,0.6)', marginBottom: 4 }}>
+          <div style={{ fontSize: 14, color: 'rgba(0,0,0,0.45)', marginBottom: 4 }}>
             Consistency Bonus
           </div>
           <div style={{ fontSize: 32, fontWeight: 800, color: '#8b5cf6', lineHeight: 1.1 }}>
             {snapshot.consistencyTier} Bonus!
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', marginTop: 8 }}>
+          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)', marginTop: 8 }}>
             +{snapshot.bonusXPEarned.toLocaleString()} XP &middot; +{snapshot.bonusCoinEarned.toLocaleString()} Coins
           </div>
         </section>

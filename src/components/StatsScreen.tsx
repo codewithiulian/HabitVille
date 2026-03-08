@@ -25,7 +25,7 @@ export default function StatsScreen() {
         position: 'fixed',
         inset: 0,
         zIndex: 150,
-        background: 'rgba(10, 12, 20, 0.97)',
+        background: 'rgba(245, 245, 250, 0.97)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
@@ -40,7 +40,7 @@ export default function StatsScreen() {
           padding: 'max(env(safe-area-inset-top), 12px) 16px 10px',
         }}
       >
-        <h1 style={{ fontSize: 20, fontWeight: 700, color: 'white', margin: 0 }}>Stats</h1>
+        <h1 style={{ fontSize: 20, fontWeight: 700, color: '#1a1a1a', margin: 0 }}>Stats</h1>
         <button
           onClick={() => useGameStore.getState().openScreen('city')}
           style={{
@@ -48,7 +48,7 @@ export default function StatsScreen() {
             height: 36,
             borderRadius: '50%',
             border: 'none',
-            background: 'rgba(255,255,255,0.08)',
+            background: 'rgba(0, 0, 0, 0.05)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -56,7 +56,7 @@ export default function StatsScreen() {
           }}
           aria-label="Close"
         >
-          <X size={20} color="rgba(255,255,255,0.6)" />
+          <X size={20} color="rgba(0, 0, 0, 0.35)" />
         </button>
       </div>
 
@@ -66,7 +66,7 @@ export default function StatsScreen() {
           display: 'flex',
           gap: 4,
           padding: '0 16px 12px',
-          background: 'rgba(255,255,255,0.02)',
+          background: 'transparent',
         }}
       >
         {TABS.map((t) => (
@@ -78,8 +78,8 @@ export default function StatsScreen() {
               padding: '8px 0',
               borderRadius: 8,
               border: 'none',
-              background: tab === t.key ? 'rgba(255,255,255,0.1)' : 'transparent',
-              color: tab === t.key ? 'white' : 'rgba(255,255,255,0.4)',
+              background: tab === t.key ? 'rgba(0, 0, 0, 0.06)' : 'transparent',
+              color: tab === t.key ? '#1a1a1a' : 'rgba(0, 0, 0, 0.35)',
               fontSize: 14,
               fontWeight: 600,
               cursor: 'pointer',

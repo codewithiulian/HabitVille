@@ -157,8 +157,8 @@ function getDayCellColor(rate: number, inMonth: boolean): string {
   if (rate === 100) return 'rgba(16, 185, 129, 0.5)';   // dark green
   if (rate >= 70) return 'rgba(16, 185, 129, 0.3)';     // medium green
   if (rate >= 50) return 'rgba(16, 185, 129, 0.15)';    // light green
-  if (rate > 0) return 'rgba(255, 255, 255, 0.06)';     // light grey
-  return 'rgba(255, 255, 255, 0.02)';                    // empty
+  if (rate > 0) return 'rgba(0, 0, 0, 0.04)';             // light grey
+  return 'rgba(0, 0, 0, 0.02)';                           // empty
 }
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
@@ -227,7 +227,7 @@ export default function MonthlyStats() {
 
   if (!data) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: 'rgba(255,255,255,0.3)' }}>
+      <div style={{ padding: 32, textAlign: 'center', color: 'rgba(0,0,0,0.25)' }}>
         Loading...
       </div>
     );
@@ -243,9 +243,9 @@ export default function MonthlyStats() {
           onClick={goPrev}
           style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}
         >
-          <ChevronLeft size={20} color="rgba(255,255,255,0.6)" />
+          <ChevronLeft size={20} color="rgba(0,0,0,0.45)" />
         </button>
-        <span style={{ fontSize: 16, fontWeight: 600, color: 'white' }}>{monthLabel}</span>
+        <span style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{monthLabel}</span>
         <button
           onClick={goNext}
           style={{
@@ -257,7 +257,7 @@ export default function MonthlyStats() {
           }}
           disabled={isCurrentMonth}
         >
-          <ChevronRight size={20} color="rgba(255,255,255,0.6)" />
+          <ChevronRight size={20} color="rgba(0,0,0,0.45)" />
         </button>
       </div>
 
@@ -266,7 +266,7 @@ export default function MonthlyStats() {
         {/* Weekday headers */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 3, marginBottom: 4 }}>
           {WEEKDAY_LABELS.map((d) => (
-            <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(255,255,255,0.3)', fontWeight: 500 }}>
+            <div key={d} style={{ textAlign: 'center', fontSize: 10, color: 'rgba(0,0,0,0.3)', fontWeight: 500 }}>
               {d}
             </div>
           ))}
@@ -290,7 +290,7 @@ export default function MonthlyStats() {
                   cursor: day.inMonth && day.rate >= 0 ? 'pointer' : 'default',
                   fontSize: 11,
                   fontWeight: 500,
-                  color: day.inMonth ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.15)',
+                  color: day.inMonth ? 'rgba(0,0,0,0.55)' : 'rgba(0,0,0,0.15)',
                   outline: tooltip?.date === day.date ? '2px solid rgba(59,130,246,0.5)' : 'none',
                 }}
               >
@@ -305,19 +305,19 @@ export default function MonthlyStats() {
       {tooltip && (
         <div
           style={{
-            background: 'rgba(255,255,255,0.06)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 10,
             padding: '10px 14px',
-            border: '1px solid rgba(255,255,255,0.08)',
+            border: '1px solid rgba(0,0,0,0.06)',
           }}
         >
-          <div style={{ fontSize: 13, fontWeight: 600, color: 'white', marginBottom: 6 }}>
+          <div style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a', marginBottom: 6 }}>
             {new Date(tooltip.date + 'T00:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
             {' — '}
             {tooltip.completed}/{tooltip.scheduled} ({tooltip.rate}%)
           </div>
           {tooltip.habitDetails.map((h) => (
-            <div key={h.name} style={{ fontSize: 12, color: 'rgba(255,255,255,0.5)', marginLeft: 4, marginBottom: 2 }}>
+            <div key={h.name} style={{ fontSize: 12, color: 'rgba(0,0,0,0.45)', marginLeft: 4, marginBottom: 2 }}>
               {h.completed ? '\u2705' : '\u2B1C'} {h.name}
             </div>
           ))}
@@ -327,19 +327,19 @@ export default function MonthlyStats() {
       {/* Per-habit completion rates */}
       {data.habitRates.length > 0 && (
         <section>
-          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'rgba(255,255,255,0.7)', margin: '0 0 12px' }}>
+          <h2 style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.55)', margin: '0 0 12px' }}>
             Per-Habit Rates
           </h2>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
             {data.habitRates.map((h) => (
               <div key={h.name}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 4, fontSize: 13 }}>
-                  <span style={{ color: 'white' }}>{h.name}</span>
-                  <span style={{ color: 'rgba(255,255,255,0.5)' }}>
+                  <span style={{ color: '#1a1a1a' }}>{h.name}</span>
+                  <span style={{ color: 'rgba(0,0,0,0.45)' }}>
                     {h.completed}/{h.scheduled} ({h.rate}%)
                   </span>
                 </div>
-                <div style={{ height: 6, borderRadius: 3, background: 'rgba(255,255,255,0.08)', overflow: 'hidden' }}>
+                <div style={{ height: 6, borderRadius: 3, background: 'rgba(0,0,0,0.06)', overflow: 'hidden' }}>
                   <div
                     style={{
                       height: '100%',
@@ -359,7 +359,7 @@ export default function MonthlyStats() {
       {trendDiff !== null && (
         <section
           style={{
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 14,
             padding: '14px 16px',
             display: 'flex',
@@ -374,10 +374,10 @@ export default function MonthlyStats() {
           ) : (
             <Minus size={20} color="#F59E0B" />
           )}
-          <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.6)' }}>
-            <span style={{ color: 'white', fontWeight: 600 }}>{data.overallRate}%</span> this month
+          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.45)' }}>
+            <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{data.overallRate}%</span> this month
             {' vs '}
-            <span style={{ color: 'white', fontWeight: 600 }}>{prevRate}%</span> last month
+            <span style={{ color: '#1a1a1a', fontWeight: 600 }}>{prevRate}%</span> last month
             {trendDiff !== 0 && (
               <span style={{ color: trendDiff > 0 ? '#10B981' : '#EF4444', fontWeight: 600 }}>
                 {' '}({trendDiff > 0 ? '+' : ''}{trendDiff}%)
@@ -397,7 +397,7 @@ export default function MonthlyStats() {
         <div
           style={{
             flex: 1,
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 14,
             padding: '14px 16px',
             textAlign: 'center',
@@ -407,22 +407,22 @@ export default function MonthlyStats() {
           <div style={{ fontSize: 18, fontWeight: 700, color: '#3b82f6' }}>
             {data.totalXP.toLocaleString()}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>XP earned</div>
+          <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)' }}>XP earned</div>
         </div>
         <div
           style={{
             flex: 1,
-            background: 'rgba(255,255,255,0.04)',
+            background: 'rgba(0,0,0,0.03)',
             borderRadius: 14,
             padding: '14px 16px',
             textAlign: 'center',
           }}
         >
           <Coins size={18} color="#facc15" style={{ marginBottom: 4 }} />
-          <div style={{ fontSize: 18, fontWeight: 700, color: '#facc15' }}>
+          <div style={{ fontSize: 18, fontWeight: 700, color: '#ca8a04' }}>
             {data.totalCoins.toLocaleString()}
           </div>
-          <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)' }}>Coins earned</div>
+          <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)' }}>Coins earned</div>
         </div>
       </section>
     </div>

@@ -96,16 +96,16 @@ export default function Onboarding() {
   return (
     <div
       className="fixed inset-0 flex flex-col"
-      style={{ zIndex: 9000, background: '#0f172a' }}
+      style={{ zIndex: 9000, background: 'rgba(245, 245, 250, 0.97)' }}
     >
       {/* Step 0: Welcome */}
       {step === 0 && (
         <div className={`flex-1 flex flex-col items-center justify-center px-8 ${fadeClass}`}>
           <div className="text-6xl mb-6">🏘️</div>
-          <h1 className="text-3xl font-bold text-white mb-3 text-center">
+          <h1 className="text-3xl font-bold mb-3 text-center" style={{ color: '#1a1a1a' }}>
             Welcome to HabitVille
           </h1>
-          <p className="text-gray-400 text-center text-base mb-10 max-w-xs">
+          <p className="text-center text-base mb-10 max-w-xs" style={{ color: '#666' }}>
             Your habits build your city. Complete daily goals to earn XP and coins, then build the city of your dreams.
           </p>
           <button
@@ -121,10 +121,10 @@ export default function Onboarding() {
       {step === 1 && !showCustomForm && (
         <div className={`flex-1 flex flex-col ${fadeClass}`}>
           <div className="px-6 pt-[max(env(safe-area-inset-top),24px)] pb-4">
-            <h2 className="text-xl font-bold text-white mb-1">
+            <h2 className="text-xl font-bold mb-1" style={{ color: '#1a1a1a' }}>
               Create your first habits
             </h2>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm" style={{ color: '#666' }}>
               We suggest starting with {GAME_CONFIG.habits.recommended_min}-{GAME_CONFIG.habits.recommended_max} habits. You can always add more later.
             </p>
           </div>
@@ -153,7 +153,7 @@ export default function Onboarding() {
                   onClick={() => toggleSuggestion(i)}
                   className="w-full flex items-center gap-3 rounded-xl px-4 py-3.5 text-left transition-colors"
                   style={{
-                    background: s.enabled ? meta.color + '15' : 'rgb(31 41 55)',
+                    background: s.enabled ? meta.color + '15' : 'rgba(255,255,255,0.6)',
                     border: s.enabled ? `2px solid ${meta.color}50` : '2px solid transparent',
                   }}
                 >
@@ -164,7 +164,7 @@ export default function Onboarding() {
                     <Icon size={20} color={meta.color} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-white text-sm font-medium">{s.name}</span>
+                    <span className="text-sm font-medium" style={{ color: '#1a1a1a' }}>{s.name}</span>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
                         className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
@@ -172,13 +172,13 @@ export default function Onboarding() {
                       >
                         {s.difficulty.charAt(0).toUpperCase() + s.difficulty.slice(1)}
                       </span>
-                      <span className="text-xs text-gray-400">{s.category}</span>
+                      <span className="text-xs" style={{ color: '#666' }}>{s.category}</span>
                     </div>
                   </div>
                   <div
                     className="w-6 h-6 rounded-full flex items-center justify-center shrink-0"
                     style={{
-                      background: s.enabled ? meta.color : 'rgb(55 65 81)',
+                      background: s.enabled ? meta.color : 'rgba(0,0,0,0.08)',
                     }}
                   >
                     {s.enabled && <Check size={14} color="white" />}
@@ -207,7 +207,7 @@ export default function Onboarding() {
                     <Icon size={20} color={meta.color} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <span className="text-white text-sm font-medium">{h.name}</span>
+                    <span className="text-sm font-medium" style={{ color: '#1a1a1a' }}>{h.name}</span>
                     <div className="flex items-center gap-2 mt-0.5">
                       <span
                         className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full"
@@ -215,8 +215,8 @@ export default function Onboarding() {
                       >
                         {h.difficulty.charAt(0).toUpperCase() + h.difficulty.slice(1)}
                       </span>
-                      <span className="text-xs text-gray-400">{h.category}</span>
-                      <span className="text-[10px] text-green-400">Custom</span>
+                      <span className="text-xs" style={{ color: '#666' }}>{h.category}</span>
+                      <span className="text-[10px] text-green-600">Custom</span>
                     </div>
                   </div>
                   <div
@@ -231,7 +231,7 @@ export default function Onboarding() {
 
             <button
               onClick={() => setShowCustomForm(true)}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-600 py-3.5 text-gray-400 text-sm active:border-gray-500 active:text-gray-300"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border-2 border-dashed py-3.5 text-sm" style={{ borderColor: 'rgba(0,0,0,0.15)', color: '#666' }}
             >
               <Plus size={16} />
               Add custom habit
@@ -249,7 +249,7 @@ export default function Onboarding() {
             )}
             <button
               onClick={finish}
-              className="text-sm text-gray-400 active:text-gray-300 py-1"
+              className="text-sm py-1" style={{ color: 'rgba(0,0,0,0.35)' }}
             >
               {totalCount > 0 ? 'Skip suggestions' : 'Skip for now'}
             </button>

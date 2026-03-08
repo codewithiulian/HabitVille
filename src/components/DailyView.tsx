@@ -162,8 +162,8 @@ function RewardFloat({
       <div className="flex flex-col items-center gap-2">
         {isSurpriseBonus && (
           <motion.span
-            className="text-amber-300 font-black text-base tracking-widest uppercase"
-            style={{ textShadow: '0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.3)' }}
+            className="text-amber-600 font-black text-base tracking-widest uppercase"
+            style={{ textShadow: '0 0 20px rgba(251, 191, 36, 0.3)' }}
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.15, duration: 0.3 }}
@@ -183,17 +183,17 @@ function RewardFloat({
           }
         >
           <div className="flex items-center gap-1.5">
-            <Sparkles size={22} className="text-emerald-400" />
+            <Sparkles size={22} className="text-emerald-500" />
             <span
-              className="text-emerald-300 font-extrabold text-2xl"
-              style={{ textShadow: '0 0 16px rgba(16,185,129,0.5), 0 2px 4px rgba(0,0,0,0.3)' }}
+              className="text-emerald-600 font-extrabold text-2xl"
+              style={{ textShadow: '0 0 16px rgba(16,185,129,0.3)' }}
             >
               +{xp} XP
             </span>
           </div>
           <span
-            className="text-yellow-300 font-extrabold text-2xl"
-            style={{ textShadow: '0 0 16px rgba(252,211,77,0.5), 0 2px 4px rgba(0,0,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
+            className="text-yellow-600 font-extrabold text-2xl"
+            style={{ textShadow: '0 0 16px rgba(252,211,77,0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
             +{coins} <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 28, height: 28 }} />
           </span>
@@ -235,10 +235,10 @@ function DateStrip({
               isSelected
                 ? 'bg-violet-600 text-white'
                 : isToday
-                  ? 'bg-violet-600/20 text-violet-300'
+                  ? 'bg-violet-600/15 text-violet-700'
                   : isFuture
-                    ? 'opacity-30 pointer-events-none text-gray-500'
-                    : 'text-gray-400 active:bg-gray-700'
+                    ? 'opacity-30 pointer-events-none text-[rgba(0,0,0,0.35)]'
+                    : 'text-[#666] active:bg-[rgba(0,0,0,0.05)]'
             }`}
           >
             <span className="text-[10px]">{DAY_LABELS[i]}</span>
@@ -312,17 +312,17 @@ function SwipeCard({
       onDragEnd={handleDragEnd}
       className="absolute inset-0 touch-none"
     >
-      <div className="h-full rounded-2xl bg-gray-800 border border-gray-700 px-6 py-8 flex flex-col items-center justify-center relative overflow-hidden select-none">
+      <div className="h-full rounded-2xl px-6 py-8 flex flex-col items-center justify-center relative overflow-hidden select-none" style={{ background: 'rgba(255,255,255,0.8)', border: '1px solid rgba(0,0,0,0.06)', boxShadow: '0 2px 16px rgba(0,0,0,0.06)' }}>
         {/* Swipe indicators */}
         <motion.div
           style={{ opacity: doneOpacity }}
-          className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 text-sm font-bold"
+          className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-100 border-2 border-emerald-500 text-emerald-700 text-sm font-bold"
         >
           DONE
         </motion.div>
         <motion.div
           style={{ opacity: skipOpacity }}
-          className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gray-500/20 border-2 border-gray-500 text-gray-400 text-sm font-bold"
+          className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gray-200 border-2 border-gray-400 text-gray-600 text-sm font-bold"
         >
           SKIP
         </motion.div>
@@ -344,16 +344,16 @@ function SwipeCard({
         </span>
 
         {/* Habit name */}
-        <h3 className="text-xl font-bold text-white text-center mb-4">{card.habit.name}</h3>
+        <h3 className="text-xl font-bold text-center mb-4" style={{ color: '#1a1a1a' }}>{card.habit.name}</h3>
 
         {/* Monthly progress */}
-        <p className="text-sm text-gray-400 mb-2">
+        <p className="text-sm mb-2" style={{ color: '#666' }}>
           {card.monthProgress.done}/{card.monthProgress.total} this month
         </p>
 
         {/* Streak */}
         {card.streak > 0 && (
-          <div className="flex items-center gap-1 text-orange-400">
+          <div className="flex items-center gap-1 text-orange-500">
             <Flame size={16} />
             <span className="text-sm font-semibold">{card.streak} day streak</span>
           </div>
@@ -381,27 +381,27 @@ function SessionSummary({
   return (
     <div className="flex-1 flex flex-col items-center justify-center px-6 text-center">
       {perfectDay && (
-        <div className="flex items-center gap-2 mb-4 text-yellow-400">
+        <div className="flex items-center gap-2 mb-4 text-yellow-600">
           <Trophy size={24} />
           <span className="text-lg font-bold">Perfect check-in!</span>
           <Trophy size={24} />
         </div>
       )}
 
-      <h2 className="text-2xl font-bold text-white mb-6">Session Complete</h2>
+      <h2 className="text-2xl font-bold mb-6" style={{ color: '#1a1a1a' }}>Session Complete</h2>
 
       <div className="space-y-3 mb-8 w-full max-w-[240px]">
-        <div className="flex justify-between items-center bg-gray-800 rounded-xl px-4 py-3">
-          <span className="text-gray-400 text-sm">Habits completed</span>
-          <span className="text-white font-bold">{completed}/{total}</span>
+        <div className="flex justify-between items-center rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}>
+          <span className="text-sm" style={{ color: '#666' }}>Habits completed</span>
+          <span className="font-bold" style={{ color: '#1a1a1a' }}>{completed}/{total}</span>
         </div>
-        <div className="flex justify-between items-center bg-gray-800 rounded-xl px-4 py-3">
-          <span className="text-gray-400 text-sm">XP earned</span>
-          <span className="text-emerald-400 font-bold">+{xp}</span>
+        <div className="flex justify-between items-center rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}>
+          <span className="text-sm" style={{ color: '#666' }}>XP earned</span>
+          <span className="text-emerald-600 font-bold">+{xp}</span>
         </div>
-        <div className="flex justify-between items-center bg-gray-800 rounded-xl px-4 py-3">
-          <span className="text-gray-400 text-sm">Coins earned</span>
-          <span className="text-yellow-400 font-bold">+{coins}</span>
+        <div className="flex justify-between items-center rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}>
+          <span className="text-sm" style={{ color: '#666' }}>Coins earned</span>
+          <span className="text-yellow-600 font-bold">+{coins}</span>
         </div>
       </div>
 
@@ -675,20 +675,20 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
 
       {/* Event banners */}
       {doubleXPEventActive && (
-        <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-amber-500/20 border border-amber-500/40 text-center">
-          <span className="text-amber-400 font-bold text-sm">&#x26A1; 2x XP Active!</span>
+        <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-amber-100 border border-amber-300 text-center">
+          <span className="text-amber-700 font-bold text-sm">&#x26A1; 2x XP Active!</span>
         </div>
       )}
       {firstWeekBoostActive && (
-        <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-violet-500/20 border border-violet-500/40 text-center">
-          <span className="text-violet-300 font-bold text-sm">&#x1F680; 2x XP BOOST — First Week!</span>
+        <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-violet-100 border border-violet-300 text-center">
+          <span className="text-violet-700 font-bold text-sm">&#x1F680; 2x XP BOOST — First Week!</span>
         </div>
       )}
 
       {/* Card area */}
       {loading ? (
         <div className="flex-1 flex items-center justify-center">
-          <div className="text-gray-500 text-sm">Loading...</div>
+          <div className="text-sm" style={{ color: 'rgba(0,0,0,0.35)' }}>Loading...</div>
         </div>
       ) : showSummary ? (
         <SessionSummary
@@ -702,7 +702,7 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
       ) : (
         <div className="flex-1 flex flex-col px-4 pt-2 pb-2 min-h-0">
           {/* Counter */}
-          <p className="text-xs text-gray-500 mb-2 text-center shrink-0">
+          <p className="text-xs mb-2 text-center shrink-0" style={{ color: 'rgba(0,0,0,0.35)' }}>
             {currentIndex + 1} / {cards.length}
           </p>
 
@@ -711,8 +711,8 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
             {/* Next card (behind) */}
             {currentIndex + 1 < cards.length && (
               <motion.div
-                className="absolute inset-0 rounded-2xl bg-gray-800 border border-gray-700 pointer-events-none overflow-hidden"
-                style={{ scale: backScale, opacity: backOpacity }}
+                className="absolute inset-0 rounded-2xl pointer-events-none overflow-hidden"
+                style={{ background: 'rgba(255,255,255,0.4)', border: '1px solid rgba(0,0,0,0.06)', scale: backScale, opacity: backOpacity }}
               >
                 {(() => {
                   const next = cards[currentIndex + 1];
@@ -726,7 +726,7 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
                       >
                         <NextIcon size={28} color={nextMeta.color} />
                       </div>
-                      <h3 className="text-lg font-bold text-white text-center opacity-60">
+                      <h3 className="text-lg font-bold text-center opacity-40" style={{ color: '#1a1a1a' }}>
                         {next.habit.name}
                       </h3>
                     </div>
@@ -754,7 +754,8 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
             <button
               onClick={handleTapSkip}
               disabled={isAnimating}
-              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-600 text-gray-400 font-medium active:bg-gray-800 transition-colors disabled:opacity-40"
+              className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors disabled:opacity-40"
+              style={{ border: '1px solid rgba(0,0,0,0.12)', color: '#666' }}
             >
               <ChevronLeft size={18} />
               <span>Skip</span>
@@ -777,12 +778,13 @@ export default function DailyView({ weekDates, todayStr, selectedDate, onSelectD
       {/* Don't show today checkbox */}
       {selectedDate === todayStr && (
         <div className="px-4 pb-4 pt-1 shrink-0">
-          <label className="flex items-center gap-2 text-xs text-gray-500 cursor-pointer">
+          <label className="flex items-center gap-2 text-xs cursor-pointer" style={{ color: 'rgba(0,0,0,0.35)' }}>
             <input
               type="checkbox"
               checked={dontShowCheckInToday === todayStr}
               onChange={handleDontShowToggle}
-              className="w-3.5 h-3.5 rounded border-gray-600 bg-gray-800 text-violet-600 focus:ring-0 focus:ring-offset-0"
+              className="w-3.5 h-3.5 rounded text-violet-600 focus:ring-0 focus:ring-offset-0"
+              style={{ borderColor: 'rgba(0,0,0,0.15)', background: 'white' }}
             />
             Don&apos;t auto-open today
           </label>

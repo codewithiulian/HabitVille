@@ -30,17 +30,21 @@ export default function HabitFab() {
   return (
     <button
       onClick={() => openScreen('check-in')}
-      className="fixed bottom-6 right-4 flex items-center justify-center shadow-lg active:scale-95 transition-transform bg-emerald-500 text-white"
+      className="fixed bottom-6 right-4 flex items-center justify-center shadow-lg active:scale-95 transition-transform"
       style={{
         width: 52,
         height: 52,
         borderRadius: 12,
         zIndex: 90,
         position: 'fixed',
+        background: 'rgba(255, 255, 255, 0.85)',
+        backdropFilter: 'blur(8px)',
+        WebkitBackdropFilter: 'blur(8px)',
+        border: '1px solid rgba(0, 0, 0, 0.08)',
       }}
       aria-label="Check in habits"
     >
-      <Check size={24} strokeWidth={3} />
+      <Check size={24} strokeWidth={3} color="#444" />
 
       {/* Pending badge */}
       {pendingCount > 0 && (
