@@ -67,6 +67,10 @@ const SettingsScreen = dynamic(() => import('@/components/SettingsScreen'), {
   ssr: false,
 });
 
+const WeeklyReport = dynamic(() => import('@/components/WeeklyReport'), {
+  ssr: false,
+});
+
 const RewardReveal = dynamic(() => import('@/components/RewardReveal'), {
   ssr: false,
 });
@@ -102,6 +106,7 @@ export default function Home() {
       <ShopScreen />
       <StatsScreen />
       <SettingsScreen />
+      <WeeklyReport />
       <RewardReveal />
       <CheckInScreen />
       <HabitListFromMenu />

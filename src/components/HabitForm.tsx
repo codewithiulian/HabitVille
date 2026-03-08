@@ -59,8 +59,8 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
         ...(freqType === 'specific_days' && { specificDays }),
       },
       timeOfDay,
-      startDate: showDates && startDate ? new Date(startDate + 'T00:00:00').toISOString() : undefined,
-      endDate: showDates && endDate ? new Date(endDate + 'T00:00:00').toISOString() : undefined,
+      startDate: showDates && startDate ? startDate : undefined,
+      endDate: showDates && endDate ? endDate : undefined,
     };
 
     if (mode === 'edit' && habit) {
@@ -302,12 +302,24 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
               </div>
               <div>
                 <span className="text-xs text-gray-500">End (optional)</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none mt-1"
-                />
+                <div className="relative mt-1">
+                  <input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="w-full bg-gray-800 text-white rounded-lg px-3 py-2 text-sm outline-none"
+                  />
+                  {endDate && (
+                    <button
+                      type="button"
+                      onClick={() => setEndDate('')}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 active:text-white text-lg leading-none"
+                      aria-label="Clear end date"
+                    >
+                      &times;
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
           )}

@@ -15,7 +15,9 @@ export function formatDateString(d: Date): string {
  * Respects start/end date bounds and frequency config.
  */
 export function isScheduledForDate(habit: Habit, dateStr: string): boolean {
-  if (habit.startDate && dateStr < habit.startDate.slice(0, 10)) return false;
+  // Use startDate if set, otherwise fall back to createdAt
+  const effectiveStart = habit.startDate ?? habit.createdAt;
+  if (effectiveStart && dateStr < effectiveStart.slice(0, 10)) return false;
   if (habit.endDate && dateStr > habit.endDate.slice(0, 10)) return false;
 
   const freq = habit.frequency;

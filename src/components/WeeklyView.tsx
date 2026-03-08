@@ -111,8 +111,18 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
     const percentage = totalScheduled > 0 ? Math.round((totalCompleted / totalScheduled) * 100) : 0;
     const multiplier = getWeeklyBonusMultiplier(percentage);
 
-    return { totalScheduled, totalCompleted, percentage, multiplier };
-  }, [displayDates, lastCountableDay, scheduledByDay, completedSet]);
+    // Sum XP and coins earned this week from check-ins
+    let xpEarned = 0;
+    let coinsEarned = 0;
+    for (const ci of checkIns) {
+      if (ci.completed) {
+        xpEarned += ci.xpEarned;
+        coinsEarned += ci.coinsEarned;
+      }
+    }
+
+    return { totalScheduled, totalCompleted, percentage, multiplier, xpEarned, coinsEarned };
+  }, [displayDates, lastCountableDay, scheduledByDay, completedSet, checkIns]);
 
   // Auto-scroll today's column into center view (current week only)
   useEffect(() => {
@@ -296,6 +306,11 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
               : 'No bonus yet'}
           </div>
         </div>
+        {(weeklyStats.xpEarned > 0 || weeklyStats.coinsEarned > 0) && (
+          <div className="text-xs text-gray-500 mt-1.5">
+            +{weeklyStats.xpEarned.toLocaleString()} XP &middot; +{weeklyStats.coinsEarned.toLocaleString()} Coins this week
+          </div>
+        )}
       </div>
     </div>
   );

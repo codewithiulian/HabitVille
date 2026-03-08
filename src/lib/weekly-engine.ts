@@ -155,6 +155,19 @@ export function generateWeeklySnapshot(
   const multiplier = getWeeklyBonusMultiplier(completion.percentage);
   const bonus = calculateWeeklyBonus(baseXPEarned, baseCoinEarned, multiplier);
 
+  const habitMap = new Map(habits.map((h) => [h.id, h]));
+  const perHabitBreakdown: WeeklySnapshot['perHabitBreakdown'] = [];
+  for (const [habitId, stats] of completion.perHabit) {
+    if (stats.scheduled === 0) continue;
+    const habit = habitMap.get(habitId);
+    perHabitBreakdown.push({
+      habitId,
+      habitName: habit?.name ?? 'Unknown',
+      completed: stats.completed,
+      scheduled: stats.scheduled,
+    });
+  }
+
   const now = new Date().toISOString();
 
   return {
@@ -168,6 +181,8 @@ export function generateWeeklySnapshot(
     bonusXPEarned: bonus.xp,
     bonusCoinEarned: bonus.coins,
     consistencyTier: `${multiplier}x`,
+    delivered: false,
+    perHabitBreakdown,
     createdAt: now,
     updatedAt: now,
   };

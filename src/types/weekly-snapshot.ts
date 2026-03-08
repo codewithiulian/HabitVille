@@ -1,3 +1,10 @@
+export interface WeeklySnapshotHabit {
+  habitId: string;
+  habitName: string;
+  completed: number;
+  scheduled: number;
+}
+
 export interface WeeklySnapshot {
   id: string;
   weekStart: string;           // ISO date string (Monday)
@@ -9,6 +16,8 @@ export interface WeeklySnapshot {
   bonusXPEarned: number;
   bonusCoinEarned: number;
   consistencyTier: string;
+  delivered: boolean;
+  perHabitBreakdown: WeeklySnapshotHabit[];
   createdAt: string;
   updatedAt: string;
   syncedAt?: string | null;
