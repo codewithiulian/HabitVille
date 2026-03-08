@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { db } from '@/db/db';
-import { isScheduledForDate } from '@/lib/schedule-utils';
+import { isScheduledForDate, formatDateString } from '@/lib/schedule-utils';
 import type { Habit } from '@/types/habit';
 import type { CheckIn } from '@/types/check-in';
 
@@ -142,7 +142,7 @@ export const useHabitStore = create<HabitState>((set, get) => ({
     const start = new Date(weekStart + 'T00:00:00');
     const end = new Date(start);
     end.setDate(end.getDate() + 6);
-    const endStr = end.toISOString().slice(0, 10);
+    const endStr = formatDateString(end);
 
     return db.checkIns
       .where('date')
