@@ -7,7 +7,6 @@ import { useInventoryStore } from '@/stores/inventory-store';
 import { getAssetsByCategory, getAsset } from '@/engine/asset-registry';
 import { startToolbarDrag } from '@/engine/build-system';
 import { catalogToRegistryKey, getCatalogAsset, isHouseAsset } from '@/lib/catalog-helpers';
-import { GAME_CONFIG } from '@/config/game-config';
 import type { AssetEntry } from '@/types/assets';
 
 // ---------------------------------------------------------------------------
@@ -41,6 +40,11 @@ const ROAD_REPRESENTATIVES = new Set([
   'StonePath_Tile1',
 ]);
 
+interface OwnedColorEntry {
+  color: string;
+  quantity: number;
+}
+
 interface InventoryAssetItem {
   registryKey: string;
   catalogAssetId: string;
@@ -48,9 +52,11 @@ interface InventoryAssetItem {
   textureKey: string;
   quantity: number;
   isHouse: boolean;
+  ownedColors?: OwnedColorEntry[];
 }
 
-const HOUSE_COLORS = GAME_CONFIG.shop.house_colors;
+// Standard swatch order for sorting owned colors
+const COLOR_ORDER = ['Blue', 'Brown', 'Green', 'Grey', 'Pink', 'Red', 'White', 'Yellow'];
 
 const COLOR_MAP: Record<string, string> = {
   Blue: '#3B82F6',
@@ -165,6 +171,15 @@ function InventoryThumbnail({
   selected: boolean;
 }) {
   const didDragRef = useRef(false);
+  const selectedColorVariant = useBuildStore((s) => s.selectedColorVariant);
+
+  // For selected houses, resolve texture to current color
+  const textureKey = useMemo(() => {
+    if (!item.isHouse || !selected || !selectedColorVariant) return item.textureKey;
+    const coloredKey = catalogToRegistryKey(item.catalogAssetId, selectedColorVariant);
+    const entry = getAsset(coloredKey);
+    return entry?.textureKey ?? item.textureKey;
+  }, [item.isHouse, item.catalogAssetId, item.textureKey, selected, selectedColorVariant]);
 
   const handlePointerDown = useCallback(
     (e: React.PointerEvent) => {
@@ -174,27 +189,30 @@ function InventoryThumbnail({
         // For houses, resolve the correct registry key with color variant
         let key = item.registryKey;
         if (item.isHouse) {
-          const colorVariant = useBuildStore.getState().selectedColorVariant ?? 'Blue';
+          const colorVariant = useBuildStore.getState().selectedColorVariant
+            ?? (item.ownedColors?.[0]?.color ?? 'Blue');
           key = catalogToRegistryKey(item.catalogAssetId, colorVariant);
         }
         startToolbarDrag(key, e.clientX, e.clientY);
         didDragRef.current = true;
       }
     },
-    [item.registryKey, item.catalogAssetId, item.isHouse, selected],
+    [item.registryKey, item.catalogAssetId, item.isHouse, item.ownedColors, selected],
   );
 
   const handleClick = useCallback(() => {
     if (didDragRef.current) return;
     useBuildStore.getState().selectAsset(item.registryKey);
-    // If house, set default color
-    if (item.isHouse) {
+    // If house, set color to first owned color (or keep current if it's owned)
+    if (item.isHouse && item.ownedColors?.length) {
       const store = useBuildStore.getState();
-      if (!store.selectedColorVariant) {
-        store.selectColorVariant('Blue');
+      const current = store.selectedColorVariant;
+      const ownsCurrentColor = current && item.ownedColors.some((c) => c.color === current);
+      if (!ownsCurrentColor) {
+        store.selectColorVariant(item.ownedColors[0].color);
       }
     }
-  }, [item.registryKey, item.isHouse]);
+  }, [item.registryKey, item.isHouse, item.ownedColors]);
 
   return (
     <button
@@ -237,7 +255,7 @@ function InventoryThumbnail({
       </span>
       <img
         className={selected ? 'asset-pulse' : undefined}
-        src={`/${item.textureKey}`}
+        src={`/${textureKey}`}
         alt={item.displayName}
         loading="lazy"
         draggable={false}
@@ -318,7 +336,7 @@ function RoadDeleteButton({ active }: { active: boolean }) {
   );
 }
 
-function HouseColorStrip() {
+function HouseColorStrip({ ownedColors }: { ownedColors: OwnedColorEntry[] }) {
   const selectedColorVariant = useBuildStore((s) => s.selectedColorVariant);
 
   return (
@@ -331,11 +349,12 @@ function HouseColorStrip() {
         borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
       }}
     >
-      {HOUSE_COLORS.map((c) => (
+      {ownedColors.map(({ color: c, quantity }) => (
         <button
           key={c}
           onClick={() => useBuildStore.getState().selectColorVariant(c)}
           style={{
+            position: 'relative',
             width: 24,
             height: 24,
             borderRadius: '50%',
@@ -347,7 +366,29 @@ function HouseColorStrip() {
             flexShrink: 0,
           }}
           aria-label={c}
-        />
+        >
+          <span
+            style={{
+              position: 'absolute',
+              top: -6,
+              right: -8,
+              fontSize: 8,
+              fontWeight: 700,
+              background: '#6D28D9',
+              color: 'white',
+              borderRadius: 6,
+              minWidth: 14,
+              height: 14,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              padding: '0 3px',
+              lineHeight: 1,
+            }}
+          >
+            {quantity}
+          </span>
+        </button>
       ))}
     </div>
   );
@@ -376,6 +417,8 @@ export default function BuildToolbar() {
 
     const catalogCategories = BUILD_CATEGORY_CATALOG_MAP[selectedCategory];
     const items: InventoryAssetItem[] = [];
+    // Group houses by assetId so multiple color variants merge into one entry
+    const houseGroups = new Map<string, { total: number; colors: OwnedColorEntry[] }>();
 
     for (const inv of ownedAssets) {
       if (inv.quantity <= 0) continue;
@@ -385,29 +428,75 @@ export default function BuildToolbar() {
       if (!catalogCategories.includes(catalogAsset.category)) continue;
 
       const house = isHouseAsset(catalogAsset);
-      const registryKey = catalogToRegistryKey(inv.assetId, house ? 'Blue' : undefined);
+
+      if (house) {
+        const color = inv.colorVariant ?? 'Blue';
+        const group = houseGroups.get(inv.assetId);
+        if (group) {
+          // Merge into existing group (avoid duplicate colors from legacy null entries)
+          const existing = group.colors.find((c) => c.color === color);
+          if (existing) {
+            existing.quantity += inv.quantity;
+          } else {
+            group.colors.push({ color, quantity: inv.quantity });
+          }
+          group.total += inv.quantity;
+        } else {
+          houseGroups.set(inv.assetId, {
+            total: inv.quantity,
+            colors: [{ color, quantity: inv.quantity }],
+          });
+        }
+      } else {
+        const registryKey = catalogToRegistryKey(inv.assetId);
+        const registryEntry = getAsset(registryKey);
+        if (!registryEntry) continue;
+
+        items.push({
+          registryKey,
+          catalogAssetId: inv.assetId,
+          displayName: catalogAsset.name,
+          textureKey: registryEntry.textureKey,
+          quantity: inv.quantity,
+          isHouse: false,
+        });
+      }
+    }
+
+    // Add house groups as single inventory items
+    for (const [assetId, group] of houseGroups) {
+      const catalogAsset = getCatalogAsset(assetId)!;
+      // Sort colors by standard swatch order
+      group.colors.sort((a, b) => COLOR_ORDER.indexOf(a.color) - COLOR_ORDER.indexOf(b.color));
+      // Default thumbnail = first owned color in swatch order
+      const defaultColor = group.colors[0].color;
+      const registryKey = catalogToRegistryKey(assetId, defaultColor);
       const registryEntry = getAsset(registryKey);
       if (!registryEntry) continue;
 
       items.push({
         registryKey,
-        catalogAssetId: inv.assetId,
+        catalogAssetId: assetId,
         displayName: catalogAsset.name,
         textureKey: registryEntry.textureKey,
-        quantity: inv.quantity,
-        isHouse: house,
+        quantity: group.total,
+        isHouse: true,
+        ownedColors: group.colors,
       });
     }
 
     return items;
   }, [selectedCategory, ownedAssets]);
 
-  // Check if selected asset is a house
-  const selectedIsHouse = useMemo(() => {
-    if (!selectedAsset || selectedCategory === 'roads') return false;
+  // Check if selected asset is a house + get its owned colors
+  const selectedHouseInfo = useMemo(() => {
+    if (!selectedAsset || selectedCategory === 'roads') return null;
     const item = inventoryItems.find((i) => i.registryKey === selectedAsset);
-    return item?.isHouse ?? false;
+    if (!item?.isHouse || !item.ownedColors) return null;
+    return item;
   }, [selectedAsset, selectedCategory, inventoryItems]);
+
+  const selectedIsHouse = !!selectedHouseInfo;
 
   const toggleBuildMode = useGameStore((s) => s.toggleBuildMode);
 
@@ -481,8 +570,10 @@ export default function BuildToolbar() {
         }
       `}</style>
 
-      {/* Color strip for houses */}
-      {selectedIsHouse && <HouseColorStrip />}
+      {/* Color strip for houses — only when 2+ colors owned */}
+      {selectedHouseInfo && selectedHouseInfo.ownedColors!.length >= 2 && (
+        <HouseColorStrip ownedColors={selectedHouseInfo.ownedColors!} />
+      )}
 
       {/* Loading state */}
       {isLoading && (

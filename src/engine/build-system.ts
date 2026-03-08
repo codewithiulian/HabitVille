@@ -9,7 +9,7 @@ import { placeOnGrid, computeUprightAnchorX, computeUprightAnchorY } from './pla
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
-import { registryKeyToCatalogId } from '../lib/catalog-helpers';
+import { registryKeyToCatalogId, extractHouseColor } from '../lib/catalog-helpers';
 import { useInventoryStore } from '../stores/inventory-store';
 import {
   handleRoadPointerDown,
@@ -405,11 +405,10 @@ function onDocumentPointerUp(e: PointerEvent): void {
       persistPlace(buildingId, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
 
       // Inventory tracking: decrement quantity and create placed asset record
-      // Note: houses are stored generically in inventory (colorVariant=null),
-      // color is only in the registry key for rendering (stored in db.city assetKey)
       const catalogId = registryKeyToCatalogId(activeDrag.assetKey);
       if (catalogId) {
-        useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, undefined, buildingId);
+        const colorVariant = extractHouseColor(activeDrag.assetKey);
+        useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, colorVariant, buildingId);
       }
 
       useBuildStore.getState().pushPlacement({
@@ -769,7 +768,8 @@ export function undoLastPlacement(): void {
     persistPlace(entry.buildingId, entry.row, entry.col, entry.assetKey);
     // Undo delete: re-place in inventory (no coin deduction — demolish doesn't refund)
     if (entry.catalogAssetId) {
-      useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, undefined, entry.buildingId);
+      const colorVariant = extractHouseColor(entry.assetKey);
+      useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, colorVariant, entry.buildingId);
     }
   } else if (entry.type === 'road-place') {
     undoRoadPlace(entry.tiles, entry.neighborChanges);

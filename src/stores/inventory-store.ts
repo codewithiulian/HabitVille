@@ -75,9 +75,15 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
   placeAsset: (assetId, gridX, gridY, colorVariant, placedId) => {
     const now = new Date().toISOString();
     const state = get();
-    const invItem = state.ownedAssets.find(
+    // Exact match first, then fallback to legacy null-color entries
+    let invItem = state.ownedAssets.find(
       (a) => a.assetId === assetId && (a.colorVariant ?? null) === (colorVariant ?? null) && a.quantity > 0
     );
+    if (!invItem && colorVariant) {
+      invItem = state.ownedAssets.find(
+        (a) => a.assetId === assetId && !a.colorVariant && a.quantity > 0
+      );
+    }
 
     if (invItem) {
       set((s) => ({

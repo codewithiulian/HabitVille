@@ -124,6 +124,15 @@ export function registryKeyToCatalogId(registryKey: string): string | null {
 }
 
 /**
+ * Extract color from a house registry key.
+ * e.g. "House_Blue_Type1" -> "Blue", "Decor_ATM" -> undefined
+ */
+export function extractHouseColor(registryKey: string): string | undefined {
+  const m = registryKey.match(/^House_(Blue|Brown|Green|Grey|Pink|Red|White|Yellow)_Type\d+$/);
+  return m ? m[1] : undefined;
+}
+
+/**
  * Get the sprite path for a specific house type + color.
  */
 export function houseSpriteKey(houseType: string, color: string): string {

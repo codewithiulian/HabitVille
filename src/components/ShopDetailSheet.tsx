@@ -28,9 +28,9 @@ export default function ShopDetailSheet() {
       useBuildStore.getState().showToast('Not enough coins!');
       return;
     }
-    useInventoryStore.getState().purchaseAsset(detailAsset.assetId);
+    useInventoryStore.getState().purchaseAsset(detailAsset.assetId, previewColor);
     useBuildStore.getState().showToast(`Purchased ${detailAsset.name}!`);
-  }, [detailAsset]);
+  }, [detailAsset, previewColor]);
 
   if (!detailAsset) return null;
 
@@ -38,8 +38,9 @@ export default function ShopDetailSheet() {
   const houseType = detailAsset.assetId.replace('houses_', '');
   const spritePath = houseSpriteKey(houseType, previewColor);
   const affordable = coins >= detailAsset.price;
-  const ownedItem = ownedAssets.find((a) => a.assetId === detailAsset.assetId);
-  const totalOwned = ownedItem ? ownedItem.totalPurchased : 0;
+  const totalOwned = ownedAssets
+    .filter((a) => a.assetId === detailAsset.assetId)
+    .reduce((sum, a) => sum + a.totalPurchased, 0);
 
   const handleBuy = () => {
     if (!affordable) {
