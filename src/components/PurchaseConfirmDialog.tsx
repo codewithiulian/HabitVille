@@ -49,7 +49,7 @@ export default function PurchaseConfirmDialog({ asset, onConfirm, onCancel }: Pr
         <div style={{ textAlign: 'center' }}>
           <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{asset.name}</div>
           <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
-            Buy for <span style={{ fontWeight: 600 }}>&#x1FA99; {asset.price}</span>?
+            Buy for <span style={{ fontWeight: 600 }}><img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {asset.price}</span>?
           </div>
         </div>
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>

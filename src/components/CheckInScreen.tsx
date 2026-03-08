@@ -141,18 +141,21 @@ function RewardFloat({
   xp,
   coins,
   isSurpriseBonus,
+  onDone,
 }: {
   xp: number;
   coins: number;
   isSurpriseBonus: boolean;
+  onDone?: () => void;
 }) {
   const [phase, setPhase] = useState<'appear' | 'pulse' | 'fly'>('appear');
 
   useEffect(() => {
     const t1 = setTimeout(() => setPhase('pulse'), 200);
     const t2 = setTimeout(() => setPhase('fly'), 1200);
-    return () => { clearTimeout(t1); clearTimeout(t2); };
-  }, []);
+    const t3 = setTimeout(() => onDone?.(), 1800);
+    return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <motion.div
@@ -204,9 +207,9 @@ function RewardFloat({
           </div>
           <span
             className="text-yellow-300 font-extrabold text-2xl"
-            style={{ textShadow: '0 0 16px rgba(252,211,77,0.5), 0 2px 4px rgba(0,0,0,0.3)' }}
+            style={{ textShadow: '0 0 16px rgba(252,211,77,0.5), 0 2px 4px rgba(0,0,0,0.3)', display: 'inline-flex', alignItems: 'center', gap: 4 }}
           >
-            +{coins} &#x1FA99;
+            +{coins} <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 28, height: 28 }} />
           </span>
         </motion.div>
       </div>
@@ -700,6 +703,8 @@ export default function CheckInScreen() {
   }, [isAnimating, frontX, handleSwipeLeft]);
 
   const handleClose = useCallback(() => {
+    setRewardFloatData(null);
+    setShowCelebration(false);
     openScreen('city');
   }, [openScreen]);
 
@@ -880,6 +885,7 @@ export default function CheckInScreen() {
             xp={rewardFloatData.xp}
             coins={rewardFloatData.coins}
             isSurpriseBonus={rewardFloatData.isSurpriseBonus}
+            onDone={() => setRewardFloatData(null)}
           />
         )}
       </AnimatePresence>

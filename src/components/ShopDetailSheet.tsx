@@ -165,7 +165,7 @@ export default function ShopDetailSheet() {
             cursor: affordable ? 'pointer' : 'default',
           }}
         >
-          &#x1FA99; {detailAsset.price}
+          <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {detailAsset.price}
         </button>
       </div>
 

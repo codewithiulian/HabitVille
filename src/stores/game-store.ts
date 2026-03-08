@@ -11,6 +11,7 @@ interface GameState {
   doubleXPEventActive: boolean;
   firstWeekBoostActive: boolean;
   showOnboarding: boolean;
+  showHabitList: boolean;
   tutorialStep: number | null;
   initialized: boolean;
 
@@ -22,6 +23,7 @@ interface GameState {
   setDeferLevelUps: (defer: boolean) => void;
   setDoubleXPEvent: (active: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
+  setShowHabitList: (show: boolean) => void;
   setTutorialStep: (step: number | null) => void;
 }
 
@@ -33,6 +35,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   doubleXPEventActive: false,
   firstWeekBoostActive: false,
   showOnboarding: false,
+  showHabitList: false,
   tutorialStep: null,
   initialized: false,
 
@@ -92,6 +95,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setShowOnboarding: (show) => {
     set({ showOnboarding: show });
+  },
+
+  setShowHabitList: (show) => {
+    set({ showHabitList: show });
   },
 
   setTutorialStep: (step) => {
