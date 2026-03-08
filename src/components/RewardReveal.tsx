@@ -142,6 +142,32 @@ function StreakMilestoneContent({ payload }: { payload: PendingReward['payload']
   );
 }
 
+function DailyPerfectContent({ payload }: { payload: PendingReward['payload'] }) {
+  const xp = payload.xp as number | undefined;
+  const coins = payload.coins as number | undefined;
+
+  return (
+    <div className="reward-scale-in" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+      <div style={{ fontSize: 48, lineHeight: 1 }}>🏆</div>
+      <div style={{ fontSize: 14, fontWeight: 500, color: 'rgba(255,255,255,0.7)' }}>
+        PERFECT DAY!
+      </div>
+      <div style={{ display: 'flex', gap: 16 }}>
+        {xp && (
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#A78BFA' }}>
+            +{xp} XP
+          </div>
+        )}
+        {coins && (
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D' }}>
+            +{coins} &#x1FA99;
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function AssetUnlockContent({ payload }: { payload: PendingReward['payload'] }) {
   const asset = payload.asset as CatalogAsset | undefined;
 
@@ -187,6 +213,8 @@ function RewardContent({ reward }: { reward: PendingReward }) {
       return <WeeklyBonusContent payload={reward.payload} />;
     case 'streak-milestone':
       return <StreakMilestoneContent payload={reward.payload} />;
+    case 'daily-perfect':
+      return <DailyPerfectContent payload={reward.payload} />;
     case 'asset-unlock':
       return <AssetUnlockContent payload={reward.payload} />;
     default:

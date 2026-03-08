@@ -7,6 +7,7 @@ interface GameState {
   currentMode: GameMode;
   activeScreen: ActiveScreen;
   pendingRewards: PendingReward[];
+  deferLevelUps: boolean;
   doubleXPEventActive: boolean;
   firstWeekBoostActive: boolean;
   showOnboarding: boolean;
@@ -18,6 +19,7 @@ interface GameState {
   openScreen: (screen: ActiveScreen) => void;
   queueReward: (reward: PendingReward) => void;
   dequeueReward: () => PendingReward | undefined;
+  setDeferLevelUps: (defer: boolean) => void;
   setDoubleXPEvent: (active: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
   setTutorialStep: (step: number | null) => void;
@@ -27,6 +29,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   currentMode: 'view',
   activeScreen: 'city',
   pendingRewards: [],
+  deferLevelUps: false,
   doubleXPEventActive: false,
   firstWeekBoostActive: false,
   showOnboarding: false,
@@ -77,6 +80,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     const [first, ...rest] = state.pendingRewards;
     set({ pendingRewards: rest });
     return first;
+  },
+
+  setDeferLevelUps: (defer) => {
+    set({ deferLevelUps: defer });
   },
 
   setDoubleXPEvent: (active) => {
