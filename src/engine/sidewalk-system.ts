@@ -61,6 +61,10 @@ export function hasSidewalk(row: number, col: number): boolean {
   return sidewalkMap.has(tileKey(row, col));
 }
 
+export function getSidewalkKeys(): IterableIterator<string> {
+  return sidewalkMap.keys();
+}
+
 // ---------------------------------------------------------------------------
 // Tile variant computation
 // ---------------------------------------------------------------------------

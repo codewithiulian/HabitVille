@@ -397,7 +397,7 @@ assets:
 # People sprites are drawn from a pool and assigned randomly.
 # ----------------------------------------------------------------------------
 population:
-  people_sprite_pool: 37 # Total unique people character designs
+  people_sprite_pool: 32 # Total unique people character designs
   max_visible_npcs: 50 # Cap on rendered NPC sprites on the map
 
   # Residents generated per housing type placed in the city.

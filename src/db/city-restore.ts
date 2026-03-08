@@ -5,6 +5,8 @@ import type { SceneContainers } from '../engine/setup-stage';
 import { getAsset } from '../engine/asset-registry';
 import { placeOnGrid } from '../engine/place-on-grid';
 import { markOccupied } from '../engine/build-system';
+import { recalcPopulation } from '../engine/population';
+import { usePlayerStore } from '../stores/player-store';
 import { restoreRoadSprite, depthSortAfterRestore } from '../engine/road-system';
 import {
   restoreSidewalkSprite,
@@ -35,6 +37,10 @@ export async function restoreCity(containers: SceneContainers): Promise<void> {
 
   // Depth sort once after all buildings restored
   containers.buildingLayer.children.sort((a, b) => a.position.y - b.position.y);
+
+  // Self-healing population recalculation from placed assets
+  const totalPop = recalcPopulation(buildings.map((b) => b.assetKey));
+  usePlayerStore.getState().setPopulation(totalPop);
 }
 
 // ---------------------------------------------------------------------------

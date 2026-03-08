@@ -22,6 +22,7 @@ import {
 import { roadAssetKey } from './road-tiles';
 import { sidewalkAssetKey } from './sidewalk-tiles';
 import { initSidewalkSystem, destroySidewalkSystem } from './sidewalk-system';
+import { initNpcSystem, destroyNpcSystem, respawnNPCs } from './npc-system';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
@@ -91,12 +92,17 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   initCamera(app, containers.gameWorld);
   initBuildSystem(app, containers);
 
+  // NPC system: init and spawn initial NPCs based on restored population
+  initNpcSystem(app, containers);
+  respawnNPCs().catch((err) => console.error('[NPC] initial spawn failed:', err));
+
   return app.canvas;
 }
 
 export function destroyGame(): void {
   if (!app) return;
 
+  destroyNpcSystem();
   destroyBuildSystem();
   destroySidewalkSystem();
   destroyRoadSystem();
