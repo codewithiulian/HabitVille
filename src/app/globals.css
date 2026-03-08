@@ -1,9 +1,98 @@
 @import "tailwindcss";
 
+@custom-variant dark (&:where(.dark, .dark *));
+
+:root {
+  /* Page backgrounds */
+  --bg-body: #F5F5FA;
+  --bg-page: rgba(245, 245, 250, 0.97);
+
+  /* Card & surface backgrounds */
+  --bg-card: rgba(255, 255, 255, 0.6);
+  --bg-elevated: rgba(255, 255, 255, 0.8);
+  --bg-back-card: rgba(255, 255, 255, 0.4);
+
+  /* Glass backgrounds */
+  --bg-glass: rgba(255, 255, 255, 0.85);
+  --bg-hud: rgba(255, 255, 255, 0.75);
+  --bg-sheet: rgba(255, 255, 255, 0.92);
+  --bg-sheet-solid: rgba(255, 255, 255, 0.95);
+
+  /* Subtle backgrounds */
+  --bg-track: rgba(0, 0, 0, 0.08);
+  --bg-muted: rgba(0, 0, 0, 0.06);
+  --bg-subtle: rgba(0, 0, 0, 0.04);
+
+  /* Text colors */
+  --text-primary: #1a1a1a;
+  --text-secondary: #666666;
+  --text-muted: rgba(0, 0, 0, 0.35);
+  --text-icon: rgba(0, 0, 0, 0.45);
+  --text-faint: rgba(0, 0, 0, 0.25);
+  --text-label: rgba(0, 0, 0, 0.55);
+
+  /* Border colors */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-subtle: rgba(0, 0, 0, 0.06);
+  --border-strong: rgba(0, 0, 0, 0.12);
+  --border-handle: rgba(0, 0, 0, 0.15);
+
+  /* Special colors */
+  --color-coin: #ca8a04;
+  --icon-fab: #444444;
+  --icon-build: #d97706;
+  --level-from: #7C3AED;
+  --level-to: #5B21B6;
+  --level-section: rgba(124, 58, 237, 0.08);
+}
+
+.dark {
+  /* Page backgrounds */
+  --bg-body: #0f172a;
+  --bg-page: rgba(10, 12, 20, 0.97);
+
+  /* Card & surface backgrounds */
+  --bg-card: rgb(31, 41, 55);
+  --bg-elevated: rgb(31, 41, 55);
+  --bg-back-card: rgba(31, 41, 55, 0.6);
+
+  /* Glass backgrounds */
+  --bg-glass: rgba(0, 0, 0, 0.6);
+  --bg-hud: rgba(10, 15, 30, 0.75);
+  --bg-sheet: rgba(15, 18, 30, 0.92);
+  --bg-sheet-solid: rgba(15, 18, 30, 0.95);
+
+  /* Subtle backgrounds */
+  --bg-track: rgba(255, 255, 255, 0.1);
+  --bg-muted: rgba(255, 255, 255, 0.1);
+  --bg-subtle: rgba(255, 255, 255, 0.06);
+
+  /* Text colors */
+  --text-primary: #ffffff;
+  --text-secondary: #9CA3AF;
+  --text-muted: #6B7280;
+  --text-icon: #9CA3AF;
+  --text-faint: rgba(255, 255, 255, 0.3);
+  --text-label: rgba(255, 255, 255, 0.7);
+
+  /* Border colors */
+  --border: rgba(255, 255, 255, 0.1);
+  --border-subtle: rgba(255, 255, 255, 0.06);
+  --border-strong: rgba(255, 255, 255, 0.15);
+  --border-handle: rgba(255, 255, 255, 0.2);
+
+  /* Special colors */
+  --color-coin: #facc15;
+  --icon-fab: #ffffff;
+  --icon-build: #fbbf24;
+  --level-from: #3b3478;
+  --level-to: #2a2060;
+  --level-section: rgba(59, 52, 120, 0.4);
+}
 
 body {
-  background: #1B4F8A;
-  color: #ffffff;
+  background: var(--bg-body);
+  color: var(--text-primary);
   font-family: Arial, Helvetica, sans-serif;
   -webkit-tap-highlight-color: transparent;
   user-select: none;

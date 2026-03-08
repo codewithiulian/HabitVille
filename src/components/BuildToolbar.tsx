@@ -140,7 +140,7 @@ function AssetThumbnail({
         style={{
           fontSize: 9,
           lineHeight: '11px',
-          color: 'rgba(0, 0, 0, 0.55)',
+          color: 'var(--text-label)',
           width: '100%',
           pointerEvents: 'none',
           overflow: 'hidden',
@@ -270,7 +270,7 @@ function InventoryThumbnail({
         style={{
           fontSize: 9,
           lineHeight: '11px',
-          color: 'rgba(0, 0, 0, 0.55)',
+          color: 'var(--text-label)',
           width: '100%',
           pointerEvents: 'none',
           overflow: 'hidden',
@@ -324,12 +324,12 @@ function RoadDeleteButton({ active }: { active: boolean }) {
         flexShrink: 0,
       }}
     >
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={active ? '#DC2626' : '#666'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke={active ? '#DC2626' : 'var(--text-secondary)'} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <line x1="4" y1="4" x2="20" y2="20" />
         <line x1="20" y1="4" x2="4" y2="20" />
         <rect x="1" y="1" width="22" height="22" rx="3" />
       </svg>
-      <span style={{ fontSize: 9, lineHeight: '11px', color: active ? '#DC2626' : 'rgba(0,0,0,0.55)' }}>
+      <span style={{ fontSize: 9, lineHeight: '11px', color: active ? '#DC2626' : 'var(--text-label)' }}>
         Delete
       </span>
     </button>
@@ -346,7 +346,7 @@ function HouseColorStrip({ ownedColors }: { ownedColors: OwnedColorEntry[] }) {
         gap: 8,
         padding: '6px 12px',
         justifyContent: 'center',
-        borderBottom: '1px solid rgba(0, 0, 0, 0.04)',
+        borderBottom: '1px solid var(--border-subtle)',
       }}
     >
       {ownedColors.map(({ color: c, quantity }) => (
@@ -541,10 +541,10 @@ export default function BuildToolbar() {
         left: 0,
         right: 0,
         zIndex: 100,
-        background: 'rgba(255, 255, 255, 0.88)',
+        background: 'var(--bg-glass)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        borderTop: '1px solid rgba(0, 0, 0, 0.08)',
+        borderTop: '1px solid var(--border)',
         paddingBottom: 'env(safe-area-inset-bottom)',
         maxHeight: '25vh',
         display: 'flex',
@@ -587,7 +587,7 @@ export default function BuildToolbar() {
           }}
         >
           <span className="category-spinner" />
-          <span style={{ fontSize: 12, color: 'rgba(0, 0, 0, 0.45)' }}>Loading...</span>
+          <span style={{ fontSize: 12, color: 'var(--text-icon)' }}>Loading...</span>
         </div>
       )}
 
@@ -647,7 +647,7 @@ export default function BuildToolbar() {
             justifyContent: 'center',
             padding: '14px 8px',
             fontSize: 12,
-            color: 'rgba(0, 0, 0, 0.4)',
+            color: 'var(--text-icon)',
           }}
         >
           No items owned. Visit the Shop to buy assets!
@@ -658,7 +658,7 @@ export default function BuildToolbar() {
       <div
         style={{
           display: 'flex',
-          borderTop: '1px solid rgba(0, 0, 0, 0.06)',
+          borderTop: '1px solid var(--border-subtle)',
         }}
       >
         {(Object.keys(CATEGORY_LABELS) as BuildCategory[]).map((cat) => (
@@ -685,7 +685,7 @@ export default function BuildToolbar() {
               color:
                 selectedCategory === cat
                   ? '#6D28D9'
-                  : 'rgba(0, 0, 0, 0.45)',
+                  : 'var(--text-icon)',
               fontSize: 12,
               fontWeight: selectedCategory === cat ? 600 : 400,
               cursor: 'pointer',
@@ -705,7 +705,7 @@ export default function BuildToolbar() {
               padding: '8px 12px',
               border: 'none',
               background: 'transparent',
-              color: 'rgba(0, 0, 0, 0.4)',
+              color: 'var(--text-icon)',
               fontSize: 16,
               cursor: 'pointer',
             }}

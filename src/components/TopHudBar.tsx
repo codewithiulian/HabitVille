@@ -119,10 +119,10 @@ export default function TopHudBar() {
         left: 8,
         right: 8,
         zIndex: 85,
-        background: 'rgba(10, 15, 30, 0.75)',
+        background: 'var(--bg-hud)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
-        border: '1px solid rgba(255,255,255,0.08)',
+        border: '1px solid var(--border)',
         borderRadius: 14,
         padding: '8px 14px',
         display: 'flex',
@@ -137,7 +137,7 @@ export default function TopHudBar() {
           width: 40,
           height: 40,
           borderRadius: 10,
-          background: 'linear-gradient(135deg, #3b3478, #2a2060)',
+          background: 'linear-gradient(135deg, var(--level-from), var(--level-to))',
           border: '1px solid rgba(139,92,246,0.3)',
           display: 'flex',
           flexDirection: 'column',
@@ -148,7 +148,7 @@ export default function TopHudBar() {
           transform: levelPulse ? 'scale(1.15)' : 'scale(1)',
         }}
       >
-        <span style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.6)', lineHeight: 1, letterSpacing: 1 }}>
+        <span style={{ fontSize: 8, fontWeight: 600, color: 'rgba(255,255,255,0.8)', lineHeight: 1, letterSpacing: 1 }}>
           LVL
         </span>
         <span style={{ fontSize: 16, fontWeight: 700, color: 'white', lineHeight: 1.1 }}>
@@ -172,7 +172,7 @@ export default function TopHudBar() {
         <span
           style={{
             fontSize: 11,
-            color: 'rgba(255,255,255,0.6)',
+            color: 'var(--text-icon)',
             fontWeight: 500,
             transition: 'transform 0.2s ease',
             transform: xpPulse ? 'scale(1.05)' : 'scale(1)',
@@ -186,7 +186,7 @@ export default function TopHudBar() {
             width: '100%',
             height: 5,
             borderRadius: 3,
-            background: 'rgba(255,255,255,0.1)',
+            background: 'var(--bg-track)',
             overflow: 'hidden',
           }}
         >
@@ -212,7 +212,7 @@ export default function TopHudBar() {
               padding: '6px 10px',
               borderRadius: 8,
               background: 'rgba(0,0,0,0.85)',
-              border: '1px solid rgba(255,255,255,0.1)',
+              border: '1px solid var(--border-strong)',
               fontSize: 11,
               color: 'rgba(255,255,255,0.8)',
               whiteSpace: 'nowrap',
@@ -240,7 +240,7 @@ export default function TopHudBar() {
           style={{
             fontSize: 14,
             fontWeight: 600,
-            color: coinFlash ? '#ef4444' : '#facc15',
+            color: coinFlash ? '#ef4444' : 'var(--color-coin)',
             transition: 'color 0.3s ease',
           }}
         >
@@ -257,12 +257,12 @@ export default function TopHudBar() {
           flexShrink: 0,
         }}
       >
-        <Users size={16} color="rgba(255,255,255,0.5)" />
+        <Users size={16} color="var(--text-muted)" />
         <span
           style={{
             fontSize: 13,
             fontWeight: 500,
-            color: 'rgba(255,255,255,0.6)',
+            color: 'var(--text-icon)',
           }}
         >
           {displayPop.toLocaleString()}

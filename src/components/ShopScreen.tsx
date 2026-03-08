@@ -34,7 +34,7 @@ export default function ShopScreen() {
         position: 'fixed',
         inset: 0,
         zIndex: 150,
-        background: 'rgba(245, 245, 250, 0.97)',
+        background: 'var(--bg-page)',
         backdropFilter: 'blur(20px)',
         WebkitBackdropFilter: 'blur(20px)',
         display: 'flex',
@@ -49,8 +49,8 @@ export default function ShopScreen() {
           alignItems: 'center',
           gap: 12,
           padding: 'max(env(safe-area-inset-top), 12px) 16px 10px',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-          background: 'rgba(255, 255, 255, 0.8)',
+          borderBottom: '1px solid var(--border-subtle)',
+          background: 'var(--bg-elevated)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
         }}
@@ -70,10 +70,10 @@ export default function ShopScreen() {
             flexShrink: 0,
           }}
         >
-          <ArrowLeft size={20} color="#333" />
+          <ArrowLeft size={20} color="var(--text-primary)" />
         </button>
 
-        <span style={{ fontSize: 18, fontWeight: 700, color: '#1a1a1a', flex: 1 }}>Shop</span>
+        <span style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)', flex: 1 }}>Shop</span>
 
         {/* Coin & level display */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -94,14 +94,14 @@ export default function ShopScreen() {
             {level}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-            <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>
+            <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-primary)' }}>
               <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {coins.toLocaleString()}
             </span>
             <div style={{
               width: 60,
               height: 3,
               borderRadius: 2,
-              background: 'rgba(0, 0, 0, 0.08)',
+              background: 'var(--bg-track)',
               overflow: 'hidden',
             }}>
               <div style={{
@@ -124,8 +124,8 @@ export default function ShopScreen() {
           overflowX: 'auto',
           WebkitOverflowScrolling: 'touch',
           scrollbarWidth: 'none',
-          borderBottom: '1px solid rgba(0, 0, 0, 0.06)',
-          background: 'rgba(255, 255, 255, 0.6)',
+          borderBottom: '1px solid var(--border-subtle)',
+          background: 'var(--bg-card)',
           flexShrink: 0,
         }}
       >
@@ -139,7 +139,7 @@ export default function ShopScreen() {
               border: 'none',
               background: 'transparent',
               borderBottom: selectedCategory === cat.id ? '2px solid #7C3AED' : '2px solid transparent',
-              color: selectedCategory === cat.id ? '#6D28D9' : 'rgba(0, 0, 0, 0.45)',
+              color: selectedCategory === cat.id ? '#6D28D9' : 'var(--text-icon)',
               fontSize: 13,
               fontWeight: selectedCategory === cat.id ? 600 : 400,
               cursor: 'pointer',

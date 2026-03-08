@@ -34,10 +34,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <head>
         <meta name="theme-color" content="#89CFF0" />
         <link rel="manifest" href="/manifest.json" />
+        <script dangerouslySetInnerHTML={{ __html: `(function(){try{var t=localStorage.getItem('habitville-theme');if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark')}}catch(e){}})()` }} />
       </head>
       <body className="min-h-screen overflow-hidden" suppressHydrationWarning>
         <div

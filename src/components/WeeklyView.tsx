@@ -166,12 +166,12 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
       <div className="flex items-center justify-between px-4 py-2">
         <button
           onClick={goToPreviousWeek}
-          className="flex items-center gap-1 text-sm text-gray-400 active:text-white transition-colors"
+          className="flex items-center gap-1 text-sm transition-colors" style={{ color: 'var(--text-secondary)' }}
         >
           <ChevronLeft size={16} />
           <span>Prev</span>
         </button>
-        <span className="text-sm font-medium text-gray-300">
+        <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
           {formatWeekRange(displayDates)}
         </span>
         {isPastWeek ? (
@@ -189,8 +189,8 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
 
       {/* Past week indicator */}
       {isPastWeek && (
-        <div className="mx-4 mb-2 py-1.5 px-3 rounded-lg bg-gray-800/60 text-center">
-          <span className="text-xs text-gray-500">Past week — read only</span>
+        <div className="mx-4 mb-2 py-1.5 px-3 rounded-lg text-center" style={{ background: 'var(--bg-muted)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Past week — read only</span>
         </div>
       )}
 
@@ -216,18 +216,18 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
                 disabled={!tappable}
                 className={`flex flex-col rounded-xl flex-1 min-w-[170px] text-left ${getColumnClasses(date)} ${
                   isToday ? 'ring-2 ring-violet-500/50' : ''
-                } ${tappable ? 'active:bg-gray-700/30 cursor-pointer' : 'cursor-default'}`}
+                } ${tappable ? 'active:bg-[rgba(0,0,0,0.04)] cursor-pointer' : 'cursor-default'}`}
               >
                 {/* Day header */}
                 <div
                   className={`flex flex-col items-center py-2.5 rounded-t-xl ${
-                    isToday ? 'bg-violet-600/20' : ''
+                    isToday ? 'bg-violet-600/15' : ''
                   }`}
                 >
-                  <span className={`text-xs font-medium ${isToday ? 'text-violet-300' : 'text-gray-400'}`}>
+                  <span className={`text-xs font-medium ${isToday ? 'text-violet-700 dark:text-violet-300' : ''}`} style={isToday ? undefined : { color: 'var(--text-secondary)' }}>
                     {DAY_LABELS[i]}
                   </span>
-                  <span className={`text-lg font-bold ${isToday ? 'text-white' : 'text-gray-300'}`}>
+                  <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                     {parseInt(dayNum)}
                   </span>
                 </div>
@@ -243,14 +243,13 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
                         className="w-full flex items-center gap-1.5 px-2 py-1.5 rounded-lg"
                       >
                         {isCompleted ? (
-                          <Check size={14} className="text-emerald-400 shrink-0" />
+                          <Check size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
                         ) : (
-                          <Circle size={14} className="text-gray-500 shrink-0" />
+                          <Circle size={14} className="shrink-0" style={{ color: 'var(--text-faint)' }} />
                         )}
                         <span
-                          className={`text-xs truncate ${
-                            isCompleted ? 'text-gray-500 line-through' : 'text-gray-300'
-                          }`}
+                          className={`text-xs truncate ${isCompleted ? 'line-through' : ''}`}
+                          style={{ color: isCompleted ? 'var(--text-muted)' : 'var(--text-primary)' }}
                         >
                           {habit.name}
                         </span>
@@ -258,7 +257,7 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
                     );
                   })}
                   {dayHabits.length === 0 && (
-                    <p className="text-[10px] text-gray-600 text-center py-2">No habits</p>
+                    <p className="text-[10px] text-center py-2" style={{ color: 'var(--text-faint)' }}>No habits</p>
                   )}
                 </div>
               </button>
@@ -268,9 +267,9 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
       </div>
 
       {/* Footer — progress bar + stats */}
-      <div className="shrink-0 px-4 pt-3 pb-4 border-t border-gray-800">
+      <div className="shrink-0 px-4 pt-3 pb-4" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         {/* Progress bar */}
-        <div className="w-full h-2 rounded-full bg-gray-800 mb-3 overflow-hidden">
+        <div className="w-full h-2 rounded-full mb-3 overflow-hidden" style={{ background: 'var(--bg-track)' }}>
           <div
             className="h-full rounded-full transition-all duration-500"
             style={{
@@ -285,21 +284,21 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <span className="text-base font-bold text-white">
+            <span className="text-base font-bold" style={{ color: 'var(--text-primary)' }}>
               {weeklyStats.totalCompleted}/{weeklyStats.totalScheduled}
             </span>
-            <span className="text-sm text-gray-400 ml-1.5">
+            <span className="text-sm ml-1.5" style={{ color: 'var(--text-secondary)' }}>
               completed ({weeklyStats.percentage}%)
             </span>
           </div>
           <div className={`text-sm font-semibold px-2.5 py-1 rounded-full ${
             weeklyStats.multiplier >= 2
-              ? 'bg-emerald-500/20 text-emerald-400'
+              ? 'bg-emerald-100 dark:bg-emerald-500/20 text-emerald-700 dark:text-emerald-400'
               : weeklyStats.multiplier >= 1
-                ? 'bg-amber-500/20 text-amber-400'
+                ? 'bg-amber-100 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400'
                 : weeklyStats.multiplier > 0
-                  ? 'bg-gray-700 text-gray-300'
-                  : 'bg-gray-800 text-gray-500'
+                  ? 'bg-[rgba(0,0,0,0.06)] dark:bg-[rgba(255,255,255,0.1)] text-[#666] dark:text-gray-400'
+                  : 'bg-[rgba(0,0,0,0.04)] dark:bg-[rgba(255,255,255,0.06)] text-[rgba(0,0,0,0.35)] dark:text-gray-500'
           }`}>
             {weeklyStats.multiplier > 0
               ? `${weeklyStats.multiplier}x bonus`
@@ -307,7 +306,7 @@ export default function WeeklyView({ weekDates, todayStr, onSelectDay }: WeeklyV
           </div>
         </div>
         {(weeklyStats.xpEarned > 0 || weeklyStats.coinsEarned > 0) && (
-          <div className="text-xs text-gray-500 mt-1.5">
+          <div className="text-xs mt-1.5" style={{ color: 'var(--text-muted)' }}>
             +{weeklyStats.xpEarned.toLocaleString()} XP &middot; +{weeklyStats.coinsEarned.toLocaleString()} Coins this week
           </div>
         )}

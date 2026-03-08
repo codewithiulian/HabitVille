@@ -86,7 +86,7 @@ export default function ShopDetailSheet() {
           left: 0,
           right: 0,
           zIndex: 160,
-          background: 'rgba(255, 255, 255, 0.92)',
+          background: 'var(--bg-sheet)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           borderTopLeftRadius: 24,
@@ -115,7 +115,7 @@ export default function ShopDetailSheet() {
 
         {/* Name & owned count */}
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 18, fontWeight: 600, color: '#1a1a1a' }}>
+          <div style={{ fontSize: 18, fontWeight: 600, color: 'var(--text-primary)' }}>
             {detailAsset.name}
           </div>
           {totalOwned > 0 && (
@@ -159,7 +159,7 @@ export default function ShopDetailSheet() {
             background: affordable
               ? 'linear-gradient(135deg, #7C3AED, #5B21B6)'
               : 'rgba(0, 0, 0, 0.1)',
-            color: affordable ? 'white' : 'rgba(0, 0, 0, 0.35)',
+            color: affordable ? 'white' : 'var(--text-muted)',
             fontSize: 16,
             fontWeight: 600,
             cursor: affordable ? 'pointer' : 'default',

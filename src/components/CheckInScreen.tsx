@@ -74,23 +74,23 @@ export default function CheckInScreen() {
   return (
     <>
       <div
-        className="fixed inset-0 bg-gray-950 flex flex-col"
-        style={{ zIndex: 250 }}
+        className="fixed inset-0 flex flex-col"
+        style={{ zIndex: 250, background: 'var(--bg-page)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pb-1" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-          <h1 className="text-lg font-bold text-white">Check-In</h1>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Check-In</h1>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowHabitList(true)}
-              className="p-2 text-gray-400 active:text-white"
+              className="p-2" style={{ color: 'var(--text-muted)' }}
               aria-label="Manage habits"
             >
               <Settings size={20} />
             </button>
             <button
               onClick={handleClose}
-              className="p-2 text-gray-400 active:text-white"
+              className="p-2" style={{ color: 'var(--text-muted)' }}
               aria-label="Close check-in"
             >
               <X size={20} />
@@ -99,13 +99,13 @@ export default function CheckInScreen() {
         </div>
 
         {/* Tab toggle */}
-        <div className="flex mx-4 mb-1 rounded-lg bg-gray-800/50 p-1">
+        <div className="flex mx-4 mb-1 rounded-lg p-1" style={{ background: 'var(--bg-muted)' }}>
           <button
             onClick={() => setActiveTab('daily')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'daily'
                 ? 'bg-violet-600 text-white'
-                : 'text-gray-400'
+                : 'text-[var(--text-secondary)]'
             }`}
           >
             Daily
@@ -115,7 +115,7 @@ export default function CheckInScreen() {
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${
               activeTab === 'weekly'
                 ? 'bg-violet-600 text-white'
-                : 'text-gray-400'
+                : 'text-[var(--text-secondary)]'
             }`}
           >
             Weekly

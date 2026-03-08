@@ -44,18 +44,19 @@ export default function TutorialOverlay() {
       onClick={advance}
     >
       <div
-        className="bg-gray-900 border border-gray-700 rounded-2xl px-6 py-5 mx-8 max-w-xs text-center animate-fade-in"
+        className="rounded-2xl px-6 py-5 mx-8 max-w-xs text-center animate-fade-in"
+        style={{ background: 'var(--bg-sheet)', border: '1px solid var(--border)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
         onClick={(e) => e.stopPropagation()}
       >
-        <h3 className="text-white font-semibold text-base mb-1.5">{tip.title}</h3>
-        <p className="text-gray-400 text-sm mb-4">{tip.body}</p>
+        <h3 className="font-semibold text-base mb-1.5" style={{ color: 'var(--text-primary)' }}>{tip.title}</h3>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>{tip.body}</p>
         <button
           onClick={advance}
           className="px-6 py-2 rounded-xl bg-violet-600 text-white text-sm font-medium active:bg-violet-700"
         >
           {isLast ? 'Got it!' : 'Next'}
         </button>
-        <p className="text-gray-500 text-xs mt-3">
+        <p className="text-xs mt-3" style={{ color: 'var(--text-muted)' }}>
           {tutorialStep + 1} / {TIPS.length}
         </p>
       </div>

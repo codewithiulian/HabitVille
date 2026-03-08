@@ -6,12 +6,15 @@ import { usePlayerStore } from '@/stores/player-store';
 import { useHabitStore } from '@/stores/habit-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { useGameStore } from '@/stores/game-store';
+import { useThemeStore } from '@/stores/theme-store';
 import { formatDateString, isScheduledForDate } from '@/lib/schedule-utils';
 import { shouldTriggerWeeklyReport, generateAndAwardWeeklyReport } from '@/lib/weekly-report-engine';
 
 export default function AppInitializer() {
   useEffect(() => {
     async function init() {
+      useThemeStore.getState().initialize();
+
       const isFirstUse = (await db.playerProfile.count()) === 0;
 
       await usePlayerStore.getState().initialize();
