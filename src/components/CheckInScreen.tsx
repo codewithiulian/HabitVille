@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback, useMemo } from 'react';
-import { Settings, Flame, ChevronRight, ChevronLeft, Trophy, Sparkles, X } from 'lucide-react';
-import { motion, useMotionValue, useTransform, animate, AnimatePresence, type PanInfo } from 'framer-motion';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { Settings, Flame, ChevronRight, ChevronLeft, Check, Trophy, Sparkles, X } from 'lucide-react';
+import { motion, useMotionValue, useTransform, animate, AnimatePresence, type PanInfo, type MotionValue } from 'framer-motion';
 import { useGameStore } from '@/stores/game-store';
 import { useHabitStore } from '@/stores/habit-store';
 import { usePlayerStore } from '@/stores/player-store';
@@ -179,55 +179,67 @@ function DateStrip({
 
 function SwipeCard({
   card,
+  x,
   onSwipeRight,
   onSwipeLeft,
+  onExitStart,
+  disabled,
 }: {
   card: CardItem;
+  x: MotionValue<number>;
   onSwipeRight: () => void;
   onSwipeLeft: () => void;
+  onExitStart?: () => void;
+  disabled?: boolean;
 }) {
   const [exiting, setExiting] = useState(false);
-  const x = useMotionValue(0);
-  const rotate = useTransform(x, [-300, 0, 300], [-15, 0, 15]);
-  const rightOpacity = useTransform(x, [0, 100], [0, 1]);
-  const leftOpacity = useTransform(x, [-100, 0], [1, 0]);
+  const rotate = useTransform(x, [-200, 0, 200], [-12, 0, 12]);
+  const doneOpacity = useTransform(x, [0, 60], [0, 1]);
+  const skipOpacity = useTransform(x, [-60, 0], [1, 0]);
 
   const meta = CATEGORY_META[card.habit.category];
   const Icon = meta.icon;
 
   function handleDragEnd(_: unknown, info: PanInfo) {
-    if (exiting) return;
+    if (exiting || disabled) return;
 
-    const offset = info.offset.x;
-    const velocity = info.velocity.x;
+    const { offset, velocity } = info;
+    const absX = Math.abs(offset.x);
+    const absVel = Math.abs(velocity.x);
 
-    const SWIPE_PX = 80;
-    const SWIPE_VEL = 400;
+    // Multi-tier swipe detection for natural mobile feel:
+    // 1. Dragged past 50px in either direction
+    // 2. Quick flick (>250px/s) regardless of distance
+    // 3. Short deliberate swipe (>25px AND >100px/s)
+    const triggered =
+      absX > 50 || absVel > 250 || (absX > 25 && absVel > 100);
 
-    if (offset > SWIPE_PX || velocity > SWIPE_VEL) {
-      setExiting(true);
-      animate(x, window.innerWidth + 100, {
-        type: 'tween',
-        duration: 0.2,
-        ease: 'easeOut',
-      }).then(onSwipeRight);
-    } else if (offset < -SWIPE_PX || velocity < -SWIPE_VEL) {
-      setExiting(true);
-      animate(x, -(window.innerWidth + 100), {
-        type: 'tween',
-        duration: 0.2,
-        ease: 'easeOut',
-      }).then(onSwipeLeft);
-    } else {
-      // Snap back to center
-      animate(x, 0, { type: 'spring', stiffness: 500, damping: 30 });
+    if (!triggered) {
+      animate(x, 0, { type: 'spring', stiffness: 600, damping: 30 });
+      return;
     }
+
+    setExiting(true);
+    onExitStart?.();
+
+    const direction = offset.x > 0 ? 1 : -1;
+    // Faster flick → faster exit animation (min 0.1s, max 0.25s)
+    const duration = Math.max(0.1, Math.min(0.25, 150 / Math.max(absVel, 200)));
+
+    animate(x, direction * (window.innerWidth + 200), {
+      type: 'tween',
+      duration,
+      ease: 'easeOut',
+    }).then(() => {
+      if (direction === 1) onSwipeRight();
+      else onSwipeLeft();
+    });
   }
 
   return (
     <motion.div
-      style={{ x, rotate }}
-      drag="x"
+      style={{ x, rotate, willChange: 'transform' }}
+      drag={!exiting && !disabled ? 'x' : false}
       dragMomentum={false}
       onDragEnd={handleDragEnd}
       className="absolute inset-0 touch-none"
@@ -235,14 +247,14 @@ function SwipeCard({
       <div className="h-full rounded-2xl bg-gray-800 border border-gray-700 px-6 py-8 flex flex-col items-center justify-center relative overflow-hidden select-none">
         {/* Swipe indicators */}
         <motion.div
-          style={{ opacity: rightOpacity }}
-          className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-500 text-emerald-400 text-sm font-bold"
+          style={{ opacity: doneOpacity }}
+          className="absolute top-4 left-4 px-3 py-1 rounded-full bg-emerald-500/20 border-2 border-emerald-500 text-emerald-400 text-sm font-bold"
         >
           DONE
         </motion.div>
         <motion.div
-          style={{ opacity: leftOpacity }}
-          className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gray-500/20 border border-gray-500 text-gray-400 text-sm font-bold"
+          style={{ opacity: skipOpacity }}
+          className="absolute top-4 right-4 px-3 py-1 rounded-full bg-gray-500/20 border-2 border-gray-500 text-gray-400 text-sm font-bold"
         >
           SKIP
         </motion.div>
@@ -278,18 +290,6 @@ function SwipeCard({
             <span className="text-sm font-semibold">{card.streak} day streak</span>
           </div>
         )}
-
-        {/* Swipe hints */}
-        <div className="absolute bottom-4 left-0 right-0 flex justify-between px-6 text-xs text-gray-500">
-          <div className="flex items-center gap-1">
-            <ChevronLeft size={14} />
-            <span>Skip</span>
-          </div>
-          <div className="flex items-center gap-1">
-            <span>Done</span>
-            <ChevronRight size={14} />
-          </div>
-        </div>
       </div>
     </motion.div>
   );
@@ -384,6 +384,18 @@ export default function CheckInScreen() {
   const [loading, setLoading] = useState(true);
   const [perfectDay, setPerfectDay] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [isAnimating, setIsAnimating] = useState(false);
+
+  // Shared motion value for the front card (drives back-card responsive animation)
+  const frontX = useMotionValue(0);
+  const backScale = useTransform(frontX, (v) => 0.95 + Math.min(Math.abs(v) / 150, 1) * 0.05);
+  const backOpacity = useTransform(frontX, (v) => 0.6 + Math.min(Math.abs(v) / 150, 1) * 0.4);
+
+  // Reset shared motion value when the active card changes (before paint to avoid flash)
+  useLayoutEffect(() => {
+    frontX.set(0);
+    setIsAnimating(false);
+  }, [currentIndex, frontX]);
 
   // Load cards when date or habits change
   const loadCards = useCallback(
@@ -429,6 +441,8 @@ export default function CheckInScreen() {
       setSessionTotal(scheduled.length);
       setSessionCompletedIds(new Set());
       setPerfectDay(false);
+      setIsAnimating(false);
+      frontX.set(0);
 
       if (cardItems.length === 0) {
         const alreadyCompleted = completedIds.size;
@@ -542,6 +556,26 @@ export default function CheckInScreen() {
     }
   }, [currentIndex, cards.length, sessionCompletedIds, finishSession]);
 
+  const handleTapDone = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    animate(frontX, window.innerWidth + 200, {
+      type: 'tween',
+      duration: 0.25,
+      ease: 'easeOut',
+    }).then(handleSwipeRight);
+  }, [isAnimating, frontX, handleSwipeRight]);
+
+  const handleTapSkip = useCallback(() => {
+    if (isAnimating) return;
+    setIsAnimating(true);
+    animate(frontX, -(window.innerWidth + 200), {
+      type: 'tween',
+      duration: 0.25,
+      ease: 'easeOut',
+    }).then(handleSwipeLeft);
+  }, [isAnimating, frontX, handleSwipeLeft]);
+
   const handleClose = useCallback(() => {
     openScreen('city');
   }, [openScreen]);
@@ -613,10 +647,32 @@ export default function CheckInScreen() {
             </p>
 
             {/* Card stack — fills remaining space */}
-            <div className="relative flex-1 min-h-0">
-              {/* Peek card */}
+            <div className="relative flex-1 min-h-0 touch-none">
+              {/* Next card (behind, responds to front card drag) */}
               {currentIndex + 1 < cards.length && (
-                <div className="absolute inset-0 rounded-2xl bg-gray-800 border border-gray-700 scale-[0.97] opacity-60" />
+                <motion.div
+                  className="absolute inset-0 rounded-2xl bg-gray-800 border border-gray-700 pointer-events-none overflow-hidden"
+                  style={{ scale: backScale, opacity: backOpacity }}
+                >
+                  {(() => {
+                    const next = cards[currentIndex + 1];
+                    const nextMeta = CATEGORY_META[next.habit.category];
+                    const NextIcon = nextMeta.icon;
+                    return (
+                      <div className="h-full flex flex-col items-center justify-center px-6 select-none">
+                        <div
+                          className="w-14 h-14 rounded-xl flex items-center justify-center mb-3"
+                          style={{ background: nextMeta.color + '22' }}
+                        >
+                          <NextIcon size={28} color={nextMeta.color} />
+                        </div>
+                        <h3 className="text-lg font-bold text-white text-center opacity-60">
+                          {next.habit.name}
+                        </h3>
+                      </div>
+                    );
+                  })()}
+                </motion.div>
               )}
 
               {/* Active card */}
@@ -624,10 +680,33 @@ export default function CheckInScreen() {
                 <SwipeCard
                   key={cards[currentIndex].habit.id}
                   card={cards[currentIndex]}
+                  x={frontX}
                   onSwipeRight={handleSwipeRight}
                   onSwipeLeft={handleSwipeLeft}
+                  onExitStart={() => setIsAnimating(true)}
+                  disabled={isAnimating}
                 />
               )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex gap-3 mt-3 shrink-0">
+              <button
+                onClick={handleTapSkip}
+                disabled={isAnimating}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl border border-gray-600 text-gray-400 font-medium active:bg-gray-800 transition-colors disabled:opacity-40"
+              >
+                <ChevronLeft size={18} />
+                <span>Skip</span>
+              </button>
+              <button
+                onClick={handleTapDone}
+                disabled={isAnimating}
+                className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-emerald-600 text-white font-medium active:bg-emerald-700 transition-colors disabled:opacity-40"
+              >
+                <span>Done</span>
+                <Check size={18} />
+              </button>
             </div>
 
             {/* Accumulated rewards */}
