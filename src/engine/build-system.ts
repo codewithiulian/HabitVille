@@ -406,11 +406,11 @@ function onDocumentPointerUp(e: PointerEvent): void {
       persistPlace(buildingId, activeDrag.lastRow, activeDrag.lastCol, activeDrag.assetKey);
 
       // Inventory tracking: decrement quantity and create placed asset record
+      // Note: houses are stored generically in inventory (colorVariant=null),
+      // color is only in the registry key for rendering (stored in db.city assetKey)
       const catalogId = registryKeyToCatalogId(activeDrag.assetKey);
       if (catalogId) {
-        const colorMatch = activeDrag.assetKey.match(/^House_(\w+)_Type\d+$/);
-        const colorVariant = colorMatch ? colorMatch[1] : undefined;
-        useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, colorVariant, buildingId);
+        useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, undefined, buildingId);
       }
 
       useBuildStore.getState().pushPlacement({
@@ -778,9 +778,7 @@ export function undoLastPlacement(): void {
       if (catalogAsset) {
         usePlayerStore.getState().spendCoins(catalogAsset.price);
       }
-      const colorMatch = entry.assetKey.match(/^House_(\w+)_Type\d+$/);
-      const colorVariant = colorMatch ? colorMatch[1] : undefined;
-      useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, colorVariant, entry.buildingId);
+      useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, undefined, entry.buildingId);
     }
   } else if (entry.type === 'road-place') {
     undoRoadPlace(entry.tiles, entry.neighborChanges);
