@@ -46,7 +46,7 @@ export default function BuildingPopup() {
           onClick={moveSelectedBuilding}
           style={{
             ...btnBase,
-            background: 'rgba(255,255,255,0.92)',
+            background: 'var(--bg-sheet)',
           }}
           title="Move"
         >

@@ -92,8 +92,8 @@ export default function ShopAssetCard({ asset }: Props) {
           gap: 4,
           padding: '10px 4px 8px',
           borderRadius: 12,
-          border: '1px solid rgba(0, 0, 0, 0.06)',
-          background: isLocked ? 'rgba(0, 0, 0, 0.03)' : 'rgba(255, 255, 255, 0.6)',
+          border: '1px solid var(--border-subtle)',
+          background: isLocked ? 'var(--bg-subtle)' : 'var(--bg-card)',
           cursor: isLocked ? 'default' : 'pointer',
           position: 'relative',
           opacity: (!isLocked && !isAffordable) ? 0.6 : 1,
@@ -171,7 +171,7 @@ export default function ShopAssetCard({ asset }: Props) {
         <span style={{
           fontSize: 10,
           lineHeight: '12px',
-          color: isLocked ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.65)',
+          color: isLocked ? 'var(--text-muted)' : 'rgba(0,0,0,0.65)',
           width: '100%',
           textAlign: 'center',
           overflow: 'hidden',
@@ -184,14 +184,14 @@ export default function ShopAssetCard({ asset }: Props) {
 
         {/* Price / Level tag */}
         {isLocked ? (
-          <span style={{ fontSize: 10, fontWeight: 600, color: 'rgba(0,0,0,0.35)' }}>
+          <span style={{ fontSize: 10, fontWeight: 600, color: 'var(--text-muted)' }}>
             Lvl {asset.unlockLevel}
           </span>
         ) : (
           <span style={{
             fontSize: 11,
             fontWeight: 600,
-            color: isAffordable ? '#1a1a1a' : '#DC2626',
+            color: isAffordable ? 'var(--text-primary)' : '#DC2626',
           }}>
             <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {asset.price}
           </span>

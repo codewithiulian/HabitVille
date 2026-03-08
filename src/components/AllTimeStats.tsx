@@ -86,7 +86,7 @@ export default function AllTimeStats() {
 
   if (!data) {
     return (
-      <div style={{ padding: 32, textAlign: 'center', color: 'rgba(0,0,0,0.25)' }}>
+      <div style={{ padding: 32, textAlign: 'center', color: 'var(--text-faint)' }}>
         Loading...
       </div>
     );
@@ -97,7 +97,7 @@ export default function AllTimeStats() {
       {/* Level + XP bar */}
       <section
         style={{
-          background: 'linear-gradient(135deg, rgba(124,58,237,0.08), rgba(91,33,182,0.08))',
+          background: 'linear-gradient(135deg, var(--level-section), rgba(91,33,182,0.08))',
           border: '1px solid rgba(124,58,237,0.15)',
           borderRadius: 14,
           padding: '20px 16px',
@@ -109,7 +109,7 @@ export default function AllTimeStats() {
             width: 56,
             height: 56,
             borderRadius: 14,
-            background: 'linear-gradient(135deg, #7C3AED, #5B21B6)',
+            background: 'linear-gradient(135deg, var(--level-from), var(--level-to))',
             border: '2px solid rgba(124,58,237,0.4)',
             display: 'flex',
             flexDirection: 'column',
@@ -128,7 +128,7 @@ export default function AllTimeStats() {
             style={{
               height: 8,
               borderRadius: 4,
-              background: 'rgba(0,0,0,0.08)',
+              background: 'var(--bg-track)',
               overflow: 'hidden',
               marginBottom: 6,
             }}
@@ -143,7 +143,7 @@ export default function AllTimeStats() {
               }}
             />
           </div>
-          <div style={{ fontSize: 12, color: 'rgba(0,0,0,0.35)' }}>
+          <div style={{ fontSize: 12, color: 'var(--text-muted)' }}>
             {progress.current.toLocaleString()} / {progress.required.toLocaleString()} XP to Level {level + 1}
           </div>
         </div>
@@ -175,7 +175,7 @@ export default function AllTimeStats() {
         <section>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 12 }}>
             <Flame size={18} color="#f97316" />
-            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'rgba(0,0,0,0.55)', margin: 0 }}>
+            <h2 style={{ fontSize: 15, fontWeight: 600, color: 'var(--text-label)', margin: 0 }}>
               Longest Streaks
             </h2>
           </div>
@@ -187,12 +187,12 @@ export default function AllTimeStats() {
                   display: 'flex',
                   justifyContent: 'space-between',
                   alignItems: 'center',
-                  background: 'rgba(0,0,0,0.03)',
+                  background: 'var(--bg-subtle)',
                   borderRadius: 10,
                   padding: '10px 14px',
                 }}
               >
-                <span style={{ fontSize: 13, color: '#1a1a1a' }}>{s.name}</span>
+                <span style={{ fontSize: 13, color: 'var(--text-primary)' }}>{s.name}</span>
                 <span style={{ fontSize: 14, fontWeight: 700, color: '#f97316' }}>
                   {s.streak} days
                 </span>
@@ -239,7 +239,7 @@ function StatCard({
   return (
     <div
       style={{
-        background: 'rgba(0,0,0,0.03)',
+        background: 'var(--bg-subtle)',
         borderRadius: 14,
         padding: '14px 16px',
         display: 'flex',
@@ -249,7 +249,7 @@ function StatCard({
     >
       {icon}
       <div style={{ flex: 1 }}>
-        <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.35)', marginBottom: 2 }}>{label}</div>
+        <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 2 }}>{label}</div>
         <div style={{ fontSize: 18, fontWeight: 700, color }}>{value}</div>
       </div>
     </div>
@@ -260,13 +260,13 @@ function MiniCard({ label, value, color }: { label: string; value: string; color
   return (
     <div
       style={{
-        background: 'rgba(0,0,0,0.03)',
+        background: 'var(--bg-subtle)',
         borderRadius: 10,
         padding: '10px 8px',
         textAlign: 'center',
       }}
     >
-      <div style={{ fontSize: 10, color: 'rgba(0,0,0,0.35)', marginBottom: 2 }}>{label}</div>
+      <div style={{ fontSize: 10, color: 'var(--text-muted)', marginBottom: 2 }}>{label}</div>
       <div style={{ fontSize: 14, fontWeight: 700, color }}>{value}</div>
     </div>
   );

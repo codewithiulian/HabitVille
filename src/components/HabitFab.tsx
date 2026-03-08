@@ -37,14 +37,14 @@ export default function HabitFab() {
         borderRadius: 12,
         zIndex: 90,
         position: 'fixed',
-        background: 'rgba(255, 255, 255, 0.85)',
+        background: 'var(--bg-glass)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
+        border: '1px solid var(--border)',
       }}
       aria-label="Check in habits"
     >
-      <Check size={24} strokeWidth={3} color="#444" />
+      <Check size={24} strokeWidth={3} color="var(--icon-fab)" />
 
       {/* Pending badge */}
       {pendingCount > 0 && (

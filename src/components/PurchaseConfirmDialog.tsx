@@ -27,7 +27,7 @@ export default function PurchaseConfirmDialog({ asset, onConfirm, onCancel }: Pr
       <div
         onClick={(e) => e.stopPropagation()}
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
+          background: 'var(--bg-sheet)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
           borderRadius: 20,
@@ -38,7 +38,7 @@ export default function PurchaseConfirmDialog({ asset, onConfirm, onCancel }: Pr
           flexDirection: 'column',
           alignItems: 'center',
           gap: 16,
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          border: '1px solid var(--border)',
         }}
       >
         <img
@@ -47,8 +47,8 @@ export default function PurchaseConfirmDialog({ asset, onConfirm, onCancel }: Pr
           style={{ width: 80, height: 80, objectFit: 'contain' }}
         />
         <div style={{ textAlign: 'center' }}>
-          <div style={{ fontSize: 16, fontWeight: 600, color: '#1a1a1a' }}>{asset.name}</div>
-          <div style={{ fontSize: 14, color: '#666', marginTop: 4 }}>
+          <div style={{ fontSize: 16, fontWeight: 600, color: 'var(--text-primary)' }}>{asset.name}</div>
+          <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginTop: 4 }}>
             Buy for <span style={{ fontWeight: 600 }}><img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {asset.price}</span>?
           </div>
         </div>
@@ -59,11 +59,11 @@ export default function PurchaseConfirmDialog({ asset, onConfirm, onCancel }: Pr
               flex: 1,
               padding: '10px 0',
               borderRadius: 12,
-              border: '1px solid rgba(0, 0, 0, 0.12)',
+              border: '1px solid var(--border-strong)',
               background: 'transparent',
               fontSize: 14,
               fontWeight: 500,
-              color: '#666',
+              color: 'var(--text-secondary)',
               cursor: 'pointer',
             }}
           >

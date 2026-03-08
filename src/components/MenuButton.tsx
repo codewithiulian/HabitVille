@@ -70,10 +70,10 @@ export default function MenuButton() {
           width: 48,
           height: 48,
           borderRadius: '50%',
-          background: 'rgba(255, 255, 255, 0.85)',
+          background: 'var(--bg-glass)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          border: '1px solid rgba(0, 0, 0, 0.08)',
+          border: '1px solid var(--border)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -81,7 +81,7 @@ export default function MenuButton() {
         }}
         aria-label="Open menu"
       >
-        <Equal size={22} color="#444" />
+        <Equal size={22} color="var(--icon-fab)" />
       </button>
 
       {/* Menu sheet */}
@@ -115,10 +115,10 @@ export default function MenuButton() {
                 left: 0,
                 right: 0,
                 zIndex: 92,
-                background: 'rgba(255, 255, 255, 0.92)',
+                background: 'var(--bg-sheet)',
                 backdropFilter: 'blur(20px)',
                 WebkitBackdropFilter: 'blur(20px)',
-                border: '1px solid rgba(0, 0, 0, 0.08)',
+                border: '1px solid var(--border)',
                 borderRadius: '20px 20px 0 0',
                 paddingBottom: 'max(env(safe-area-inset-bottom), 20px)',
               }}
@@ -130,7 +130,7 @@ export default function MenuButton() {
                     width: 36,
                     height: 4,
                     borderRadius: 2,
-                    background: 'rgba(0, 0, 0, 0.15)',
+                    background: 'var(--border-handle)',
                   }}
                 />
               </div>
@@ -156,8 +156,8 @@ export default function MenuButton() {
                         gap: 12,
                         padding: '14px 16px',
                         borderRadius: 14,
-                        background: 'rgba(0, 0, 0, 0.04)',
-                        border: '1px solid rgba(0, 0, 0, 0.06)',
+                        background: 'var(--bg-subtle)',
+                        border: '1px solid var(--border-subtle)',
                         cursor: 'pointer',
                         textAlign: 'left',
                       }}
@@ -176,7 +176,7 @@ export default function MenuButton() {
                       >
                         <Icon size={20} color={item.color} />
                       </div>
-                      <span style={{ fontSize: 16, fontWeight: 500, color: '#1a1a1a' }}>
+                      <span style={{ fontSize: 16, fontWeight: 500, color: 'var(--text-primary)' }}>
                         {item.label}
                       </span>
                     </button>

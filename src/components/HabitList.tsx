@@ -74,14 +74,14 @@ export default function HabitList({ onClose }: HabitListProps) {
           zIndex: 300,
           top: 'env(safe-area-inset-top)',
           paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
-          background: 'rgba(255, 255, 255, 0.95)',
+          background: 'var(--bg-sheet-solid)',
           backdropFilter: 'blur(16px)',
           WebkitBackdropFilter: 'blur(16px)',
         }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pt-4 pb-2">
-          <h2 className="text-lg font-semibold" style={{ color: '#1a1a1a' }}>My Habits</h2>
+          <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>My Habits</h2>
           <div className="flex items-center gap-2">
             <button
               onClick={() => setFormState({ kind: 'create' })}
@@ -89,7 +89,7 @@ export default function HabitList({ onClose }: HabitListProps) {
             >
               <Plus size={18} />
             </button>
-            <button onClick={onClose} className="p-1" style={{ color: 'rgba(0,0,0,0.35)' }}>
+            <button onClick={onClose} className="p-1" style={{ color: 'var(--text-muted)' }}>
               <X size={20} />
             </button>
           </div>
@@ -97,7 +97,7 @@ export default function HabitList({ onClose }: HabitListProps) {
 
         {/* Warning banner */}
         {showWarning && (
-          <div className="mx-4 mb-2 px-3 py-2 bg-amber-100 border border-amber-300 rounded-lg text-xs text-amber-700">
+          <div className="mx-4 mb-2 px-3 py-2 bg-amber-100 dark:bg-amber-500/20 border border-amber-300 dark:border-amber-700/50 rounded-lg text-xs text-amber-700 dark:text-amber-400">
             You have a lot of habits! Research shows {GAME_CONFIG.habits.recommended_min}-{GAME_CONFIG.habits.recommended_max} is the sweet spot for consistency.
           </div>
         )}
@@ -106,7 +106,7 @@ export default function HabitList({ onClose }: HabitListProps) {
         <div className="flex-1 overflow-y-auto px-4">
           {habits.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16 text-center">
-              <p className="text-sm mb-4" style={{ color: '#666' }}>
+              <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
                 No habits yet. Create your first one to start building your city!
               </p>
               <button
@@ -127,7 +127,7 @@ export default function HabitList({ onClose }: HabitListProps) {
                     key={habit.id}
                     onClick={() => setFormState({ kind: 'edit', habit })}
                     className="w-full flex items-center gap-3 rounded-xl px-3.5 py-3 text-left"
-                    style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}
+                    style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
                   >
                     <div
                       className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
@@ -137,7 +137,7 @@ export default function HabitList({ onClose }: HabitListProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium truncate" style={{ color: '#1a1a1a' }}>
+                        <span className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                           {habit.name}
                         </span>
                         <span
@@ -150,12 +150,12 @@ export default function HabitList({ onClose }: HabitListProps) {
                           {habit.difficulty.charAt(0).toUpperCase() + habit.difficulty.slice(1)}
                         </span>
                       </div>
-                      <span className="text-xs" style={{ color: '#666' }}>{frequencyLabel(habit)}</span>
+                      <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>{frequencyLabel(habit)}</span>
                     </div>
                     {streak > 0 && (
                       <div className="flex items-center gap-0.5 shrink-0">
-                        <Flame size={14} className="text-orange-500" />
-                        <span className="text-xs font-semibold text-orange-500">{streak}</span>
+                        <Flame size={14} className="text-orange-500 dark:text-orange-400" />
+                        <span className="text-xs font-semibold text-orange-500 dark:text-orange-400">{streak}</span>
                       </div>
                     )}
                   </button>

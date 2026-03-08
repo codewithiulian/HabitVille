@@ -24,14 +24,14 @@ export default function BuildToggle() {
         height: 52,
         borderRadius: 12,
         zIndex: 90,
-        background: 'rgba(255, 255, 255, 0.85)',
+        background: 'var(--bg-glass)',
         backdropFilter: 'blur(8px)',
         WebkitBackdropFilter: 'blur(8px)',
-        border: '1px solid rgba(0, 0, 0, 0.08)',
+        border: '1px solid var(--border)',
       }}
       aria-label={isBuild ? 'View mode' : 'Build mode'}
     >
-      <Icon size={22} color={isBuild ? '#d97706' : '#444'} />
+      <Icon size={22} color={isBuild ? 'var(--icon-build)' : 'var(--icon-fab)'} />
     </button>
   );
 }

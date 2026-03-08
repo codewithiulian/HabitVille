@@ -108,14 +108,14 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
   return (
     <div
       className="fixed inset-0 flex flex-col"
-      style={{ zIndex: 310, background: 'rgba(245, 245, 250, 0.97)' }}
+      style={{ zIndex: 310, background: 'var(--bg-page)' }}
     >
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-[max(env(safe-area-inset-top),12px)] pb-3">
-        <button onClick={onClose} className="p-1 -ml-1" style={{ color: 'rgba(0,0,0,0.35)' }}>
+        <button onClick={onClose} className="p-1 -ml-1" style={{ color: 'var(--text-muted)' }}>
           <ChevronLeft size={24} />
         </button>
-        <h2 className="text-lg font-semibold" style={{ color: '#1a1a1a' }}>
+        <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
           {mode === 'edit' ? 'Edit Habit' : mode === 'onboarding' ? 'New Habit' : 'Create Habit'}
         </h2>
       </div>
@@ -124,21 +124,21 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
       <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-6">
         {/* Name */}
         <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#666' }}>Name</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>Name</label>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             placeholder="e.g., Go to the gym"
             className="w-full rounded-xl px-4 py-3 text-base outline-none focus:ring-2 focus:ring-violet-500"
-            style={{ background: 'rgba(255,255,255,0.6)', color: '#1a1a1a', border: '1px solid rgba(0,0,0,0.08)' }}
+            style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
             autoFocus={mode !== 'edit'}
           />
         </div>
 
         {/* Category */}
         <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#666' }}>Category</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>Category</label>
           <div className="grid grid-cols-4 gap-2">
             {categories.map((cat) => {
               const meta = CATEGORY_META[cat];
@@ -150,12 +150,12 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
                   onClick={() => setCategory(cat)}
                   className="flex flex-col items-center gap-1 rounded-xl py-2.5 px-1 transition-colors"
                   style={{
-                    background: selected ? meta.color + '22' : 'rgba(255,255,255,0.6)',
+                    background: selected ? meta.color + '22' : 'var(--bg-card)',
                     border: selected ? `2px solid ${meta.color}` : '2px solid transparent',
                   }}
                 >
-                  <Icon size={20} color={selected ? meta.color : 'rgba(0,0,0,0.45)'} />
-                  <span className="text-xs" style={{ color: selected ? meta.color : 'rgba(0,0,0,0.45)' }}>
+                  <Icon size={20} color={selected ? meta.color : 'var(--text-icon)'} />
+                  <span className="text-xs" style={{ color: selected ? meta.color : 'var(--text-icon)' }}>
                     {cat}
                   </span>
                 </button>
@@ -166,7 +166,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
 
         {/* Frequency */}
         <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#666' }}>Frequency</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>Frequency</label>
           <div className="flex flex-wrap gap-2">
             {(GAME_CONFIG.habits.frequency_options as HabitFrequencyType[]).map((ft) => (
               <button
@@ -174,8 +174,8 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
                 onClick={() => setFreqType(ft)}
                 className="rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors"
                 style={{
-                  background: freqType === ft ? selectedColor + '22' : 'rgba(255,255,255,0.6)',
-                  color: freqType === ft ? selectedColor : 'rgba(0,0,0,0.45)',
+                  background: freqType === ft ? selectedColor + '22' : 'var(--bg-card)',
+                  color: freqType === ft ? selectedColor : 'var(--text-icon)',
                   border: freqType === ft ? `1.5px solid ${selectedColor}` : '1.5px solid transparent',
                 }}
               >
@@ -186,19 +186,19 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
 
           {/* Times per week stepper */}
           {freqType === 'times_per_week' && (
-            <div className="flex items-center gap-4 mt-3 rounded-xl px-4 py-3" style={{ background: 'rgba(255,255,255,0.6)', border: '1px solid rgba(0,0,0,0.06)' }}>
-              <span className="text-sm" style={{ color: '#1a1a1a' }}>Times per week</span>
+            <div className="flex items-center gap-4 mt-3 rounded-xl px-4 py-3" style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}>
+              <span className="text-sm" style={{ color: 'var(--text-primary)' }}>Times per week</span>
               <div className="flex items-center gap-3 ml-auto">
                 <button
                   onClick={() => setTimesPerWeek(Math.max(1, timesPerWeek - 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg" style={{ background: 'rgba(0,0,0,0.06)', color: '#1a1a1a' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg" style={{ background: 'var(--bg-muted)', color: 'var(--text-primary)' }}
                 >
                   -
                 </button>
-                <span className="font-semibold w-4 text-center" style={{ color: '#1a1a1a' }}>{timesPerWeek}</span>
+                <span className="font-semibold w-4 text-center" style={{ color: 'var(--text-primary)' }}>{timesPerWeek}</span>
                 <button
                   onClick={() => setTimesPerWeek(Math.min(7, timesPerWeek + 1))}
-                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg" style={{ background: 'rgba(0,0,0,0.06)', color: '#1a1a1a' }}
+                  className="w-8 h-8 rounded-full flex items-center justify-center text-lg" style={{ background: 'var(--bg-muted)', color: 'var(--text-primary)' }}
                 >
                   +
                 </button>
@@ -215,8 +215,8 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
                   onClick={() => toggleDay(i)}
                   className="flex-1 py-2 rounded-lg text-xs font-medium transition-colors"
                   style={{
-                    background: specificDays.includes(i) ? selectedColor + '22' : 'rgba(255,255,255,0.6)',
-                    color: specificDays.includes(i) ? selectedColor : 'rgba(0,0,0,0.45)',
+                    background: specificDays.includes(i) ? selectedColor + '22' : 'var(--bg-card)',
+                    color: specificDays.includes(i) ? selectedColor : 'var(--text-icon)',
                     border: specificDays.includes(i) ? `1.5px solid ${selectedColor}` : '1.5px solid transparent',
                   }}
                 >
@@ -229,7 +229,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
 
         {/* Difficulty */}
         <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#666' }}>Difficulty</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>Difficulty</label>
           <div className="space-y-2">
             {difficulties.map((tier) => {
               const selected = difficulty === tier.id;
@@ -241,17 +241,17 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
                   onClick={() => setDifficulty(tier.id as HabitDifficulty)}
                   className="w-full text-left rounded-xl px-4 py-3 transition-colors"
                   style={{
-                    background: selected ? selectedColor + '15' : 'rgba(255,255,255,0.6)',
+                    background: selected ? selectedColor + '15' : 'var(--bg-card)',
                     border: selected ? `2px solid ${selectedColor}` : '2px solid transparent',
                   }}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-semibold" style={{ color: '#1a1a1a' }}>{tier.label}</span>
-                    <span className="text-xs" style={{ color: '#666' }}>
+                    <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{tier.label}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                       +{xp} XP &middot; +{coins} coins
                     </span>
                   </div>
-                  <p className="text-xs mt-0.5" style={{ color: '#666' }}>{tier.description}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{tier.description}</p>
                 </button>
               );
             })}
@@ -260,7 +260,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
 
         {/* Time of Day */}
         <div>
-          <label className="block text-sm mb-1.5" style={{ color: '#666' }}>Time of Day</label>
+          <label className="block text-sm mb-1.5" style={{ color: 'var(--text-secondary)' }}>Time of Day</label>
           <div className="flex gap-2">
             {TIME_OPTIONS.map((opt) => (
               <button
@@ -268,8 +268,8 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
                 onClick={() => setTimeOfDay(opt.value)}
                 className="flex-1 rounded-xl py-2.5 text-sm font-medium transition-colors"
                 style={{
-                  background: timeOfDay === opt.value ? selectedColor + '22' : 'rgba(255,255,255,0.6)',
-                  color: timeOfDay === opt.value ? selectedColor : 'rgba(0,0,0,0.45)',
+                  background: timeOfDay === opt.value ? selectedColor + '22' : 'var(--bg-card)',
+                  color: timeOfDay === opt.value ? selectedColor : 'var(--text-icon)',
                   border: timeOfDay === opt.value ? `1.5px solid ${selectedColor}` : '1.5px solid transparent',
                 }}
               >
@@ -281,7 +281,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
 
         {/* Start/End Dates */}
         <div>
-          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: '#666' }}>
+          <label className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
             <input
               type="checkbox"
               checked={showDates}
@@ -293,31 +293,31 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
           {showDates && (
             <div className="grid grid-cols-2 gap-3 mt-2">
               <div>
-                <span className="text-xs" style={{ color: 'rgba(0,0,0,0.35)' }}>Start</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>Start</span>
                 <input
                   type="date"
                   value={startDate}
                   onChange={(e) => setStartDate(e.target.value)}
                   className="w-full rounded-lg px-3 py-2 text-sm outline-none mt-1"
-                  style={{ background: 'rgba(255,255,255,0.6)', color: '#1a1a1a', border: '1px solid rgba(0,0,0,0.08)' }}
+                  style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
                 />
               </div>
               <div>
-                <span className="text-xs" style={{ color: 'rgba(0,0,0,0.35)' }}>End (optional)</span>
+                <span className="text-xs" style={{ color: 'var(--text-muted)' }}>End (optional)</span>
                 <div className="relative mt-1">
                   <input
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
                     className="w-full rounded-lg px-3 py-2 text-sm outline-none"
-                    style={{ background: 'rgba(255,255,255,0.6)', color: '#1a1a1a', border: '1px solid rgba(0,0,0,0.08)' }}
+                    style={{ background: 'var(--bg-card)', color: 'var(--text-primary)', border: '1px solid var(--border)' }}
                   />
                   {endDate && (
                     <button
                       type="button"
                       onClick={() => setEndDate('')}
                       className="absolute right-2 top-1/2 -translate-y-1/2 text-lg leading-none"
-                      style={{ color: 'rgba(0,0,0,0.35)' }}
+                      style={{ color: 'var(--text-muted)' }}
                       aria-label="Clear end date"
                     >
                       &times;
@@ -333,7 +333,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
         {mode === 'edit' && (
           <button
             onClick={() => setShowArchiveConfirm(true)}
-            className="text-sm text-red-600 underline underline-offset-2"
+            className="text-sm text-red-600 dark:text-red-400 underline underline-offset-2"
           >
             Archive this habit
           </button>
@@ -341,7 +341,7 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
       </div>
 
       {/* Save button */}
-      <div className="px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderTop: '1px solid rgba(0,0,0,0.06)' }}>
+      <div className="px-4 pb-[max(env(safe-area-inset-bottom),12px)] pt-3" style={{ borderTop: '1px solid var(--border-subtle)' }}>
         <button
           onClick={handleSave}
           disabled={!name.trim()}
@@ -361,17 +361,17 @@ export default function HabitForm({ mode, habit, onClose, onSaved }: HabitFormPr
         >
           <div
             className="rounded-2xl p-5 w-full max-w-xs"
-            style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid rgba(0,0,0,0.08)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
+            style={{ background: 'var(--bg-sheet)', border: '1px solid var(--border)', backdropFilter: 'blur(16px)', WebkitBackdropFilter: 'blur(16px)' }}
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="font-semibold text-base mb-2" style={{ color: '#1a1a1a' }}>Archive habit?</h3>
-            <p className="text-sm mb-4" style={{ color: '#666' }}>
-              <strong style={{ color: '#1a1a1a' }}>{habit?.name}</strong> won&apos;t appear in check-ins anymore. Historical data is kept.
+            <h3 className="font-semibold text-base mb-2" style={{ color: 'var(--text-primary)' }}>Archive habit?</h3>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
+              <strong style={{ color: 'var(--text-primary)' }}>{habit?.name}</strong> won&apos;t appear in check-ins anymore. Historical data is kept.
             </p>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowArchiveConfirm(false)}
-                className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: 'transparent', border: '1px solid rgba(0,0,0,0.12)', color: '#666' }}
+                className="flex-1 py-2.5 rounded-xl text-sm" style={{ background: 'transparent', border: '1px solid var(--border-strong)', color: 'var(--text-secondary)' }}
               >
                 Cancel
               </button>

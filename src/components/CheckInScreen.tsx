@@ -75,22 +75,22 @@ export default function CheckInScreen() {
     <>
       <div
         className="fixed inset-0 flex flex-col"
-        style={{ zIndex: 250, background: 'rgba(245, 245, 250, 0.97)' }}
+        style={{ zIndex: 250, background: 'var(--bg-page)' }}
       >
         {/* Header */}
         <div className="flex items-center justify-between px-4 pb-1" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
-          <h1 className="text-lg font-bold" style={{ color: '#1a1a1a' }}>Check-In</h1>
+          <h1 className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>Check-In</h1>
           <div className="flex items-center gap-1">
             <button
               onClick={() => setShowHabitList(true)}
-              className="p-2" style={{ color: 'rgba(0,0,0,0.35)' }}
+              className="p-2" style={{ color: 'var(--text-muted)' }}
               aria-label="Manage habits"
             >
               <Settings size={20} />
             </button>
             <button
               onClick={handleClose}
-              className="p-2" style={{ color: 'rgba(0,0,0,0.35)' }}
+              className="p-2" style={{ color: 'var(--text-muted)' }}
               aria-label="Close check-in"
             >
               <X size={20} />
@@ -99,7 +99,7 @@ export default function CheckInScreen() {
         </div>
 
         {/* Tab toggle */}
-        <div className="flex mx-4 mb-1 rounded-lg p-1" style={{ background: 'rgba(0,0,0,0.06)' }}>
+        <div className="flex mx-4 mb-1 rounded-lg p-1" style={{ background: 'var(--bg-muted)' }}>
           <button
             onClick={() => setActiveTab('daily')}
             className={`flex-1 py-1.5 rounded-md text-sm font-medium transition-colors ${

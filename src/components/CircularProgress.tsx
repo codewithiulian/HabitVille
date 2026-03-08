@@ -29,7 +29,7 @@ export default function CircularProgress({
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(0,0,0,0.08)"
+          stroke="var(--bg-track)"
           strokeWidth={strokeWidth}
         />
         {/* Progress arc */}
@@ -57,10 +57,10 @@ export default function CircularProgress({
           flexDirection: 'column',
         }}
       >
-        <span style={{ fontSize: size * 0.28, fontWeight: 800, color: '#1a1a1a', lineHeight: 1 }}>
+        <span style={{ fontSize: size * 0.28, fontWeight: 800, color: 'var(--text-primary)', lineHeight: 1 }}>
           {percentage}%
         </span>
-        <span style={{ fontSize: size * 0.1, color: 'rgba(0,0,0,0.35)', marginTop: 2 }}>
+        <span style={{ fontSize: size * 0.1, color: 'var(--text-muted)', marginTop: 2 }}>
           completed
         </span>
       </div>

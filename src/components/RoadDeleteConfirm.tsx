@@ -36,7 +36,7 @@ export default function RoadDeleteConfirm() {
         gap: 10,
         padding: '8px 14px',
         borderRadius: 12,
-        background: 'rgba(255, 255, 255, 0.92)',
+        background: 'var(--bg-sheet)',
         boxShadow: '0 2px 12px rgba(0,0,0,0.15)',
         backdropFilter: 'blur(12px)',
         WebkitBackdropFilter: 'blur(12px)',
