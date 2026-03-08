@@ -10,7 +10,9 @@
     "prebuild": "node scripts/gen-config.js && node scripts/gen-asset-catalog.js",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "predev2": "node scripts/gen-config.js && node scripts/gen-asset-catalog.js",
+    "dev2": "concurrently -n next,tunnel \"next dev --port 3001\" \"cloudflared tunnel run --url http://localhost:3001 habitville2\""
   },
   "dependencies": {
     "dexie": "^4.3.0",
