@@ -9,9 +9,8 @@ import { placeOnGrid, computeUprightAnchorX, computeUprightAnchorY } from './pla
 import { useBuildStore } from '../stores/build-store';
 import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
-import { registryKeyToCatalogId, getCatalogAsset } from '../lib/catalog-helpers';
+import { registryKeyToCatalogId } from '../lib/catalog-helpers';
 import { useInventoryStore } from '../stores/inventory-store';
-import { usePlayerStore } from '../stores/player-store';
 import {
   handleRoadPointerDown,
   handleRoadDeletePointerDown,
@@ -693,14 +692,10 @@ export function deleteSelectedBuilding(): void {
   useBuildStore.getState().deselectBuilding();
   persistDelete(occupant.buildingId);
 
-  // Inventory tracking: return asset to inventory + refund coins
+  // Inventory tracking: return asset to inventory (no coin refund — selling is a future feature)
   const catalogId = registryKeyToCatalogId(occupant.assetKey);
   if (catalogId) {
     useInventoryStore.getState().demolishAsset(occupant.buildingId);
-    const catalogAsset = getCatalogAsset(catalogId);
-    if (catalogAsset) {
-      usePlayerStore.getState().addCoins(catalogAsset.price);
-    }
   }
 
   useBuildStore.getState().pushPlacement({
@@ -772,12 +767,8 @@ export function undoLastPlacement(): void {
     depthSort();
     if (pixiApp) bounceAnimation(entry.sprite, pixiApp.ticker);
     persistPlace(entry.buildingId, entry.row, entry.col, entry.assetKey);
-    // Undo delete: re-deduct coins and re-place in inventory
+    // Undo delete: re-place in inventory (no coin deduction — demolish doesn't refund)
     if (entry.catalogAssetId) {
-      const catalogAsset = getCatalogAsset(entry.catalogAssetId);
-      if (catalogAsset) {
-        usePlayerStore.getState().spendCoins(catalogAsset.price);
-      }
       useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, undefined, entry.buildingId);
     }
   } else if (entry.type === 'road-place') {
