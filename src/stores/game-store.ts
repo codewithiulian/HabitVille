@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { GAME_CONFIG } from '@/config/game-config';
 import { usePlayerStore } from './player-store';
 import type { GameMode, ActiveScreen, PendingReward } from '@/types/game';
+import type { WeeklySnapshot } from '@/types/weekly-snapshot';
 
 interface GameState {
   currentMode: GameMode;
@@ -12,6 +13,7 @@ interface GameState {
   firstWeekBoostActive: boolean;
   showOnboarding: boolean;
   showHabitList: boolean;
+  weeklyReportSnapshot: WeeklySnapshot | null;
   tutorialStep: number | null;
   initialized: boolean;
 
@@ -24,6 +26,7 @@ interface GameState {
   setDoubleXPEvent: (active: boolean) => void;
   setShowOnboarding: (show: boolean) => void;
   setShowHabitList: (show: boolean) => void;
+  setWeeklyReportSnapshot: (snapshot: WeeklySnapshot | null) => void;
   setTutorialStep: (step: number | null) => void;
 }
 
@@ -36,6 +39,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   firstWeekBoostActive: false,
   showOnboarding: false,
   showHabitList: false,
+  weeklyReportSnapshot: null,
   tutorialStep: null,
   initialized: false,
 
@@ -99,6 +103,10 @@ export const useGameStore = create<GameState>((set, get) => ({
 
   setShowHabitList: (show) => {
     set({ showHabitList: show });
+  },
+
+  setWeeklyReportSnapshot: (snapshot) => {
+    set({ weeklyReportSnapshot: snapshot });
   },
 
   setTutorialStep: (step) => {

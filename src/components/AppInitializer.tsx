@@ -7,6 +7,7 @@ import { useHabitStore } from '@/stores/habit-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { useGameStore } from '@/stores/game-store';
 import { formatDateString, isScheduledForDate } from '@/lib/schedule-utils';
+import { shouldTriggerWeeklyReport, generateAndAwardWeeklyReport } from '@/lib/weekly-report-engine';
 
 export default function AppInitializer() {
   useEffect(() => {
@@ -23,6 +24,25 @@ export default function AppInitializer() {
       if (isFirstUse) {
         useGameStore.getState().setShowOnboarding(true);
         return;
+      }
+
+      // Check if weekly report should trigger (before auto-open check-in)
+      const { trigger, weekStart } = shouldTriggerWeeklyReport(new Date());
+      if (trigger) {
+        const existing = await db.weeklySnapshots
+          .where('weekStart')
+          .equals(weekStart)
+          .first();
+        if (!existing || !existing.delivered) {
+          try {
+            const snapshot = await generateAndAwardWeeklyReport(weekStart);
+            useGameStore.getState().setWeeklyReportSnapshot(snapshot);
+            useGameStore.getState().openScreen('weekly-report');
+            return; // Don't auto-open check-in — show report first
+          } catch {
+            // Silently continue if report generation fails
+          }
+        }
       }
 
       // Auto-open check-in if there are pending habits and user hasn't dismissed

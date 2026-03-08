@@ -112,4 +112,18 @@ db.version(5).stores({
   weeklySnapshots: 'id, weekStart',
 });
 
+db.version(6).stores({
+  city: 'id',
+  roads: 'id',
+  sidewalks: 'id',
+  accessories: 'id',
+  gameState: 'id',
+  habits: 'id, archived',
+  checkIns: 'id, [habitId+date], date',
+  playerProfile: 'id',
+  inventory: 'id, assetId',
+  placedAssets: 'id, assetId',
+  weeklySnapshots: 'id, weekStart',
+});
+
 export { db };
