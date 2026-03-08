@@ -4,7 +4,6 @@ import type { SceneContainers } from './setup-stage';
 import { gridToScreen } from './iso-utils';
 import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
-import { hasSidewalk } from './sidewalk-system';
 import { GRID_SIZE } from '../config/grid-constants';
 import { GAME_CONFIG } from '../config/game-config';
 import { usePlayerStore } from '../stores/player-store';
@@ -171,19 +170,32 @@ async function loadSheetTextures(spritePath: string): Promise<Texture[][]> {
 function buildWalkableGraph(): void {
   walkableGraph.clear();
 
-  // Walkable = tiles adjacent to sidewalks (2 tiles from roads).
-  // Sidewalk tiles visually extend the road surface, so NPCs must walk
-  // just outside them to appear "next to" the road.
+  // Step 1: collect tiles directly adjacent to roads.
+  // In isometric view these visually overlap with the road surface,
+  // so NPCs must NOT walk on them.
+  const roadAdjacent = new Set<string>();
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
-      if (!hasSidewalk(row, col)) continue;
+      if (!hasRoad(row, col)) continue;
       for (const [dr, dc] of CARDINALS) {
         const nr = row + dr;
         const nc = col + dc;
         if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-        if (hasRoad(nr, nc) || hasSidewalk(nr, nc) || isOccupied(nr, nc)) continue;
-        walkableGraph.set(tileKey(nr, nc), []);
+        if (!hasRoad(nr, nc)) roadAdjacent.add(tileKey(nr, nc));
       }
+    }
+  }
+
+  // Step 2: walkable = tiles adjacent to roadAdjacent (2 tiles from roads),
+  // excluding roads, roadAdjacent tiles, and occupied tiles.
+  for (const key of roadAdjacent) {
+    const [row, col] = parseKey(key);
+    for (const [dr, dc] of CARDINALS) {
+      const nr = row + dr;
+      const nc = col + dc;
+      if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
+      if (hasRoad(nr, nc) || roadAdjacent.has(tileKey(nr, nc)) || isOccupied(nr, nc)) continue;
+      walkableGraph.set(tileKey(nr, nc), []);
     }
   }
 
