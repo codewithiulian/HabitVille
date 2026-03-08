@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useLayoutEffect, useCallback, useMemo, useRef } from 'react';
 import { Settings, Flame, ChevronRight, ChevronLeft, Check, Trophy, Sparkles, X } from 'lucide-react';
 import { motion, useMotionValue, useTransform, animate, AnimatePresence, type PanInfo, type MotionValue } from 'framer-motion';
 import { useGameStore } from '@/stores/game-store';
@@ -8,9 +8,12 @@ import { useHabitStore } from '@/stores/habit-store';
 import { usePlayerStore } from '@/stores/player-store';
 import { CATEGORY_META } from '@/config/habit-categories';
 import { isScheduledForDate, formatDateString } from '@/lib/schedule-utils';
-import { calculateCheckInReward, rollSurpriseBonus } from '@/lib/economy-engine';
+import { calculateCheckInReward, rollSurpriseBonus, rollDoubleXPEvent } from '@/lib/economy-engine';
+import { checkStreakMilestone } from '@/lib/streak-engine';
+import { detectLevelUps } from '@/lib/leveling-engine';
 import { calculateStreak } from '@/lib/streak-utils';
 import { GAME_CONFIG } from '@/config/game-config';
+import { ASSET_CATALOG } from '@/config/asset-catalog';
 import { db } from '@/db/db';
 import type { Habit } from '@/types/habit';
 import type { CheckIn } from '@/types/check-in';
@@ -127,6 +130,87 @@ function CelebrationBurst({ onDone }: { onDone: () => void }) {
         ))}
       </div>
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Fly-to-HUD reward animation
+// ---------------------------------------------------------------------------
+
+function RewardFloat({
+  xp,
+  coins,
+  isSurpriseBonus,
+}: {
+  xp: number;
+  coins: number;
+  isSurpriseBonus: boolean;
+}) {
+  const [phase, setPhase] = useState<'appear' | 'pulse' | 'fly'>('appear');
+
+  useEffect(() => {
+    const t1 = setTimeout(() => setPhase('pulse'), 200);
+    const t2 = setTimeout(() => setPhase('fly'), 1200);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, []);
+
+  return (
+    <motion.div
+      className="fixed left-0 right-0 flex justify-center pointer-events-none"
+      style={{ top: '35%', zIndex: 270 }}
+      initial={{ opacity: 0, scale: 0.3, y: 20 }}
+      animate={
+        phase === 'fly'
+          ? { opacity: 0, scale: 0.2, y: -350, x: -100 }
+          : { opacity: 1, scale: 1, y: 0, x: 0 }
+      }
+      transition={
+        phase === 'fly'
+          ? { duration: 0.6, ease: [0.4, 0, 0.2, 1] }
+          : { type: 'spring', stiffness: 300, damping: 15, mass: 0.8 }
+      }
+    >
+      <div className="flex flex-col items-center gap-2">
+        {isSurpriseBonus && (
+          <motion.span
+            className="text-amber-300 font-black text-base tracking-widest uppercase"
+            style={{ textShadow: '0 0 20px rgba(251, 191, 36, 0.6), 0 0 40px rgba(251, 191, 36, 0.3)' }}
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15, duration: 0.3 }}
+          >
+            Surprise Bonus!
+          </motion.span>
+        )}
+        <motion.div
+          className="flex items-center gap-4 px-6 py-3 rounded-2xl"
+          style={{
+            background: 'radial-gradient(ellipse at center, rgba(16,185,129,0.15) 0%, transparent 70%)',
+          }}
+          animate={
+            phase === 'pulse'
+              ? { scale: [1, 1.08, 1], transition: { duration: 0.5, ease: 'easeInOut' } }
+              : {}
+          }
+        >
+          <div className="flex items-center gap-1.5">
+            <Sparkles size={22} className="text-emerald-400" />
+            <span
+              className="text-emerald-300 font-extrabold text-2xl"
+              style={{ textShadow: '0 0 16px rgba(16,185,129,0.5), 0 2px 4px rgba(0,0,0,0.3)' }}
+            >
+              +{xp} XP
+            </span>
+          </div>
+          <span
+            className="text-yellow-300 font-extrabold text-2xl"
+            style={{ textShadow: '0 0 16px rgba(252,211,77,0.5), 0 2px 4px rgba(0,0,0,0.3)' }}
+          >
+            +{coins} &#x1FA99;
+          </span>
+        </motion.div>
+      </div>
+    </motion.div>
   );
 }
 
@@ -357,6 +441,8 @@ export default function CheckInScreen() {
   const doubleXPEventActive = useGameStore((s) => s.doubleXPEventActive);
   const openScreen = useGameStore((s) => s.openScreen);
   const queueReward = useGameStore((s) => s.queueReward);
+  const setDeferLevelUps = useGameStore((s) => s.setDeferLevelUps);
+  const setDoubleXPEvent = useGameStore((s) => s.setDoubleXPEvent);
 
   const habits = useHabitStore((s) => s.habits);
   const habitCheckIn = useHabitStore((s) => s.checkIn);
@@ -385,6 +471,9 @@ export default function CheckInScreen() {
   const [perfectDay, setPerfectDay] = useState(false);
   const [showCelebration, setShowCelebration] = useState(false);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [rewardFloatKey, setRewardFloatKey] = useState(0);
+  const [rewardFloatData, setRewardFloatData] = useState<{ xp: number; coins: number; isSurpriseBonus: boolean } | null>(null);
+  const sessionStartXPRef = useRef(0);
 
   // Shared motion value for the front card (drives back-card responsive animation)
   const frontX = useMotionValue(0);
@@ -463,6 +552,21 @@ export default function CheckInScreen() {
     }
   }, [activeScreen, selectedDate, habits, loadCards]);
 
+  // Session mount: defer level-ups, roll 2x XP, capture start XP
+  useEffect(() => {
+    if (activeScreen === 'check-in') {
+      setDeferLevelUps(true);
+      sessionStartXPRef.current = usePlayerStore.getState().xp;
+      if (rollDoubleXPEvent()) {
+        setDoubleXPEvent(true);
+      }
+      return () => {
+        setDeferLevelUps(false);
+        setDoubleXPEvent(false);
+      };
+    }
+  }, [activeScreen, setDeferLevelUps, setDoubleXPEvent]);
+
   const handleDateSelect = useCallback((date: string) => {
     setSelectedDate(date);
   }, []);
@@ -482,11 +586,27 @@ export default function CheckInScreen() {
         setSessionXP((s) => s + perfectXP);
         setSessionCoins((s) => s + perfectCoins);
         setPerfectDay(true);
+        queueReward({
+          type: 'daily-perfect',
+          payload: { xp: perfectXP, coins: perfectCoins },
+        });
       }
 
+      // Detect deferred level-ups across the entire session
+      const currentXP = usePlayerStore.getState().xp;
+      const levelResult = detectLevelUps(sessionStartXPRef.current, currentXP, ASSET_CATALOG);
+      if (levelResult.levelsGained.length > 0) {
+        queueReward({
+          type: 'level-up',
+          payload: { level: levelResult.newLevel, unlockedAssets: levelResult.unlockedAssets },
+        });
+      }
+
+      // Re-capture start XP for the next date session (deferLevelUps stays true until screen closes)
+      sessionStartXPRef.current = usePlayerStore.getState().xp;
       setShowSummary(true);
     },
-    [initialCompletedIds, getScheduledForDate, selectedDate, addXP, addCoins],
+    [initialCompletedIds, getScheduledForDate, selectedDate, addXP, addCoins, queueReward],
   );
 
   const handleSwipeRight = useCallback(() => {
@@ -504,14 +624,17 @@ export default function CheckInScreen() {
     addXP(reward.xp);
     addCoins(reward.coins);
 
-    if (surprise) {
+    // Fly-to-HUD animation (replaces surprise-bonus overlay + inline text)
+    setRewardFloatData({ xp: reward.xp, coins: reward.coins, isSurpriseBonus: surprise });
+    setRewardFloatKey((k) => k + 1);
+
+    // Streak milestone detection
+    const newStreak = card.streak + 1;
+    const milestone = checkStreakMilestone(newStreak);
+    if (milestone !== null) {
       queueReward({
-        type: 'surprise-bonus',
-        payload: {
-          xp: reward.breakdown.surpriseBonusXP,
-          coins: reward.breakdown.surpriseBonusCoins,
-          habitName: card.habit.name,
-        },
+        type: 'streak-milestone',
+        payload: { streak: newStreak, habitName: card.habit.name },
       });
     }
 
@@ -597,7 +720,7 @@ export default function CheckInScreen() {
         style={{ zIndex: 250 }}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-4 pt-4 pb-1">
+        <div className="flex items-center justify-between px-4 pb-1" style={{ paddingTop: 'max(1rem, env(safe-area-inset-top))' }}>
           <h1 className="text-lg font-bold text-white">Check-In</h1>
           <div className="flex items-center gap-1">
             <button
@@ -624,6 +747,18 @@ export default function CheckInScreen() {
           todayStr={todayStr}
           onSelect={handleDateSelect}
         />
+
+        {/* Event banners */}
+        {doubleXPEventActive && (
+          <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-amber-500/20 border border-amber-500/40 text-center">
+            <span className="text-amber-400 font-bold text-sm">&#x26A1; 2x XP Active!</span>
+          </div>
+        )}
+        {firstWeekBoostActive && (
+          <div className="mx-4 mb-2 py-2 px-3 rounded-lg bg-violet-500/20 border border-violet-500/40 text-center">
+            <span className="text-violet-300 font-bold text-sm">&#x1F680; 2x XP BOOST — First Week!</span>
+          </div>
+        )}
 
         {/* Card area */}
         {loading ? (
@@ -709,18 +844,8 @@ export default function CheckInScreen() {
               </button>
             </div>
 
-            {/* Accumulated rewards */}
-            <div className="shrink-0 h-8 flex items-center justify-center gap-4 text-sm">
-              {sessionXP > 0 && (
-                <div className="flex items-center gap-1">
-                  <Sparkles size={14} className="text-emerald-400" />
-                  <span className="text-emerald-400 font-semibold">+{sessionXP} XP</span>
-                </div>
-              )}
-              {sessionCoins > 0 && (
-                <span className="text-yellow-400 font-semibold">+{sessionCoins} coins</span>
-              )}
-            </div>
+            {/* Spacer for layout balance */}
+            <div className="shrink-0 h-4" />
           </div>
         )}
 
@@ -744,6 +869,18 @@ export default function CheckInScreen() {
       <AnimatePresence>
         {showCelebration && (
           <CelebrationBurst onDone={() => setShowCelebration(false)} />
+        )}
+      </AnimatePresence>
+
+      {/* Fly-to-HUD reward animation */}
+      <AnimatePresence mode="wait">
+        {rewardFloatData && (
+          <RewardFloat
+            key={rewardFloatKey}
+            xp={rewardFloatData.xp}
+            coins={rewardFloatData.coins}
+            isSurpriseBonus={rewardFloatData.isSurpriseBonus}
+          />
         )}
       </AnimatePresence>
 

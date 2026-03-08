@@ -104,10 +104,12 @@ export const usePlayerStore = create<PlayerState>((set, get) => ({
         });
       }
       import('@/stores/game-store').then(({ useGameStore }) => {
-        useGameStore.getState().queueReward({
-          type: 'level-up',
-          payload: { level: newLevel, unlockedAssets: result.unlockedAssets },
-        });
+        if (!useGameStore.getState().deferLevelUps) {
+          useGameStore.getState().queueReward({
+            type: 'level-up',
+            payload: { level: newLevel, unlockedAssets: result.unlockedAssets },
+          });
+        }
       });
     }
 
