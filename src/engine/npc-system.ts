@@ -4,7 +4,7 @@ import type { SceneContainers } from './setup-stage';
 import { gridToScreen } from './iso-utils';
 import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
-import { GRID_SIZE } from '../config/grid-constants';
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT } from '../config/grid-constants';
 import { GAME_CONFIG } from '../config/game-config';
 import { usePlayerStore } from '../stores/player-store';
 import { useBuildStore } from '../stores/build-store';
@@ -167,13 +167,39 @@ async function loadSheetTextures(spritePath: string): Promise<Texture[][]> {
 // Walkable graph
 // ---------------------------------------------------------------------------
 
+// Pixel offset pushing NPC away from adjacent road(s) so they walk
+// visually next to the road, not on top of its texture.
+const ROAD_OFFSET_PX = 60;
+
+function computeRoadOffset(row: number, col: number): { x: number; y: number } {
+  let ox = 0;
+  let oy = 0;
+  for (const [dr, dc] of CARDINALS) {
+    if (hasRoad(row + dr, col + dc)) {
+      // Screen direction toward the road tile
+      ox -= (dc - dr) * (TILE_WIDTH / 2);
+      oy -= (dc + dr) * (TILE_HEIGHT / 2);
+    }
+  }
+  const len = Math.sqrt(ox * ox + oy * oy);
+  if (len > 0) {
+    ox = (ox / len) * ROAD_OFFSET_PX;
+    oy = (oy / len) * ROAD_OFFSET_PX;
+  }
+  return { x: ox, y: oy };
+}
+
+function npcScreenPos(row: number, col: number): { x: number; y: number } {
+  const base = gridToScreen(row, col);
+  const off = computeRoadOffset(row, col);
+  return { x: base.x + off.x, y: base.y + off.y };
+}
+
 function buildWalkableGraph(): void {
   walkableGraph.clear();
 
-  // Step 1: collect tiles directly adjacent to roads.
-  // In isometric view these visually overlap with the road surface,
-  // so NPCs must NOT walk on them.
-  const roadAdjacent = new Set<string>();
+  // Walkable = tiles directly adjacent to a road, not roads or buildings.
+  // A pixel offset (computeRoadOffset) shifts NPCs off the road texture.
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
       if (!hasRoad(row, col)) continue;
@@ -181,21 +207,9 @@ function buildWalkableGraph(): void {
         const nr = row + dr;
         const nc = col + dc;
         if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-        if (!hasRoad(nr, nc)) roadAdjacent.add(tileKey(nr, nc));
+        if (hasRoad(nr, nc) || isOccupied(nr, nc)) continue;
+        walkableGraph.set(tileKey(nr, nc), []);
       }
-    }
-  }
-
-  // Step 2: walkable = tiles adjacent to roadAdjacent (2 tiles from roads),
-  // excluding roads, roadAdjacent tiles, and occupied tiles.
-  for (const key of roadAdjacent) {
-    const [row, col] = parseKey(key);
-    for (const [dr, dc] of CARDINALS) {
-      const nr = row + dr;
-      const nc = col + dc;
-      if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-      if (hasRoad(nr, nc) || roadAdjacent.has(tileKey(nr, nc)) || isOccupied(nr, nc)) continue;
-      walkableGraph.set(tileKey(nr, nc), []);
     }
   }
 
@@ -267,7 +281,7 @@ export async function respawnNPCs(): Promise<void> {
     sprite.scale.set(NPC_SCALE);
     sprite.play();
 
-    const screen = gridToScreen(row, col);
+    const screen = npcScreenPos(row, col);
     sprite.position.set(screen.x, screen.y);
 
     sceneContainers.entityLayer.addChild(sprite);
@@ -382,13 +396,13 @@ function updateNPCs(ticker: Ticker): void {
           ? now + 50   // tiny pause between path steps for smooth walking
           : now + randomFloat(IDLE_MIN_MS, IDLE_MAX_MS);
 
-        const screen = gridToScreen(npc.currentRow, npc.currentCol);
+        const screen = npcScreenPos(npc.currentRow, npc.currentCol);
         npc.sprite.position.set(screen.x, screen.y);
         needSort = true;
       } else {
-        // Lerp between current and target positions
-        const from = gridToScreen(npc.currentRow, npc.currentCol);
-        const to = gridToScreen(npc.targetRow, npc.targetCol);
+        // Lerp between current and target positions (including road offsets)
+        const from = npcScreenPos(npc.currentRow, npc.currentCol);
+        const to = npcScreenPos(npc.targetRow, npc.targetCol);
         npc.sprite.position.set(
           from.x + (to.x - from.x) * npc.progress,
           from.y + (to.y - from.y) * npc.progress,
