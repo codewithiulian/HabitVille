@@ -62,6 +62,10 @@ const RewardReveal = dynamic(() => import('@/components/RewardReveal'), {
   ssr: false,
 });
 
+const CheckInScreen = dynamic(() => import('@/components/CheckInScreen'), {
+  ssr: false,
+});
+
 export default function Home() {
   return (
     <>
@@ -78,6 +82,7 @@ export default function Home() {
       <HabitFab />
       <ShopScreen />
       <RewardReveal />
+      <CheckInScreen />
       <Onboarding />
       <TutorialOverlay />
     </>
