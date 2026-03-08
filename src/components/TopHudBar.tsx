@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useState, useCallback } from 'react';
-import { CircleDollarSign, Users } from 'lucide-react';
+import { Users } from 'lucide-react';
 import { usePlayerStore } from '@/stores/player-store';
 import { useGameStore } from '@/stores/game-store';
 import { getXPProgressInCurrentLevel } from '@/lib/leveling-engine';
@@ -235,7 +235,7 @@ export default function TopHudBar() {
           flexShrink: 0,
         }}
       >
-        <CircleDollarSign size={18} color="#facc15" />
+        <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 20, height: 20 }} />
         <span
           style={{
             fontSize: 14,

@@ -95,7 +95,7 @@ export default function ShopScreen() {
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             <span style={{ fontSize: 13, fontWeight: 600, color: '#1a1a1a' }}>
-              &#x1FA99; {coins.toLocaleString()}
+              <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {coins.toLocaleString()}
             </span>
             <div style={{
               width: 60,

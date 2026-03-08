@@ -193,7 +193,7 @@ export default function ShopAssetCard({ asset }: Props) {
             fontWeight: 600,
             color: isAffordable ? '#1a1a1a' : '#DC2626',
           }}>
-            &#x1FA99; {asset.price}
+            <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 16, height: 16, display: 'inline', verticalAlign: 'middle' }} /> {asset.price}
           </span>
         )}
       </button>

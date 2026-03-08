@@ -91,8 +91,8 @@ function SurpriseBonusContent({ payload }: { payload: PendingReward['payload'] }
           </div>
         )}
         {coins && (
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D' }}>
-            +{coins} &#x1FA99;
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D', display: 'flex', alignItems: 'center', gap: 4 }}>
+            +{coins} <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 28, height: 28 }} />
           </div>
         )}
       </div>
@@ -117,7 +117,7 @@ function WeeklyBonusContent({ payload }: { payload: PendingReward['payload'] }) 
       )}
       <div style={{ display: 'flex', gap: 16 }}>
         {xp && <div style={{ fontSize: 28, fontWeight: 700, color: '#A78BFA' }}>+{xp} XP</div>}
-        {coins && <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D' }}>+{coins} &#x1FA99;</div>}
+        {coins && <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D', display: 'flex', alignItems: 'center', gap: 4 }}>+{coins} <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 28, height: 28 }} /></div>}
       </div>
     </div>
   );
@@ -159,8 +159,8 @@ function DailyPerfectContent({ payload }: { payload: PendingReward['payload'] })
           </div>
         )}
         {coins && (
-          <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D' }}>
-            +{coins} &#x1FA99;
+          <div style={{ fontSize: 28, fontWeight: 700, color: '#FCD34D', display: 'flex', alignItems: 'center', gap: 4 }}>
+            +{coins} <img src="/assets/coin/coin.svg" alt="coin" style={{ width: 28, height: 28 }} />
           </div>
         )}
       </div>

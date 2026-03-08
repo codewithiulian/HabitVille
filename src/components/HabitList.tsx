@@ -69,10 +69,10 @@ export default function HabitList({ onClose }: HabitListProps) {
 
       {/* Sheet */}
       <div
-        className="fixed inset-x-0 bottom-0 bg-gray-900 rounded-t-2xl flex flex-col"
+        className="fixed inset-x-0 bottom-0 bg-gray-900 flex flex-col"
         style={{
           zIndex: 300,
-          maxHeight: '85vh',
+          top: 'env(safe-area-inset-top)',
           paddingBottom: 'max(env(safe-area-inset-bottom), 12px)',
         }}
       >
