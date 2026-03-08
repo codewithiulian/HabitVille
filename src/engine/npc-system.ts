@@ -167,32 +167,33 @@ async function loadSheetTextures(spritePath: string): Promise<Texture[][]> {
 // Walkable graph
 // ---------------------------------------------------------------------------
 
-// Pixel offset pushing NPC away from adjacent road(s) so they walk
-// visually next to the road, not on top of its texture.
-const ROAD_OFFSET_PX = 60;
-
-function computeRoadOffset(row: number, col: number): { x: number; y: number } {
-  let ox = 0;
-  let oy = 0;
-  for (const [dr, dc] of CARDINALS) {
-    if (hasRoad(row + dr, col + dc)) {
-      // Screen direction toward the road tile
-      ox -= (dc - dr) * (TILE_WIDTH / 2);
-      oy -= (dc + dr) * (TILE_HEIGHT / 2);
-    }
-  }
-  const len = Math.sqrt(ox * ox + oy * oy);
-  if (len > 0) {
-    ox = (ox / len) * ROAD_OFFSET_PX;
-    oy = (oy / len) * ROAD_OFFSET_PX;
-  }
-  return { x: ox, y: oy };
-}
+// Position NPCs at the midpoint of the shared edge between their grass tile
+// and the adjacent road tile, offset a few pixels into the grass side.
+// Each entry: [dRow, dCol, offsetX, offsetY] relative to gridToScreen.
+// Computed as: edge midpoint + 25px perpendicular into grass.
+const ROAD_EDGE: [number, number, number, number][] = [
+  [-1, 0,  116,  95],  // north road → upper-right edge of tile
+  [ 1, 0, -116, 197],  // south road → lower-left edge
+  [ 0, 1,  116, 197],  // east road  → lower-right edge
+  [ 0,-1, -116,  95],  // west road  → upper-left edge
+];
 
 function npcScreenPos(row: number, col: number): { x: number; y: number } {
   const base = gridToScreen(row, col);
-  const off = computeRoadOffset(row, col);
-  return { x: base.x + off.x, y: base.y + off.y };
+  let sumX = 0;
+  let sumY = 0;
+  let count = 0;
+  for (const [dr, dc, ox, oy] of ROAD_EDGE) {
+    if (hasRoad(row + dr, col + dc)) {
+      sumX += ox;
+      sumY += oy;
+      count++;
+    }
+  }
+  if (count === 0) {
+    return { x: base.x, y: base.y + TILE_HEIGHT / 2 };
+  }
+  return { x: base.x + sumX / count, y: base.y + sumY / count };
 }
 
 function buildWalkableGraph(): void {
