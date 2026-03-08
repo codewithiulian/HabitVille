@@ -167,31 +167,33 @@ async function loadSheetTextures(spritePath: string): Promise<Texture[][]> {
 // Walkable graph
 // ---------------------------------------------------------------------------
 
-// Position NPCs at the midpoint of the shared edge between their grass tile
-// and the adjacent road tile, offset a few pixels into the grass side.
-// Each entry: [dRow, dCol, offsetX, offsetY] relative to gridToScreen.
-// Computed as: edge midpoint + 25px perpendicular into grass.
-const ROAD_EDGE: [number, number, number, number][] = [
-  [-1, 0,  116,  95],  // north road → upper-right edge of tile
-  [ 1, 0, -116, 197],  // south road → lower-left edge
-  [ 0, 1,  116, 197],  // east road  → lower-right edge
-  [ 0,-1, -116,  95],  // west road  → upper-left edge
+// Edge midpoints for each road direction, relative to gridToScreen (top vertex).
+// [dRow, dCol, midpointX, midpointY]
+const EDGE_MID: [number, number, number, number][] = [
+  [-1, 0,  128,  73],   // north road → top-right edge
+  [ 1, 0, -128, 219],   // south road → bottom-left edge
+  [ 0, 1,  128, 219],   // east road  → bottom-right edge
+  [ 0,-1, -128,  73],   // west road  → top-left edge
 ];
+
+// How far from edge midpoint toward tile center (0 = on edge, 1 = at center).
+const EDGE_LERP = 0.35;
+const TILE_CY = TILE_HEIGHT / 2; // tile center Y offset from gridToScreen
 
 function npcScreenPos(row: number, col: number): { x: number; y: number } {
   const base = gridToScreen(row, col);
   let sumX = 0;
   let sumY = 0;
   let count = 0;
-  for (const [dr, dc, ox, oy] of ROAD_EDGE) {
+  for (const [dr, dc, mx, my] of EDGE_MID) {
     if (hasRoad(row + dr, col + dc)) {
-      sumX += ox;
-      sumY += oy;
+      sumX += mx * (1 - EDGE_LERP);               // center X is 0
+      sumY += my + (TILE_CY - my) * EDGE_LERP;
       count++;
     }
   }
   if (count === 0) {
-    return { x: base.x, y: base.y + TILE_HEIGHT / 2 };
+    return { x: base.x, y: base.y + TILE_CY };
   }
   return { x: base.x + sumX / count, y: base.y + sumY / count };
 }
