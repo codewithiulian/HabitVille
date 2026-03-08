@@ -4,6 +4,7 @@ import type { SceneContainers } from './setup-stage';
 import { gridToScreen } from './iso-utils';
 import { hasRoad } from './road-system';
 import { isOccupied } from './build-system';
+import { hasSidewalk } from './sidewalk-system';
 import { GRID_SIZE } from '../config/grid-constants';
 import { GAME_CONFIG } from '../config/game-config';
 import { usePlayerStore } from '../stores/player-store';
@@ -170,16 +171,17 @@ async function loadSheetTextures(spritePath: string): Promise<Texture[][]> {
 function buildWalkableGraph(): void {
   walkableGraph.clear();
 
-  // Walkable = tiles directly adjacent to a road, that are not roads or buildings.
-  // This makes NPCs walk "next to" roads like pedestrians on sidewalks.
+  // Walkable = tiles adjacent to sidewalks (2 tiles from roads).
+  // Sidewalk tiles visually extend the road surface, so NPCs must walk
+  // just outside them to appear "next to" the road.
   for (let row = 0; row < GRID_SIZE; row++) {
     for (let col = 0; col < GRID_SIZE; col++) {
-      if (!hasRoad(row, col)) continue;
+      if (!hasSidewalk(row, col)) continue;
       for (const [dr, dc] of CARDINALS) {
         const nr = row + dr;
         const nc = col + dc;
         if (nr < 0 || nr >= GRID_SIZE || nc < 0 || nc >= GRID_SIZE) continue;
-        if (hasRoad(nr, nc) || isOccupied(nr, nc)) continue;
+        if (hasRoad(nr, nc) || hasSidewalk(nr, nc) || isOccupied(nr, nc)) continue;
         walkableGraph.set(tileKey(nr, nc), []);
       }
     }
