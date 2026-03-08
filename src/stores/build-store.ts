@@ -15,6 +15,7 @@ export interface BuildingPlacementEntry {
   buildingId: string;
   fromRow?: number;  // only for 'move'
   fromCol?: number;  // only for 'move'
+  catalogAssetId?: string;  // for inventory tracking on undo
 }
 
 export interface RoadPlacementEntry {
@@ -71,11 +72,13 @@ interface BuildState {
   selectedRoad: SelectedRoadInfo | null;
   roadPopupScreenPos: { x: number; y: number } | null;
   categoryLoadState: Record<BuildCategory, CategoryLoadState>;
+  selectedColorVariant: string | null;
   roadDeleteMode: boolean;
   roadDeleteSelection: Set<string>;
 
   selectCategory: (category: BuildCategory) => void;
   selectAsset: (assetKey: string) => void;
+  selectColorVariant: (color: string | null) => void;
   deselectAsset: () => void;
   exitBuildMode: () => void;
   pushPlacement: (entry: PlacementEntry) => void;
@@ -122,25 +125,28 @@ export const useBuildStore = create<BuildState>((set, get) => ({
     public: 'idle',
     decorations: 'idle',
   },
+  selectedColorVariant: null,
   roadDeleteMode: false,
   roadDeleteSelection: new Set<string>(),
 
   selectCategory: (category) =>
-    set({ selectedCategory: category, selectedAsset: null, selectedRoadType: null, buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() }),
+    set({ selectedCategory: category, selectedAsset: null, selectedRoadType: null, selectedColorVariant: null, buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() }),
 
   selectAsset: (assetKey) => {
     if (get().selectedAsset === assetKey) {
-      set({ selectedAsset: null, selectedRoadType: null, buildMode: false });
+      set({ selectedAsset: null, selectedRoadType: null, selectedColorVariant: null, buildMode: false });
     } else {
-      set({ selectedAsset: assetKey, selectedRoadType: deriveRoadType(assetKey), buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() });
+      set({ selectedAsset: assetKey, selectedRoadType: deriveRoadType(assetKey), selectedColorVariant: null, buildMode: true, roadDeleteMode: false, roadDeleteSelection: new Set() });
     }
   },
 
+  selectColorVariant: (color) => set({ selectedColorVariant: color }),
+
   deselectAsset: () =>
-    set({ selectedAsset: null, selectedRoadType: null, buildMode: false }),
+    set({ selectedAsset: null, selectedRoadType: null, selectedColorVariant: null, buildMode: false }),
 
   exitBuildMode: () =>
-    set({ buildMode: false, selectedCategory: null, selectedAsset: null, selectedRoadType: null, selectedRoad: null, roadPopupScreenPos: null, roadDeleteMode: false, roadDeleteSelection: new Set() }),
+    set({ buildMode: false, selectedCategory: null, selectedAsset: null, selectedRoadType: null, selectedColorVariant: null, selectedRoad: null, roadPopupScreenPos: null, roadDeleteMode: false, roadDeleteSelection: new Set() }),
 
   pushPlacement: (entry) =>
     set((s) => ({ placementHistory: [...s.placementHistory, entry] })),

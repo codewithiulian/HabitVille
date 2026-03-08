@@ -112,6 +112,10 @@ export interface GameConfig {
     counts_only_scheduled_days: boolean;
   };
   celebrations: Record<string, unknown>;
+  shop: {
+    purchase_confirm_threshold: number;
+    house_colors: string[];
+  };
 }
 
 export const GAME_CONFIG = rawConfig as GameConfig;

@@ -9,7 +9,7 @@ interface InventoryState {
 
   initialize: () => Promise<void>;
   purchaseAsset: (assetId: string, colorVariant?: string) => void;
-  placeAsset: (assetId: string, gridX: number, gridY: number, colorVariant?: string) => string;
+  placeAsset: (assetId: string, gridX: number, gridY: number, colorVariant?: string, placedId?: string) => string;
   demolishAsset: (placedAssetId: string) => void;
   grantFreeAsset: (assetId: string, colorVariant?: string) => void;
   getAvailableForPlacement: () => InventoryItem[];
@@ -72,7 +72,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     }
   },
 
-  placeAsset: (assetId, gridX, gridY, colorVariant) => {
+  placeAsset: (assetId, gridX, gridY, colorVariant, placedId) => {
     const now = new Date().toISOString();
     const state = get();
     const invItem = state.ownedAssets.find(
@@ -91,9 +91,9 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
       }).catch(() => {});
     }
 
-    const placedId = crypto.randomUUID();
+    const id = placedId ?? crypto.randomUUID();
     const placed: PlacedAsset = {
-      id: placedId,
+      id,
       assetId,
       colorVariant: colorVariant ?? null,
       gridX,
@@ -105,7 +105,7 @@ export const useInventoryStore = create<InventoryState>((set, get) => ({
     set((s) => ({ placedAssets: [...s.placedAssets, placed] }));
     db.placedAssets.put(placed).catch(() => {});
 
-    return placedId;
+    return id;
   },
 
   demolishAsset: (placedAssetId) => {

@@ -46,6 +46,22 @@ const TutorialOverlay = dynamic(() => import('@/components/TutorialOverlay'), {
   ssr: false,
 });
 
+const CoinHud = dynamic(() => import('@/components/CoinHud'), {
+  ssr: false,
+});
+
+const ShopFab = dynamic(() => import('@/components/ShopFab'), {
+  ssr: false,
+});
+
+const ShopScreen = dynamic(() => import('@/components/ShopScreen'), {
+  ssr: false,
+});
+
+const RewardReveal = dynamic(() => import('@/components/RewardReveal'), {
+  ssr: false,
+});
+
 const CheckInScreen = dynamic(() => import('@/components/CheckInScreen'), {
   ssr: false,
 });
@@ -61,7 +77,11 @@ export default function Home() {
       <RoadDeleteConfirm />
       <BuildToolbar />
       <BuildToggle />
+      <CoinHud />
+      <ShopFab />
       <HabitFab />
+      <ShopScreen />
+      <RewardReveal />
       <CheckInScreen />
       <Onboarding />
       <TutorialOverlay />
