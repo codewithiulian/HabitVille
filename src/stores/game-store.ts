@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { GAME_CONFIG } from '@/config/game-config';
 import { usePlayerStore } from './player-store';
+import { useBuildStore } from './build-store';
 import type { GameMode, ActiveScreen, PendingReward } from '@/types/game';
 import type { WeeklySnapshot } from '@/types/weekly-snapshot';
 
@@ -68,9 +69,11 @@ export const useGameStore = create<GameState>((set, get) => ({
   },
 
   toggleBuildMode: () => {
-    set((s) => ({
-      currentMode: s.currentMode === 'build' ? 'view' : 'build',
-    }));
+    const leaving = get().currentMode === 'build';
+    set({ currentMode: leaving ? 'view' : 'build' });
+    if (leaving) {
+      useBuildStore.getState().exitBuildMode();
+    }
   },
 
   openScreen: (screen) => {

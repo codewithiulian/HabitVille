@@ -11,6 +11,8 @@ import { GRID_SIZE } from '../config/grid-constants';
 import { persistPlace, persistMove, persistDelete } from '../db/city-persistence';
 import { registryKeyToCatalogId, extractHouseColor } from '../lib/catalog-helpers';
 import { useInventoryStore } from '../stores/inventory-store';
+import { usePlayerStore } from '../stores/player-store';
+import { getPopulationContribution } from './population';
 import {
   handleRoadPointerDown,
   handleRoadDeletePointerDown,
@@ -298,7 +300,11 @@ function destroyGhost(): void {
 
 function depthSort(): void {
   if (!containers) return;
-  containers.buildingLayer.children.sort((a, b) => a.position.y - b.position.y);
+  containers.buildingLayer.children.sort((a, b) => {
+    const ay = (a as any)._sortY ?? a.position.y;
+    const by = (b as any)._sortY ?? b.position.y;
+    return ay - by;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -409,6 +415,13 @@ function onDocumentPointerUp(e: PointerEvent): void {
       if (catalogId) {
         const colorVariant = extractHouseColor(activeDrag.assetKey);
         useInventoryStore.getState().placeAsset(catalogId, activeDrag.lastRow, activeDrag.lastCol, colorVariant, buildingId);
+      }
+
+      // Population: add housing contribution
+      const popDelta = getPopulationContribution(activeDrag.assetKey);
+      if (popDelta > 0) {
+        const ps = usePlayerStore.getState();
+        ps.setPopulation(ps.population + popDelta);
       }
 
       useBuildStore.getState().pushPlacement({
@@ -697,6 +710,13 @@ export function deleteSelectedBuilding(): void {
     useInventoryStore.getState().demolishAsset(occupant.buildingId);
   }
 
+  // Population: subtract housing contribution
+  const popDelta = getPopulationContribution(occupant.assetKey);
+  if (popDelta > 0) {
+    const ps = usePlayerStore.getState();
+    ps.setPopulation(Math.max(0, ps.population - popDelta));
+  }
+
   useBuildStore.getState().pushPlacement({
     type: 'delete',
     sprite: occupant.sprite,
@@ -750,6 +770,12 @@ export function undoLastPlacement(): void {
     if (entry.catalogAssetId) {
       useInventoryStore.getState().demolishAsset(entry.buildingId);
     }
+    // Undo population: subtract what was added
+    const popDeltaPlace = getPopulationContribution(entry.assetKey);
+    if (popDeltaPlace > 0) {
+      const ps = usePlayerStore.getState();
+      ps.setPopulation(Math.max(0, ps.population - popDeltaPlace));
+    }
   } else if (entry.type === 'move') {
     // Move: return sprite to original position
     placeOnGrid(entry.sprite, entry.fromRow!, entry.fromCol!, entry.assetKey);
@@ -770,6 +796,12 @@ export function undoLastPlacement(): void {
     if (entry.catalogAssetId) {
       const colorVariant = extractHouseColor(entry.assetKey);
       useInventoryStore.getState().placeAsset(entry.catalogAssetId, entry.row, entry.col, colorVariant, entry.buildingId);
+    }
+    // Undo population: add back what was subtracted
+    const popDeltaDelete = getPopulationContribution(entry.assetKey);
+    if (popDeltaDelete > 0) {
+      const ps = usePlayerStore.getState();
+      ps.setPopulation(ps.population + popDeltaDelete);
     }
   } else if (entry.type === 'road-place') {
     undoRoadPlace(entry.tiles, entry.neighborChanges);
