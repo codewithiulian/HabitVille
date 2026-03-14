@@ -181,7 +181,7 @@ const EDGE_MID: [number, number, number, number][] = [
 //   Top edges (NPC visually below road): body extends up INTO road → push further inward
 //   Bottom edges (NPC visually above road): body extends up AWAY from road → stay near edge
 const EDGE_LERP_TOP = 0.65;
-const EDGE_LERP_BOTTOM = 0.12;
+const EDGE_LERP_BOTTOM = -0.5;
 const TILE_CY = TILE_HEIGHT / 2; // tile center Y offset from gridToScreen
 
 function npcScreenPos(row: number, col: number): { x: number; y: number } {
