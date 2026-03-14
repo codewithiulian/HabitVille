@@ -388,6 +388,9 @@ function updateCars(ticker: Ticker): void {
       const dir = directionFromDelta(tr - car.currentRow, tc - car.currentCol);
       if (dir !== car.direction) {
         applyDirection(car, dir);
+        // Snap position to new lane offset immediately so there's no visual pop
+        const screen = carScreenPos(car.currentRow, car.currentCol, car.direction);
+        car.sprite.position.set(screen.x, screen.y);
       }
     } else {
       car.progress += cfg.speed * dtSec;
@@ -398,7 +401,7 @@ function updateCars(ticker: Ticker): void {
         car.progress = 0;
         car.idle = true;
         car.idleUntil = car.path.length > 0
-          ? now + 50
+          ? now   // no pause between path steps — seamless driving
           : now + randomFloat(cfg.idle_min_ms, cfg.idle_max_ms);
 
         const screen = carScreenPos(car.currentRow, car.currentCol, car.direction);
