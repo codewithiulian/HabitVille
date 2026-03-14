@@ -61,6 +61,10 @@ export function hasRoad(row: number, col: number): boolean {
   return roadMap.has(tileKey(row, col));
 }
 
+export function getAllRoadKeys(): string[] {
+  return Array.from(roadMap.keys());
+}
+
 /** Used by computeBitmask — returns roadType at (r,c) or undefined */
 function getRoadTypeAt(r: number, c: number): string | undefined {
   return roadMap.get(tileKey(r, c))?.roadType;

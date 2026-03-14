@@ -116,6 +116,15 @@ export interface GameConfig {
     purchase_confirm_threshold: number;
     house_colors: string[];
   };
+  cars: {
+    max_visible: number;
+    speed: number;
+    scale: number;
+    idle_min_ms: number;
+    idle_max_ms: number;
+    path_min: number;
+    path_max: number;
+  };
 }
 
 export const GAME_CONFIG = rawConfig as GameConfig;

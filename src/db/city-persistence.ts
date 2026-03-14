@@ -1,4 +1,5 @@
 import { db } from './db';
+import type { CityCar } from './db';
 import type { CameraState } from '../types/camera';
 
 // ---------------------------------------------------------------------------
@@ -100,6 +101,22 @@ export function persistAccessoryBatch(
 
 export function persistAccessoryDeleteBatch(keys: string[]): void {
   db.accessories.bulkDelete(keys).catch(() => {});
+}
+
+// ---------------------------------------------------------------------------
+// Camera persistence — debounced 500ms
+// ---------------------------------------------------------------------------
+
+// ---------------------------------------------------------------------------
+// Car persistence — fire-and-forget
+// ---------------------------------------------------------------------------
+
+export function persistCar(record: CityCar): void {
+  db.cars.put(record).catch(() => {});
+}
+
+export function persistCarDelete(id: string): void {
+  db.cars.delete(id).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------

@@ -53,8 +53,8 @@ export function catalogToRegistryKey(catalogAssetId: string, color?: string): st
       return catalogAssetId.replace('fences_', '');
     }
     case 'vehicles': {
-      // vehicles_Bus_Grey_Back -> Bus_Grey_Back
-      return catalogAssetId.replace('vehicles_', '');
+      // vehicles_CarType1_Blue -> CarType1_Blue_Front (show Front sprite for display)
+      return catalogAssetId.replace('vehicles_', '') + '_Front';
     }
     case 'apartments': {
       // apartments_Appartment_Blue_1x1_Level1 -> Appartment_Blue_1x1_Level1

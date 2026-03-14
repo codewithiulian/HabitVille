@@ -413,6 +413,18 @@ population:
   apartment_size_threshold: "defined_per_asset_in_data_file"
 
 # ----------------------------------------------------------------------------
+# CARS (vehicles driving on roads)
+# ----------------------------------------------------------------------------
+cars:
+  max_visible: 20        # max cars rendered at once
+  speed: 1.2             # tiles per second (NPCs are 0.5)
+  scale: 0.55            # visual scale on road tiles
+  idle_min_ms: 200       # min pause at intersections
+  idle_max_ms: 1000      # max pause
+  path_min: 10           # min tiles per drive path
+  path_max: 30           # max tiles per drive path
+
+# ----------------------------------------------------------------------------
 # CITY
 # ----------------------------------------------------------------------------
 city:

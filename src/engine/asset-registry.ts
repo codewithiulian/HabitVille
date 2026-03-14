@@ -544,3 +544,16 @@ export function getAssetsByCategory(category: AssetCategory): AssetEntry[] {
 export function getAllAssetKeys(): string[] {
   return [...ASSET_REGISTRY.keys()];
 }
+
+/**
+ * Derive Front/Back texture paths from a merged catalog vehicle assetId.
+ * e.g. "vehicles_CarType1_Blue" → { front: "assets/GiantCityBuilder/Vehicles/CarType1_Blue_Front.png", back: "...Back.png" }
+ */
+export function getVehicleTexturePaths(catalogAssetId: string): { front: string; back: string } | null {
+  if (!catalogAssetId.startsWith('vehicles_')) return null;
+  const baseName = catalogAssetId.replace('vehicles_', '');
+  return {
+    front: `${BASE}/Vehicles/${baseName}_Front.png`,
+    back: `${BASE}/Vehicles/${baseName}_Back.png`,
+  };
+}

@@ -54,9 +54,15 @@ export async function loadEssentialAssets(
   if (dirt) essentialKeys.add(dirt.textureKey);
 
   // Add textures for saved buildings so restoreCity() works
+  // Keys may be registry keys (resolved via getAsset) or raw texture paths (e.g. car textures)
   for (const assetKey of savedAssetKeys) {
     const asset = getAsset(assetKey);
-    if (asset) essentialKeys.add(asset.textureKey);
+    if (asset) {
+      essentialKeys.add(asset.textureKey);
+    } else {
+      // Treat as a raw texture path (e.g. vehicle Front/Back sprites)
+      essentialKeys.add(assetKey);
+    }
   }
 
   const keys = [...essentialKeys];
