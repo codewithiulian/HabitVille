@@ -84,6 +84,14 @@ function directionFromDelta(dRow: number, dCol: number): Direction {
   return 'NW';               // grid west  → screen NW
 }
 
+// Grid delta per direction (for path generation straight-line preference)
+const DIR_DELTA: Record<Direction, [number, number]> = {
+  SE: [0, 1],   // +col
+  SW: [1, 0],   // +row
+  NE: [-1, 0],  // -row
+  NW: [0, -1],  // -col
+};
+
 // Anchor tuned to average content bounds across all 45 vehicle sprites:
 // content center-x ≈ 0.526, content bottom (tire line) ≈ 0.911
 const CAR_ANCHOR_X = 0.5;   // keep centered so flipX mirrors correctly
@@ -196,26 +204,50 @@ async function loadCarTextures(assetId: string): Promise<{ front: Texture; back:
 // Path generation — random walk along road graph
 // ---------------------------------------------------------------------------
 
-function generatePath(startRow: number, startCol: number): string[] {
+function generatePath(startRow: number, startCol: number, lastDir?: Direction): string[] {
   const cfg = GAME_CONFIG.cars;
   const path: string[] = [];
   const steps = randomInt(cfg.path_min, cfg.path_max);
   let row = startRow;
   let col = startCol;
+
+  // Derive the "came from" key from last travel direction so first step doesn't U-turn
   let prevKey = '';
+  if (lastDir) {
+    const delta = DIR_DELTA[lastDir];
+    // The tile we "came from" is opposite of travel direction
+    prevKey = tileKey(row - delta[0], col - delta[1]);
+  }
+
+  // Track current movement delta for straight-line preference
+  let dRow = lastDir ? DIR_DELTA[lastDir][0] : 0;
+  let dCol = lastDir ? DIR_DELTA[lastDir][1] : 0;
 
   for (let i = 0; i < steps; i++) {
     const key = tileKey(row, col);
     const neighbors = roadGraph.get(key);
     if (!neighbors || neighbors.length === 0) break;
 
+    // Never go back to the tile we just came from
     const forward = neighbors.filter((n) => n !== prevKey);
     const choices = forward.length > 0 ? forward : neighbors;
 
-    const nextKey = choices[randomInt(0, choices.length - 1)];
+    // Prefer continuing straight: if the straight-ahead tile is available, take it 80% of the time
+    let nextKey: string;
+    const straightKey = (dRow !== 0 || dCol !== 0) ? tileKey(row + dRow, col + dCol) : '';
+    if (straightKey && choices.includes(straightKey) && choices.length > 1 && Math.random() < 0.8) {
+      nextKey = straightKey;
+    } else {
+      nextKey = choices[randomInt(0, choices.length - 1)];
+    }
+
     path.push(nextKey);
     prevKey = key;
-    [row, col] = parseKey(nextKey);
+    const [nr, nc] = parseKey(nextKey);
+    dRow = nr - row;
+    dCol = nc - col;
+    row = nr;
+    col = nc;
   }
 
   return path;
@@ -377,7 +409,7 @@ function updateCars(ticker: Ticker): void {
       if (now < car.idleUntil) continue;
 
       if (car.path.length === 0) {
-        car.path = generatePath(car.currentRow, car.currentCol);
+        car.path = generatePath(car.currentRow, car.currentCol, car.direction);
         if (car.path.length === 0) {
           car.idleUntil = now + randomFloat(cfg.idle_min_ms, cfg.idle_max_ms);
           continue;
