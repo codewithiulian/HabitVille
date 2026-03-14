@@ -424,13 +424,17 @@ function updateCars(ticker: Ticker): void {
       car.progress = 0;
       car.idle = false;
 
-      // Capture current visual position as lerp start — no snapping
-      car.fromX = car.sprite.position.x;
-      car.fromY = car.sprite.position.y;
-
       const dir = directionFromDelta(tr - car.currentRow, tc - car.currentCol);
       if (dir !== car.direction) {
         applyDirection(car, dir);
+        // Snap to correct lane for new direction so the car turns in-lane
+        const snapped = carScreenPos(car.currentRow, car.currentCol, car.direction);
+        car.fromX = snapped.x;
+        car.fromY = snapped.y;
+        car.sprite.position.set(snapped.x, snapped.y);
+      } else {
+        car.fromX = car.sprite.position.x;
+        car.fromY = car.sprite.position.y;
       }
     } else {
       car.progress += cfg.speed * dtSec;
