@@ -126,11 +126,13 @@ const CARDINALS: [number, number][] = [
 ];
 
 function directionFromDelta(dRow: number, dCol: number): Direction {
-  // Isometric: south = +row, north = -row, east = +col, west = -col
-  if (dRow > 0) return 0; // south / down
-  if (dCol < 0) return 1; // west / left
-  if (dCol > 0) return 2; // east / right
-  return 3;               // north / up
+  // Isometric screen directions: +row = lower-left, +col = lower-right
+  // Row 0 = SE (lower-right), Row 1 = SW (lower-left),
+  // Row 2 = NE (upper-right), Row 3 = NW (upper-left)
+  if (dCol > 0) return 0; // grid east  → screen SE (lower-right)
+  if (dRow > 0) return 1; // grid south → screen SW (lower-left)
+  if (dRow < 0) return 2; // grid north → screen NE (upper-right)
+  return 3;               // grid west  → screen NW (upper-left)
 }
 
 // ---------------------------------------------------------------------------
