@@ -31,6 +31,8 @@ interface Car {
   idle: boolean;
   idleUntil: number;
   path: string[];
+  fromX: number;       // lerp start — captured from actual sprite position
+  fromY: number;
 }
 
 // ---------------------------------------------------------------------------
@@ -282,6 +284,8 @@ export async function respawnCars(): Promise<void> {
       idle: true,
       idleUntil: performance.now() + randomFloat(0, cfg.idle_max_ms),
       path: [],
+      fromX: screen.x,
+      fromY: screen.y,
     };
 
     applyDirection(car, direction);
@@ -336,6 +340,8 @@ export async function spawnSingleCar(assetId: string, recordId: string): Promise
     idle: true,
     idleUntil: performance.now() + randomFloat(0, cfg.idle_max_ms),
     path: [],
+    fromX: screen.x,
+    fromY: screen.y,
   };
 
   applyDirection(car, direction);
@@ -385,12 +391,13 @@ function updateCars(ticker: Ticker): void {
       car.progress = 0;
       car.idle = false;
 
+      // Capture current visual position as lerp start — no snapping
+      car.fromX = car.sprite.position.x;
+      car.fromY = car.sprite.position.y;
+
       const dir = directionFromDelta(tr - car.currentRow, tc - car.currentCol);
       if (dir !== car.direction) {
         applyDirection(car, dir);
-        // Snap position to new lane offset immediately so there's no visual pop
-        const screen = carScreenPos(car.currentRow, car.currentCol, car.direction);
-        car.sprite.position.set(screen.x, screen.y);
       }
     } else {
       car.progress += cfg.speed * dtSec;
@@ -406,14 +413,15 @@ function updateCars(ticker: Ticker): void {
 
         const screen = carScreenPos(car.currentRow, car.currentCol, car.direction);
         car.sprite.position.set(screen.x, screen.y);
+        car.fromX = screen.x;
+        car.fromY = screen.y;
         (car.sprite as any)._sortY = tileDepthY(car.currentRow, car.currentCol);
         needSort = true;
       } else {
-        const from = carScreenPos(car.currentRow, car.currentCol, car.direction);
         const to = carScreenPos(car.targetRow, car.targetCol, car.direction);
         car.sprite.position.set(
-          from.x + (to.x - from.x) * car.progress,
-          from.y + (to.y - from.y) * car.progress,
+          car.fromX + (to.x - car.fromX) * car.progress,
+          car.fromY + (to.y - car.fromY) * car.progress,
         );
         (car.sprite as any)._sortY = Math.max(
           tileDepthY(car.currentRow, car.currentCol),
