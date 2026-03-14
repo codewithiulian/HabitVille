@@ -3,7 +3,7 @@ import type { Ticker } from 'pixi.js';
 import type { SceneContainers } from './setup-stage';
 import { gridToScreen } from './iso-utils';
 import { hasRoad, getAllRoadKeys } from './road-system';
-import { GRID_SIZE, TILE_HEIGHT } from '../config/grid-constants';
+import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT } from '../config/grid-constants';
 import { GAME_CONFIG } from '../config/game-config';
 import { getVehicleTexturePaths } from './asset-registry';
 import { useCarStore } from '../stores/car-store';
@@ -87,9 +87,24 @@ function directionFromDelta(dRow: number, dCol: number): Direction {
 const CAR_ANCHOR_X = 0.5;   // keep centered so flipX mirrors correctly
 const CAR_ANCHOR_Y = 0.91;  // tire line within the sprite canvas
 
-function carScreenPos(row: number, col: number): { x: number; y: number } {
+// Right-hand traffic: offset cars to the right side of the road.
+// In isometric coords, "right of travel direction" maps to these screen offsets.
+// The offset magnitude is ~25% of the half-tile dimensions to stay in-lane.
+const LANE_OX = TILE_WIDTH * 0.12;   // ~61px lateral offset component
+const LANE_OY = TILE_HEIGHT * 0.12;  // ~35px lateral offset component
+
+// Perpendicular-right screen offset per travel direction (right-hand traffic)
+const LANE_OFFSET: Record<Direction, { x: number; y: number }> = {
+  SE: { x: -LANE_OX, y:  LANE_OY },  // right of SE = toward +row → screen down-left
+  NW: { x:  LANE_OX, y: -LANE_OY },  // right of NW = toward -row → screen up-right
+  SW: { x: -LANE_OX, y: -LANE_OY },  // right of SW = toward -col → screen up-left
+  NE: { x:  LANE_OX, y:  LANE_OY },  // right of NE = toward +col → screen down-right
+};
+
+function carScreenPos(row: number, col: number, dir: Direction): { x: number; y: number } {
   const base = gridToScreen(row, col);
-  return { x: base.x, y: base.y + TILE_HEIGHT / 2 };
+  const lane = LANE_OFFSET[dir];
+  return { x: base.x + lane.x, y: base.y + TILE_HEIGHT / 2 + lane.y };
 }
 
 function tileDepthY(row: number, col: number): number {
@@ -242,7 +257,7 @@ export async function respawnCars(): Promise<void> {
     sprite.anchor.set(CAR_ANCHOR_X, CAR_ANCHOR_Y);
     sprite.scale.set(cfg.scale);
 
-    const screen = carScreenPos(row, col);
+    const screen = carScreenPos(row, col, direction);
     sprite.position.set(screen.x, screen.y);
     (sprite as any)._sortY = tileDepthY(row, col);
 
@@ -293,10 +308,10 @@ export async function spawnSingleCar(assetId: string, recordId: string): Promise
   const direction: Direction = (['SE', 'SW', 'NE', 'NW'] as Direction[])[randomInt(0, 3)];
 
   const sprite = new Sprite(textures.front);
-  sprite.anchor.set(0.5, 1.0);
+  sprite.anchor.set(CAR_ANCHOR_X, CAR_ANCHOR_Y);
   sprite.scale.set(cfg.scale);
 
-  const screen = carScreenPos(row, col);
+  const screen = carScreenPos(row, col, direction);
   sprite.position.set(screen.x, screen.y);
   (sprite as any)._sortY = tileDepthY(row, col);
 
@@ -382,13 +397,13 @@ function updateCars(ticker: Ticker): void {
           ? now + 50
           : now + randomFloat(cfg.idle_min_ms, cfg.idle_max_ms);
 
-        const screen = carScreenPos(car.currentRow, car.currentCol);
+        const screen = carScreenPos(car.currentRow, car.currentCol, car.direction);
         car.sprite.position.set(screen.x, screen.y);
         (car.sprite as any)._sortY = tileDepthY(car.currentRow, car.currentCol);
         needSort = true;
       } else {
-        const from = carScreenPos(car.currentRow, car.currentCol);
-        const to = carScreenPos(car.targetRow, car.targetCol);
+        const from = carScreenPos(car.currentRow, car.currentCol, car.direction);
+        const to = carScreenPos(car.targetRow, car.targetCol, car.direction);
         car.sprite.position.set(
           from.x + (to.x - from.x) * car.progress,
           from.y + (to.y - from.y) * car.progress,
