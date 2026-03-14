@@ -82,6 +82,11 @@ function directionFromDelta(dRow: number, dCol: number): Direction {
   return 'NW';               // grid west  → screen NW
 }
 
+// Anchor tuned to average content bounds across all 45 vehicle sprites:
+// content center-x ≈ 0.526, content bottom (tire line) ≈ 0.911
+const CAR_ANCHOR_X = 0.5;   // keep centered so flipX mirrors correctly
+const CAR_ANCHOR_Y = 0.91;  // tire line within the sprite canvas
+
 function carScreenPos(row: number, col: number): { x: number; y: number } {
   const base = gridToScreen(row, col);
   return { x: base.x, y: base.y + TILE_HEIGHT / 2 };
@@ -234,7 +239,7 @@ export async function respawnCars(): Promise<void> {
     const direction: Direction = (['SE', 'SW', 'NE', 'NW'] as Direction[])[randomInt(0, 3)];
 
     const sprite = new Sprite(textures.front);
-    sprite.anchor.set(0.5, 1.0);
+    sprite.anchor.set(CAR_ANCHOR_X, CAR_ANCHOR_Y);
     sprite.scale.set(cfg.scale);
 
     const screen = carScreenPos(row, col);
