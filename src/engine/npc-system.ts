@@ -177,7 +177,11 @@ const EDGE_MID: [number, number, number, number][] = [
 ];
 
 // How far from edge midpoint toward tile center (0 = on edge, 1 = at center).
-const EDGE_LERP = 0.35;
+// Asymmetric to compensate for sprite height (anchor at feet, body extends up):
+//   Top edges (NPC visually below road): body extends up INTO road → push further inward
+//   Bottom edges (NPC visually above road): body extends up AWAY from road → stay near edge
+const EDGE_LERP_TOP = 0.65;
+const EDGE_LERP_BOTTOM = 0.12;
 const TILE_CY = TILE_HEIGHT / 2; // tile center Y offset from gridToScreen
 
 function npcScreenPos(row: number, col: number): { x: number; y: number } {
@@ -187,8 +191,9 @@ function npcScreenPos(row: number, col: number): { x: number; y: number } {
   let count = 0;
   for (const [dr, dc, mx, my] of EDGE_MID) {
     if (hasRoad(row + dr, col + dc)) {
-      sumX += mx * (1 - EDGE_LERP);               // center X is 0
-      sumY += my + (TILE_CY - my) * EDGE_LERP;
+      const lerp = my < TILE_CY ? EDGE_LERP_TOP : EDGE_LERP_BOTTOM;
+      sumX += mx * (1 - lerp);
+      sumY += my + (TILE_CY - my) * lerp;
       count++;
     }
   }
