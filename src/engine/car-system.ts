@@ -101,10 +101,14 @@ const LANE_OFFSET: Record<Direction, { x: number; y: number }> = {
   NE: { x:  LANE_OX, y:  LANE_OY },  // right of NE = toward +col → screen down-right
 };
 
+// Extra downward nudge so the tire line sits on the visual road surface
+// rather than at the geometric diamond center (which is too high visually).
+const CAR_Y_NUDGE = TILE_HEIGHT * 0.18; // ~53px down
+
 function carScreenPos(row: number, col: number, dir: Direction): { x: number; y: number } {
   const base = gridToScreen(row, col);
   const lane = LANE_OFFSET[dir];
-  return { x: base.x + lane.x, y: base.y + TILE_HEIGHT / 2 + lane.y };
+  return { x: base.x + lane.x, y: base.y + TILE_HEIGHT / 2 + CAR_Y_NUDGE + lane.y };
 }
 
 function tileDepthY(row: number, col: number): number {
