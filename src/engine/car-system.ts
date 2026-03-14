@@ -3,7 +3,7 @@ import type { Ticker } from 'pixi.js';
 import type { SceneContainers } from './setup-stage';
 import { gridToScreen } from './iso-utils';
 import { hasRoad, getAllRoadKeys } from './road-system';
-import { GRID_SIZE, TILE_WIDTH, TILE_HEIGHT } from '../config/grid-constants';
+import { TILE_WIDTH, TILE_HEIGHT } from '../config/grid-constants';
 import { GAME_CONFIG } from '../config/game-config';
 import { getVehicleTexturePaths } from './asset-registry';
 import { useCarStore } from '../stores/car-store';
@@ -103,6 +103,11 @@ const LANE_OFFSET: Record<Direction, { x: number; y: number }> = {
   NE: { x:  LANE_OX, y:  LANE_OY },  // right of NE = toward +col → screen down-right
 };
 
+// Depth sort bias: cars sort half a tile behind their actual grid position.
+// This ensures ground-level cars render behind tall buildings at the same
+// or diagonally adjacent tile depth (e.g. road at (r-1,c+1) vs building at (r,c)).
+const CAR_SORT_BIAS = -TILE_HEIGHT / 2;
+
 // Extra downward nudge so the tire line sits on the visual road surface
 // rather than at the geometric diamond center (which is too high visually).
 const CAR_Y_NUDGE = TILE_HEIGHT * 0.35; // ~102px down
@@ -111,10 +116,6 @@ function carScreenPos(row: number, col: number, dir: Direction): { x: number; y:
   const base = gridToScreen(row, col);
   const lane = LANE_OFFSET[dir];
   return { x: base.x + lane.x, y: base.y + TILE_HEIGHT / 2 + CAR_Y_NUDGE + lane.y };
-}
-
-function tileDepthY(row: number, col: number): number {
-  return gridToScreen(row, col).y;
 }
 
 // ---------------------------------------------------------------------------
@@ -265,7 +266,7 @@ export async function respawnCars(): Promise<void> {
 
     const screen = carScreenPos(row, col, direction);
     sprite.position.set(screen.x, screen.y);
-    (sprite as any)._sortY = tileDepthY(row, col);
+    (sprite as any)._sortY = gridToScreen(row, col).y + CAR_SORT_BIAS;
 
     sceneContainers.buildingLayer.addChild(sprite);
 
@@ -321,7 +322,7 @@ export async function spawnSingleCar(assetId: string, recordId: string): Promise
 
   const screen = carScreenPos(row, col, direction);
   sprite.position.set(screen.x, screen.y);
-  (sprite as any)._sortY = tileDepthY(row, col);
+  (sprite as any)._sortY = gridToScreen(row, col).y + CAR_SORT_BIAS;
 
   sceneContainers.buildingLayer.addChild(sprite);
 
@@ -415,18 +416,17 @@ function updateCars(ticker: Ticker): void {
         car.sprite.position.set(screen.x, screen.y);
         car.fromX = screen.x;
         car.fromY = screen.y;
-        (car.sprite as any)._sortY = tileDepthY(car.currentRow, car.currentCol);
+        (car.sprite as any)._sortY = gridToScreen(car.currentRow, car.currentCol).y + CAR_SORT_BIAS;
         needSort = true;
       } else {
         const to = carScreenPos(car.targetRow, car.targetCol, car.direction);
-        car.sprite.position.set(
-          car.fromX + (to.x - car.fromX) * car.progress,
-          car.fromY + (to.y - car.fromY) * car.progress,
-        );
-        (car.sprite as any)._sortY = Math.max(
-          tileDepthY(car.currentRow, car.currentCol),
-          tileDepthY(car.targetRow, car.targetCol),
-        );
+        const lerpX = car.fromX + (to.x - car.fromX) * car.progress;
+        const lerpY = car.fromY + (to.y - car.fromY) * car.progress;
+        car.sprite.position.set(lerpX, lerpY);
+        // Smoothly interpolate depth between current and target tile
+        const fromDepth = gridToScreen(car.currentRow, car.currentCol).y;
+        const toDepth = gridToScreen(car.targetRow, car.targetCol).y;
+        (car.sprite as any)._sortY = fromDepth + (toDepth - fromDepth) * car.progress + CAR_SORT_BIAS;
         needSort = true;
       }
     }
