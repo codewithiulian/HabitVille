@@ -184,6 +184,11 @@ const EDGE_LERP_TOP = 0.65;
 const EDGE_LERP_BOTTOM = -0.5;
 const TILE_CY = TILE_HEIGHT / 2; // tile center Y offset from gridToScreen
 
+/** Tile-based depth Y for sorting — independent of visual edge offset */
+function tileDepthY(row: number, col: number): number {
+  return gridToScreen(row, col).y;
+}
+
 function npcScreenPos(row: number, col: number): { x: number; y: number } {
   const base = gridToScreen(row, col);
   let sumX = 0;
@@ -291,8 +296,9 @@ export async function respawnNPCs(): Promise<void> {
 
     const screen = npcScreenPos(row, col);
     sprite.position.set(screen.x, screen.y);
+    (sprite as any)._sortY = tileDepthY(row, col);
 
-    sceneContainers.entityLayer.addChild(sprite);
+    sceneContainers.buildingLayer.addChild(sprite);
 
     npcs.push({
       sprite,
@@ -310,12 +316,16 @@ export async function respawnNPCs(): Promise<void> {
   }
 
   // Initial depth sort
-  sortEntityLayer();
+  sortBuildingLayer();
 }
 
-function sortEntityLayer(): void {
+function sortBuildingLayer(): void {
   if (!sceneContainers) return;
-  sceneContainers.entityLayer.children.sort((a, b) => a.position.y - b.position.y);
+  sceneContainers.buildingLayer.children.sort((a, b) => {
+    const ay = (a as any)._sortY ?? a.position.y;
+    const by = (b as any)._sortY ?? b.position.y;
+    return ay - by;
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -406,6 +416,7 @@ function updateNPCs(ticker: Ticker): void {
 
         const screen = npcScreenPos(npc.currentRow, npc.currentCol);
         npc.sprite.position.set(screen.x, screen.y);
+        (npc.sprite as any)._sortY = tileDepthY(npc.currentRow, npc.currentCol);
         needSort = true;
       } else {
         // Lerp between current and target positions (including road offsets)
@@ -415,12 +426,17 @@ function updateNPCs(ticker: Ticker): void {
           from.x + (to.x - from.x) * npc.progress,
           from.y + (to.y - from.y) * npc.progress,
         );
+        // Use max depth of current/target tile to prevent popping during transition
+        (npc.sprite as any)._sortY = Math.max(
+          tileDepthY(npc.currentRow, npc.currentCol),
+          tileDepthY(npc.targetRow, npc.targetCol),
+        );
         needSort = true;
       }
     }
   }
 
-  if (needSort) sortEntityLayer();
+  if (needSort) sortBuildingLayer();
 }
 
 // ---------------------------------------------------------------------------

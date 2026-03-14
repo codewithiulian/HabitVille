@@ -300,7 +300,11 @@ function destroyGhost(): void {
 
 function depthSort(): void {
   if (!containers) return;
-  containers.buildingLayer.children.sort((a, b) => a.position.y - b.position.y);
+  containers.buildingLayer.children.sort((a, b) => {
+    const ay = (a as any)._sortY ?? a.position.y;
+    const by = (b as any)._sortY ?? b.position.y;
+    return ay - by;
+  });
 }
 
 // ---------------------------------------------------------------------------
