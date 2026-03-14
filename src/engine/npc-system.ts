@@ -321,7 +321,7 @@ export async function respawnNPCs(): Promise<void> {
   sortBuildingLayer();
 }
 
-function sortBuildingLayer(): void {
+export function sortBuildingLayer(): void {
   if (!sceneContainers) return;
   sceneContainers.buildingLayer.children.sort((a, b) => {
     const ay = (a as any)._sortY ?? a.position.y;

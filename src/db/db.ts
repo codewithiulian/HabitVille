@@ -45,6 +45,13 @@ export interface CityAccessory {
   placedAt: Date;
 }
 
+export interface CityCar {
+  id: string;           // UUID
+  assetId: string;      // e.g. "vehicles_CarType1_Blue"
+  createdAt: string;    // ISO
+  updatedAt: string;    // ISO
+}
+
 export interface GameStateRow {
   id: string;
   cameraX: number;
@@ -69,6 +76,7 @@ const db = new Dexie('habitville') as Dexie & {
   inventory: EntityTable<InventoryItem, 'id'>;
   placedAssets: EntityTable<PlacedAsset, 'id'>;
   weeklySnapshots: EntityTable<WeeklySnapshot, 'id'>;
+  cars: EntityTable<CityCar, 'id'>;
 };
 
 db.version(1).stores({
@@ -124,6 +132,21 @@ db.version(6).stores({
   inventory: 'id, assetId',
   placedAssets: 'id, assetId',
   weeklySnapshots: 'id, weekStart',
+});
+
+db.version(7).stores({
+  city: 'id',
+  roads: 'id',
+  sidewalks: 'id',
+  accessories: 'id',
+  gameState: 'id',
+  habits: 'id, archived',
+  checkIns: 'id, [habitId+date], date',
+  playerProfile: 'id',
+  inventory: 'id, assetId',
+  placedAssets: 'id, assetId',
+  weeklySnapshots: 'id, weekStart',
+  cars: 'id, assetId',
 });
 
 export { db };

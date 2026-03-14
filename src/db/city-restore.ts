@@ -1,6 +1,6 @@
 import { Assets, Sprite } from 'pixi.js';
 import { db } from './db';
-import type { GameStateRow } from './db';
+import type { GameStateRow, CityCar } from './db';
 import type { SceneContainers } from '../engine/setup-stage';
 import { getAsset } from '../engine/asset-registry';
 import { placeOnGrid } from '../engine/place-on-grid';
@@ -86,6 +86,14 @@ export async function restoreAccessories(): Promise<void> {
 // ---------------------------------------------------------------------------
 
 export { recalcSidewalksAfterRestore };
+
+// ---------------------------------------------------------------------------
+// Restore cars from IndexedDB
+// ---------------------------------------------------------------------------
+
+export async function restoreCars(): Promise<CityCar[]> {
+  return db.cars.toArray();
+}
 
 // ---------------------------------------------------------------------------
 // Restore camera state

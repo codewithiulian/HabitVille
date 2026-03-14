@@ -23,6 +23,10 @@ import { roadAssetKey } from './road-tiles';
 import { sidewalkAssetKey } from './sidewalk-tiles';
 import { initSidewalkSystem, destroySidewalkSystem } from './sidewalk-system';
 import { initNpcSystem, destroyNpcSystem, respawnNPCs } from './npc-system';
+import { initCarSystem, destroyCarSystem, respawnCars } from './car-system';
+import { getVehicleTexturePaths } from './asset-registry';
+import { restoreCars } from '../db/city-restore';
+import { useCarStore } from '../stores/car-store';
 
 let app: Application | null = null;
 let containers: SceneContainers | null = null;
@@ -40,18 +44,33 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   app = await createApp();
   containers = setupStage(app);
 
-  // Load essential assets (grid tiles + saved buildings + saved roads + sidewalks + accessories)
-  const [savedBuildings, savedRoads, savedSidewalks, savedAccessories] = await Promise.all([
+  // Load essential assets (grid tiles + saved buildings + saved roads + sidewalks + accessories + car textures)
+  const [savedBuildings, savedRoads, savedSidewalks, savedAccessories, savedCars] = await Promise.all([
     db.city.toArray(),
     db.roads.toArray(),
     db.sidewalks.toArray(),
     db.accessories.toArray(),
+    restoreCars(),
   ]);
+
+  // Derive car texture paths from owned car records
+  const carTexturePaths: string[] = [];
+  const seenCarAssets = new Set<string>();
+  for (const car of savedCars) {
+    if (seenCarAssets.has(car.assetId)) continue;
+    seenCarAssets.add(car.assetId);
+    const paths = getVehicleTexturePaths(car.assetId);
+    if (paths) {
+      carTexturePaths.push(paths.front, paths.back);
+    }
+  }
+
   const savedAssetKeys = [...new Set([
     ...savedBuildings.map((b) => b.assetKey),
     ...savedRoads.map((r) => roadAssetKey(r.roadType, r.tileNum)),
     ...savedSidewalks.map((s) => sidewalkAssetKey(s.tileNum)),
     ...savedAccessories.map((a) => a.assetKey),
+    ...carTexturePaths,
   ])];
   await loadEssentialAssets(savedAssetKeys, (progress) => {
     const bar = document.getElementById('loading-progress');
@@ -96,12 +115,18 @@ async function doInitGame(): Promise<HTMLCanvasElement> {
   initNpcSystem(app, containers);
   respawnNPCs().catch((err) => console.error('[NPC] initial spawn failed:', err));
 
+  // Car system: init and spawn cars from saved records
+  initCarSystem(app, containers);
+  useCarStore.getState().initFromRecords(savedCars);
+  respawnCars().catch((err) => console.error('[Car] initial spawn failed:', err));
+
   return app.canvas;
 }
 
 export function destroyGame(): void {
   if (!app) return;
 
+  destroyCarSystem();
   destroyNpcSystem();
   destroyBuildSystem();
   destroySidewalkSystem();

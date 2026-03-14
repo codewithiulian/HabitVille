@@ -6,8 +6,11 @@ import { usePlayerStore } from '@/stores/player-store';
 import { useInventoryStore } from '@/stores/inventory-store';
 import { useShopStore } from '@/stores/shop-store';
 import { useBuildStore } from '@/stores/build-store';
+import { useCarStore } from '@/stores/car-store';
 import { isHouseAsset } from '@/lib/catalog-helpers';
 import { GAME_CONFIG } from '@/config/game-config';
+import { getAllRoadKeys } from '@/engine/road-system';
+import { spawnSingleCar, removeCar } from '@/engine/car-system';
 import PurchaseConfirmDialog from './PurchaseConfirmDialog';
 
 interface Props {
@@ -29,14 +32,52 @@ export default function ShopAssetCard({ asset }: Props) {
   const coins = usePlayerStore((s) => s.coins);
   const ownedAssets = useInventoryStore((s) => s.ownedAssets);
   const newlyUnlockedIds = useShopStore((s) => s.newlyUnlockedIds);
+  const carCount = useCarStore((s) => s.ownedCars.filter((c) => c.assetId === asset.assetId).length);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showSellOption, setShowSellOption] = useState(false);
 
+  const isVehicle = asset.category === 'vehicles';
   const ownedItem = ownedAssets.find((a) => a.assetId === asset.assetId);
-  const totalOwned = ownedItem ? ownedItem.totalPurchased : 0;
+  const totalOwned = isVehicle ? carCount : (ownedItem ? ownedItem.totalPurchased : 0);
 
   const state = getCardState(asset, playerLevel, coins, totalOwned);
   const isNew = newlyUnlockedIds.has(asset.assetId);
   const isHouse = isHouseAsset(asset);
+
+  const executeVehiclePurchase = useCallback(() => {
+    const success = usePlayerStore.getState().spendCoins(asset.price);
+    if (!success) {
+      useBuildStore.getState().showToast('Not enough coins!');
+      return;
+    }
+
+    if (getAllRoadKeys().length === 0) {
+      usePlayerStore.getState().addCoins(asset.price);
+      useBuildStore.getState().showToast('Build some roads first!');
+      return;
+    }
+
+    const recordId = useCarStore.getState().purchaseCar(asset.assetId);
+    spawnSingleCar(asset.assetId, recordId);
+    useBuildStore.getState().showToast(`${asset.name} deployed to roads!`);
+    if (isNew) {
+      useShopStore.getState().markSeen(asset.assetId);
+    }
+  }, [asset, isNew]);
+
+  const handleSellVehicle = useCallback(() => {
+    const ownedCars = useCarStore.getState().ownedCars
+      .filter((c) => c.assetId === asset.assetId);
+    if (ownedCars.length === 0) return;
+
+    // Sell the oldest one
+    const oldest = ownedCars[0];
+    useCarStore.getState().sellCar(oldest.id);
+    removeCar(oldest.id);
+    usePlayerStore.getState().addCoins(asset.price);
+    useBuildStore.getState().showToast(`Sold ${asset.name} for ${asset.price} coins!`);
+    setShowSellOption(false);
+  }, [asset]);
 
   const executePurchase = useCallback(() => {
     const success = usePlayerStore.getState().spendCoins(asset.price);
@@ -66,6 +107,21 @@ export default function ShopAssetCard({ asset }: Props) {
       return;
     }
 
+    // Vehicles: special purchase flow
+    if (isVehicle) {
+      if (totalOwned > 0) {
+        // Show sell option dialog
+        setShowSellOption(true);
+        return;
+      }
+      if (state === 'cant-afford') {
+        useBuildStore.getState().showToast('Not enough coins!');
+        return;
+      }
+      executeVehiclePurchase();
+      return;
+    }
+
     if (state === 'cant-afford' || state === 'owned-cant-afford') {
       useBuildStore.getState().showToast('Not enough coins!');
       return;
@@ -76,7 +132,7 @@ export default function ShopAssetCard({ asset }: Props) {
     } else {
       executePurchase();
     }
-  }, [asset, state, isHouse, isNew, executePurchase]);
+  }, [asset, state, isHouse, isNew, isVehicle, totalOwned, executePurchase, executeVehiclePurchase]);
 
   const isLocked = state === 'locked';
   const isAffordable = state === 'affordable' || state === 'owned-affordable';
@@ -207,6 +263,101 @@ export default function ShopAssetCard({ asset }: Props) {
           }}
           onCancel={() => setShowConfirm(false)}
         />
+      )}
+
+      {showSellOption && (
+        <div
+          onClick={() => setShowSellOption(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 160,
+            background: 'rgba(0,0,0,0.4)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'var(--bg-card)',
+              borderRadius: 16,
+              padding: '20px 24px',
+              maxWidth: 280,
+              width: '90%',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 12,
+              alignItems: 'center',
+            }}
+          >
+            <img
+              src={`/${asset.spriteKey}`}
+              alt={asset.name}
+              style={{ maxWidth: 64, maxHeight: 64, objectFit: 'contain' }}
+            />
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--text-primary)' }}>
+              {asset.name}
+            </span>
+            <span style={{ fontSize: 12, color: 'var(--text-secondary)' }}>
+              Owned: {totalOwned}
+            </span>
+            <div style={{ display: 'flex', gap: 8, width: '100%' }}>
+              {coins >= asset.price && (
+                <button
+                  onClick={() => {
+                    setShowSellOption(false);
+                    executeVehiclePurchase();
+                  }}
+                  style={{
+                    flex: 1,
+                    padding: '10px 0',
+                    borderRadius: 10,
+                    border: 'none',
+                    background: '#2563EB',
+                    color: '#fff',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  Buy ({asset.price})
+                </button>
+              )}
+              <button
+                onClick={handleSellVehicle}
+                style={{
+                  flex: 1,
+                  padding: '10px 0',
+                  borderRadius: 10,
+                  border: '1px solid #DC2626',
+                  background: 'transparent',
+                  color: '#DC2626',
+                  fontSize: 13,
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                }}
+              >
+                Sell (+{asset.price})
+              </button>
+            </div>
+            <button
+              onClick={() => setShowSellOption(false)}
+              style={{
+                padding: '6px 16px',
+                borderRadius: 8,
+                border: '1px solid var(--border-subtle)',
+                background: 'transparent',
+                color: 'var(--text-secondary)',
+                fontSize: 12,
+                cursor: 'pointer',
+              }}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       )}
     </>
   );

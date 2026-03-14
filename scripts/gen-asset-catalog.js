@@ -68,13 +68,13 @@ function discoverCategory(catConfig) {
 
   if (id === "houses") return discoverHouses();
   if (id === "apartments") return discoverApartments();
+  if (id === "vehicles") return discoverVehicles();
 
   // All other categories: flat directory scan
   const dirMap = {
     public_buildings: "Public",
     restaurants: "Restaurants",
     shopping: "Shopping",
-    vehicles: "Vehicles",
     plants: "Plants",
     decorations: "DecorItems",
     fences: "Fences",
@@ -89,6 +89,38 @@ function discoverCategory(catConfig) {
     name: displayName(stem(f)),
     spriteKey: `${BASE_KEY}/${dirName}/${f}`,
   }));
+}
+
+function discoverVehicles() {
+  const dir = path.join(ASSETS_DIR, "Vehicles");
+  const files = listPngs(dir);
+
+  // Exclusion prefixes — non-road vehicles
+  const excludePrefixes = ["FishingBoat", "RowBoat", "Ship_", "Plane"];
+
+  // Group by base name (strip _Front/_Back suffix)
+  const groups = new Map();
+  for (const f of files) {
+    const s = stem(f);
+    if (excludePrefixes.some((p) => s.startsWith(p))) continue;
+
+    const base = s.replace(/_(Front|Back)$/, "");
+    if (!groups.has(base)) groups.set(base, {});
+    if (s.endsWith("_Front")) groups.get(base).front = f;
+    else if (s.endsWith("_Back")) groups.get(base).back = f;
+  }
+
+  const entries = [];
+  for (const [base, sprites] of groups) {
+    if (!sprites.front) continue; // Need at least a Front sprite
+    entries.push({
+      assetId: `vehicles_${base}`,
+      name: displayName(base),
+      spriteKey: `${BASE_KEY}/Vehicles/${sprites.front}`,
+    });
+  }
+
+  return entries;
 }
 
 function discoverHouses() {
